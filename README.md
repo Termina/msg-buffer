@@ -1,30 +1,12 @@
 
-Respo workflow in Calcit-js
+Message Buffer for Gemini API
 ----
 
 > Respo web page based on [calcit-js](https://github.com/calcit-lang/calcit).
 
-Demo https://repo.calcit-lang.org/respo-calcit-workflow/ .
+Demo https://r.tiye.me/Termina/msg-buffer/ .
 
-### Usages
-
-To develop:
-
-```bash
-cr js # watching
-
-yarn # to install vite
-yarn vite # watching and running on localhost:3000
-```
-
-calcit-js is using [Calcit Editor](https://github.com/calcit-lang/editor).
-
-To build:
-
-```bash
-yarn vite build
-http-server dist/
-```
+Docs https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest#text-and-image_input .
 
 ### Workflow
 
