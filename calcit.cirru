@@ -348,42 +348,6 @@
                               |r $ %{} :Expr (:at 1507461840980) (:by |root)
                                 :data $ {}
                                   |T $ %{} :Leaf (:at 1507461841342) (:by |root) (:text |{})
-        |gemini-model $ %{} :CodeEntry (:doc |)
-          :code $ %{} :Expr (:at 1722408909293) (:by |rJG4IHzWf)
-            :data $ {}
-              |T $ %{} :Leaf (:at 1722408909293) (:by |rJG4IHzWf) (:text |def)
-              |b $ %{} :Leaf (:at 1722408909293) (:by |rJG4IHzWf) (:text |gemini-model)
-              |h $ %{} :Expr (:at 1722408990142) (:by |rJG4IHzWf)
-                :data $ {}
-                  |D $ %{} :Leaf (:at 1722408991900) (:by |rJG4IHzWf) (:text |let)
-                  |T $ %{} :Expr (:at 1722408992267) (:by |rJG4IHzWf)
-                    :data $ {}
-                      |T $ %{} :Expr (:at 1722408992429) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |D $ %{} :Leaf (:at 1722408994896) (:by |rJG4IHzWf) (:text |ai)
-                          |T $ %{} :Expr (:at 1722408909293) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1722408916341) (:by |rJG4IHzWf) (:text |new)
-                              |b $ %{} :Leaf (:at 1722408916880) (:by |rJG4IHzWf) (:text |GoogleGenerativeAI)
-                              |h $ %{} :Expr (:at 1722408917504) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1722408924537) (:by |rJG4IHzWf) (:text |js/localStorage.getItem)
-                                  |b $ %{} :Leaf (:at 1722408928632) (:by |rJG4IHzWf) (:text "|\"gemini-key")
-                      |b $ %{} :Expr (:at 1722409024044) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1722409024618) (:by |rJG4IHzWf) (:text |model)
-                          |b $ %{} :Expr (:at 1722409025083) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1722409025083) (:by |rJG4IHzWf) (:text |.!getGenerativeModel)
-                              |b $ %{} :Leaf (:at 1722409025083) (:by |rJG4IHzWf) (:text |ai)
-                              |h $ %{} :Expr (:at 1722409025083) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1722409025083) (:by |rJG4IHzWf) (:text |js-object)
-                                  |b $ %{} :Expr (:at 1722409025083) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1722409025083) (:by |rJG4IHzWf) (:text |:model)
-                                      |b $ %{} :Leaf (:at 1722409025083) (:by |rJG4IHzWf) (:text "|\"gemini-1.0-pro")
-                  |b $ %{} :Leaf (:at 1722409027133) (:by |rJG4IHzWf) (:text |model)
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1722409346610) (:by |rJG4IHzWf)
             :data $ {}
@@ -431,7 +395,7 @@
                                 :data $ {}
                                   |D $ %{} :Leaf (:at 1722410319548) (:by |rJG4IHzWf) (:text |.!post)
                                   |T $ %{} :Leaf (:at 1722410311824) (:by |rJG4IHzWf) (:text |axios)
-                                  |X $ %{} :Leaf (:at 1722410365923) (:by |rJG4IHzWf) (:text "|\"https://sf.chenyong.life/v1beta/models/gemini-1.0-pro:generateContent")
+                                  |X $ %{} :Leaf (:at 1722426085194) (:by |rJG4IHzWf) (:text "|\"https://sf.chenyong.life/v1beta/models/gemini-1.5-pro:generateContent")
                                   |Z $ %{} :Expr (:at 1722410582786) (:by |rJG4IHzWf)
                                     :data $ {}
                                       |T $ %{} :Leaf (:at 1722410582786) (:by |rJG4IHzWf) (:text |js-object)
@@ -577,13 +541,6 @@
                     |v $ %{} :Expr (:at 1521954065004) (:by |root)
                       :data $ {}
                         |j $ %{} :Leaf (:at 1521954067604) (:by |root) (:text |dev?)
-                |z $ %{} :Expr (:at 1722408623032) (:by |rJG4IHzWf)
-                  :data $ {}
-                    |T $ %{} :Leaf (:at 1722408623949) (:by |rJG4IHzWf) (:text "|\"@google/generative-ai")
-                    |b $ %{} :Leaf (:at 1722408630090) (:by |rJG4IHzWf) (:text |:refer)
-                    |h $ %{} :Expr (:at 1722408630372) (:by |rJG4IHzWf)
-                      :data $ {}
-                        |T $ %{} :Leaf (:at 1722408630609) (:by |rJG4IHzWf) (:text |GoogleGenerativeAI)
                 |zD $ %{} :Expr (:at 1722410482268) (:by |rJG4IHzWf)
                   :data $ {}
                     |T $ %{} :Leaf (:at 1722410483524) (:by |rJG4IHzWf) (:text "|\"axios")

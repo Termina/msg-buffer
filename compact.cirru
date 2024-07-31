@@ -52,20 +52,13 @@
                         div ({})
                           comp-md-block (:answer state) ({})
                   when dev? $ comp-reel (>> states :reel) reel ({})
-        |gemini-model $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            def gemini-model $ let
-                ai $ new GoogleGenerativeAI (js/localStorage.getItem "\"gemini-key")
-                model $ .!getGenerativeModel ai
-                  js-object $ :model "\"gemini-1.0-pro"
-              , model
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state d!) (hint-fn async)
               d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
               let
                   result $ js-await
-                    .!post axios "\"https://sf.chenyong.life/v1beta/models/gemini-1.0-pro:generateContent"
+                    .!post axios "\"https://sf.chenyong.life/v1beta/models/gemini-1.5-pro:generateContent"
                       js-object $ :contents
                         js-array $ js-object
                           :parts $ js-array
@@ -86,7 +79,6 @@
             respo.comp.space :refer $ =<
             reel.comp.reel :refer $ comp-reel
             app.config :refer $ dev?
-            "\"@google/generative-ai" :refer $ GoogleGenerativeAI
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block
     |app.config $ %{} :FileEntry
