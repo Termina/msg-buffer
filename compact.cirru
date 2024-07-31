@@ -1,7 +1,7 @@
 
 {} (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
-    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/
+    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/
   :entries $ {}
   :files $ {}
     |app.comp.container $ %{} :FileEntry
@@ -14,9 +14,11 @@
                   states $ :states store
                   cursor $ or (:cursor states) ([])
                   state $ or (:data states)
-                    {} (:content "\"") (:answer nil)
+                    {} (:content "\"") (:answer nil) (:loading? false)
                 div
-                  {} $ :class-name (str-spaced css/preset css/global css/row css/fullscreen)
+                  {}
+                    :class-name $ str-spaced css/preset css/global css/row css/fullscreen
+                    :style $ {} (:padding "\"8px")
                   div
                     {} $ :class-name (str-spaced css/column css/flex)
                     textarea $ {}
@@ -32,7 +34,10 @@
                             = 13 $ :keycode e
                             :meta? e
                           submit-message! cursor state d!
-                    div ({})
+                    div
+                      {} (:class-name css/row-parted)
+                        :style $ {} (:padding "\"8px 2px")
+                      span $ {}
                       button $ {} (:class-name css/button) (:inner-text "\"Run")
                         :on-click $ fn (e d!)
                           ; println $ :content state
@@ -40,10 +45,12 @@
                   =< 8 nil
                   div
                     {} $ :class-name css/expand
-                    if
-                      not $ blank? (:answer state)
-                      div ({})
-                        <> $ :answer state
+                    if (:loading? state)
+                      div ({}) (<> "\"loading..." css/font-fancy)
+                      if
+                        not $ blank? (:answer state)
+                        div ({})
+                          comp-md-block (:answer state) ({})
                   when dev? $ comp-reel (>> states :reel) reel ({})
         |gemini-model $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -55,7 +62,7 @@
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state d!) (hint-fn async)
-              d! cursor $ assoc state :answer nil
+              d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
               let
                   result $ js-await
                     .!post axios "\"https://sf.chenyong.life/v1beta/models/gemini-1.0-pro:generateContent"
@@ -68,7 +75,9 @@
                           :key $ js/localStorage.getItem "\"gemini-key"
                         :headers $ js-object ("\"Content-Type" "\"application/json")
                   answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
-                d! cursor $ assoc state :answer answer
+                d! cursor $ -> state
+                  assoc :answer $ w-log answer
+                  assoc :loading? false
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
@@ -79,6 +88,7 @@
             app.config :refer $ dev?
             "\"@google/generative-ai" :refer $ GoogleGenerativeAI
             "\"axios" :default axios
+            respo-md.comp.md :refer $ comp-md-block
     |app.config $ %{} :FileEntry
       :defs $ {}
         |dev? $ %{} :CodeEntry (:doc |)
