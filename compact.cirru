@@ -6,6 +6,8 @@
   :files $ {}
     |app.comp.container $ %{} :FileEntry
       :defs $ {}
+        |*abort-control $ %{} :CodeEntry (:doc |)
+          :code $ quote (defatom *abort-control nil)
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
@@ -43,30 +45,39 @@
                             div
                               {} $ :class-name style-more
                               <> "\"fetching more..." $ str-spaced css/font-fancy
-                  div
-                    {} $ :class-name (str-spaced css/center css/flex)
-                    textarea $ {}
-                      :value $ :content state
-                      :placeholder "\"Content"
-                      :class-name $ str-spaced css/textarea
-                      :style $ {} (:height 320) (:width "\"100%")
-                      :on-input $ fn (e d!)
-                        d! cursor $ assoc state :content (:value e)
-                      :on-keydown $ fn (e d!)
-                        if
-                          and
-                            = 13 $ :keycode e
-                            :meta? e
-                          submit-message! cursor state d!
-                    div
-                      {} (:class-name css/row-parted)
-                        :style $ {} (:padding "\"8px 2px")
-                      span $ {}
-                      button $ {} (:class-name css/button) (:inner-text "\"Run")
-                        :on-click $ fn (e d!)
-                          ; println $ :content state
-                          submit-message! cursor state d!
+                  comp-message-box (>> states :message-box)
+                    fn (text d!) (submit-message! cursor state text d!)
                   when dev? $ comp-reel (>> states :reel) reel ({})
+        |comp-message-box $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defcomp comp-message-box (states on-submit)
+              let
+                  cursor $ :cursor states
+                  state $ either (:data states)
+                    {} $ :content "\""
+                div
+                  {} $ :class-name (str-spaced css/center css/flex)
+                  textarea $ {}
+                    :value $ :content state
+                    :placeholder "\"Content"
+                    :class-name $ str-spaced css/textarea
+                    :style $ {} (:height 160) (:width "\"100%")
+                    :on-input $ fn (e d!)
+                      d! cursor $ assoc state :content (:value e)
+                    :on-keydown $ fn (e d!)
+                      if
+                        and
+                          = 13 $ :keycode e
+                          :meta? e
+                        on-submit (:content state) d!
+                  div
+                    {} (:class-name css/row-parted)
+                      :style $ {} (:padding "\"8px 2px")
+                    span $ {}
+                    button $ {} (:class-name css/button) (:inner-text "\"Ask")
+                      :on-click $ fn (e d!)
+                        ; println $ :content state
+                        on-submit (:content state) d!
         |get-gemini-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
@@ -88,7 +99,10 @@
                 :margin 16
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn submit-message! (cursor state d!) (hint-fn async)
+            defn submit-message! (cursor state prompt-test d!) (hint-fn async)
+              if-let
+                abort $ deref *abort-control
+                do (js/console.log "\"Aborting prev") (.!abort abort)
               d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
               let
                   result $ js-await
@@ -97,7 +111,7 @@
                       js-object $ :contents
                         js-array $ js-object
                           :parts $ js-array
-                            js-object $ :text (:content state)
+                            js-object $ :text prompt-test
                       js-object
                         :params $ js-object
                           :key $ get-gemini-key!
@@ -105,6 +119,10 @@
                         :headers $ js-object (:Accept "\"text/event-stream") (; :Content-Type "\"application/json")
                         :responseType "\"stream"
                         :adapter "\"fetch"
+                        :signal $ let
+                            abort $ new js/AbortController
+                          reset! *abort-control abort
+                          .-signal abort
                   stream $ .-data result
                   reader $ ->
                     .!pipeThrough stream $ new js/TextDecoderStream
