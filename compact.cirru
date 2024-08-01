@@ -27,9 +27,19 @@
                       if
                         not $ blank? (:answer state)
                         div ({})
-                          comp-md-block (:answer state) ({})
-                          if
-                            not $ :done? state
+                          comp-md-block
+                            -> (:answer state) (either "\"")
+                              .!replace pattern-spaced-code $ str &newline "\"```"
+                            {}
+                          if (:done? state)
+                            div
+                              {} $ :class-name css/row-parted
+                              span $ {}
+                              div
+                                {} $ :class-name (str-spaced css/row-middle)
+                                comp-copy $ :answer state
+                                =< 2 nil
+                                <> "\"Copy raw" css/font-fancy
                             div
                               {} $ :class-name style-more
                               <> "\"fetching more..." $ str-spaced css/font-fancy
@@ -63,6 +73,9 @@
                 key $ js/localStorage.getItem "\"gemini-key"
               if (blank? key) (js/alert "\"Required gemini-key in localStorage")
               , key
+        |pattern-spaced-code $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
@@ -125,6 +138,7 @@
             app.config :refer $ dev?
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block
+            respo-ui.comp :refer $ comp-copy
     |app.config $ %{} :FileEntry
       :defs $ {}
         |dev? $ %{} :CodeEntry (:doc |)
