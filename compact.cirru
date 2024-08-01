@@ -63,6 +63,9 @@
                 key $ js/localStorage.getItem "\"gemini-key"
               if (blank? key) (js/alert "\"Required gemini-key in localStorage")
               , key
+        |pick-model $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
@@ -76,7 +79,8 @@
               d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
               let
                   result $ js-await
-                    .!post axios "\"https://sf.chenyong.life/v1beta/models/gemini-1.5-pro:streamGenerateContent"
+                    .!post axios
+                      str "\"https://sf.chenyong.life/v1beta/models/" (pick-model) "\":streamGenerateContent"
                       js-object $ :contents
                         js-array $ js-object
                           :parts $ js-array

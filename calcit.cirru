@@ -421,6 +421,18 @@
                           |T $ %{} :Leaf (:at 1722448331004) (:by |rJG4IHzWf) (:text |js/alert)
                           |b $ %{} :Leaf (:at 1722448341536) (:by |rJG4IHzWf) (:text "|\"Required gemini-key in localStorage")
                   |b $ %{} :Leaf (:at 1722448319448) (:by |rJG4IHzWf) (:text |key)
+        |pick-model $ %{} :CodeEntry (:doc |)
+          :code $ %{} :Expr (:at 1722480815830) (:by |rJG4IHzWf)
+            :data $ {}
+              |T $ %{} :Leaf (:at 1722480815830) (:by |rJG4IHzWf) (:text |defn)
+              |b $ %{} :Leaf (:at 1722480815830) (:by |rJG4IHzWf) (:text |pick-model)
+              |e $ %{} :Expr (:at 1722480823778) (:by |rJG4IHzWf)
+                :data $ {}
+              |h $ %{} :Expr (:at 1722480815830) (:by |rJG4IHzWf)
+                :data $ {}
+                  |D $ %{} :Leaf (:at 1722480836949) (:by |rJG4IHzWf) (:text |get-env)
+                  |L $ %{} :Leaf (:at 1722480838937) (:by |rJG4IHzWf) (:text "|\"model")
+                  |T $ %{} :Leaf (:at 1722480820908) (:by |rJG4IHzWf) (:text "|\"gemini-1.5-flash")
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1722448082591) (:by |rJG4IHzWf)
             :data $ {}
@@ -503,7 +515,14 @@
                                 :data $ {}
                                   |D $ %{} :Leaf (:at 1722410319548) (:by |rJG4IHzWf) (:text |.!post)
                                   |T $ %{} :Leaf (:at 1722410311824) (:by |rJG4IHzWf) (:text |axios)
-                                  |X $ %{} :Leaf (:at 1722446325837) (:by |rJG4IHzWf) (:text "|\"https://sf.chenyong.life/v1beta/models/gemini-1.5-pro:streamGenerateContent")
+                                  |X $ %{} :Expr (:at 1722480805746) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |D $ %{} :Leaf (:at 1722480806471) (:by |rJG4IHzWf) (:text |str)
+                                      |T $ %{} :Leaf (:at 1722480859612) (:by |rJG4IHzWf) (:text "|\"https://sf.chenyong.life/v1beta/models/")
+                                      |b $ %{} :Expr (:at 1722480809062) (:by |rJG4IHzWf)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1722480815201) (:by |rJG4IHzWf) (:text |pick-model)
+                                      |h $ %{} :Leaf (:at 1722480851526) (:by |rJG4IHzWf) (:text "|\":streamGenerateContent")
                                   |Z $ %{} :Expr (:at 1722410582786) (:by |rJG4IHzWf)
                                     :data $ {}
                                       |T $ %{} :Leaf (:at 1722410582786) (:by |rJG4IHzWf) (:text |js-object)
