@@ -38,11 +38,9 @@
                               div
                                 {} $ :class-name (str-spaced css/row-middle)
                                 comp-copy $ :answer state
-                                =< 2 nil
-                                <> "\"Copy raw" css/font-fancy
                             div
                               {} $ :class-name style-more
-                              <> "\"fetching more..." $ str-spaced css/font-fancy
+                              <> "\"Streaming..." $ str-spaced css/font-fancy
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text d!)
                   when dev? $ comp-reel (>> states :reel) reel ({})
@@ -60,7 +58,8 @@
                   textarea $ {}
                     :value $ :content state
                     :placeholder "\"Content"
-                    :class-name $ str-spaced css/textarea
+                    :id "\"message"
+                    :class-name $ str-spaced css/textarea css/font-code! style-textbox
                     :style $ {} (:height 160) (:width "\"100%")
                     :on-input $ fn (e d!)
                       d! cursor $ assoc state :content (:value e)
@@ -72,10 +71,16 @@
                         on-submit (:content state) d!
                   button $ {}
                     :class-name $ str-spaced css/button style-submit
-                    :inner-text "\"Ask"
+                    :inner-text "\"Generate"
                     :on-click $ fn (e d!)
                       ; println $ :content state
                       on-submit (:content state) d!
+                  if
+                    not $ blank? (:content state)
+                    comp-close $ {} (:class-name style-clear)
+                      :on-click $ fn (e d!)
+                        d! cursor $ assoc state :content "\""
+                        -> (js/document.querySelector "\"#message") (.!focus)
         |get-gemini-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
@@ -97,6 +102,10 @@
             defstyle style-app-global $ {}
                 str "\"& ." style-code-block
                 {} $ :max-width "\"90vw"
+        |style-clear $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-clear $ {}
+              "\"&" $ {} (:position :absolute) (:right 16) (:top 16) (:opacity 0.4)
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
@@ -104,14 +113,19 @@
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
-              "\"&" $ {} (:text-align :center)
-                :background-color $ hsl 0 0 90
+              "\"&" $ {} (:text-align :center) (:width 80)
+                :background-color $ hsl 0 0 94
                 :border-radius 12
-                :margin 16
+                :padding "\"4px 8px"
+                :margin "\"8px 0"
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
-              "\"&" $ {} (:position :absolute) (:top -24) (:right 8)
+              "\"&" $ {} (:position :absolute) (:bottom 16) (:right 16)
+        |style-textbox $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-textbox $ {}
+              "\"&" $ {} (:border-radius 12)
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-test d!) (hint-fn async)
@@ -171,7 +185,7 @@
             app.config :refer $ dev?
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
-            respo-ui.comp :refer $ comp-copy
+            respo-ui.comp :refer $ comp-copy comp-close
     |app.config $ %{} :FileEntry
       :defs $ {}
         |dev? $ %{} :CodeEntry (:doc |)
