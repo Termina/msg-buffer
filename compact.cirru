@@ -6,6 +6,8 @@
   :files $ {}
     |app.comp.container $ %{} :FileEntry
       :defs $ {}
+        |*abort-control $ %{} :CodeEntry (:doc |)
+          :code $ quote (defatom *abort-control nil)
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
@@ -14,73 +16,147 @@
                   states $ :states store
                   cursor $ or (:cursor states) ([])
                   state $ or (:data states)
-                    {} (:content "\"") (:answer nil) (:loading? false)
+                    {} (:content "\"") (:answer nil) (:loading? false) (:done? false)
                 div
                   {}
-                    :class-name $ str-spaced css/preset css/global css/row css/fullscreen
-                    :style $ {} (:padding "\"8px")
+                    :class-name $ str-spaced css/preset css/global css/row css/fullscreen css/gap8
+                    :style $ {} (:padding "\"8px 8px")
                   div
-                    {} $ :class-name (str-spaced css/column css/flex)
-                    textarea $ {}
-                      :value $ :content state
-                      :placeholder "\"Content"
-                      :class-name $ str-spaced css/textarea
-                      :style $ {} (:height 320) (:width "\"100%")
-                      :on-input $ fn (e d!)
-                        d! cursor $ assoc state :content (:value e)
-                      :on-keydown $ fn (e d!)
-                        if
-                          and
-                            = 13 $ :keycode e
-                            :meta? e
-                          submit-message! cursor state d!
-                    div
-                      {} (:class-name css/row-parted)
-                        :style $ {} (:padding "\"8px 2px")
-                      span $ {}
-                      button $ {} (:class-name css/button) (:inner-text "\"Run")
-                        :on-click $ fn (e d!)
-                          ; println $ :content state
-                          submit-message! cursor state d!
-                  =< 8 nil
-                  div
-                    {} $ :class-name css/expand
+                    {} (:class-name css/expand)
+                      :style $ {} (:flex 2) (:padding "\"40px 16px 200px 16px")
                     if (:loading? state)
                       div ({}) (<> "\"loading..." css/font-fancy)
                       if
                         not $ blank? (:answer state)
                         div ({})
-                          comp-md-block (:answer state) ({})
+                          comp-md-block
+                            -> (:answer state) (either "\"")
+                              .!replace pattern-spaced-code $ str &newline "\"```"
+                            {}
+                          if (:done? state)
+                            div
+                              {} $ :class-name css/row-parted
+                              span $ {}
+                              div
+                                {} $ :class-name (str-spaced css/row-middle)
+                                comp-copy $ :answer state
+                                =< 2 nil
+                                <> "\"Copy raw" css/font-fancy
+                            div
+                              {} $ :class-name style-more
+                              <> "\"fetching more..." $ str-spaced css/font-fancy
+                  comp-message-box (>> states :message-box)
+                    fn (text d!) (submit-message! cursor state text d!)
                   when dev? $ comp-reel (>> states :reel) reel ({})
+        |comp-message-box $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defcomp comp-message-box (states on-submit)
+              let
+                  cursor $ :cursor states
+                  state $ either (:data states)
+                    {} $ :content "\""
+                div
+                  {} $ :class-name (str-spaced css/center css/flex)
+                  textarea $ {}
+                    :value $ :content state
+                    :placeholder "\"Content"
+                    :class-name $ str-spaced css/textarea
+                    :style $ {} (:height 160) (:width "\"100%")
+                    :on-input $ fn (e d!)
+                      d! cursor $ assoc state :content (:value e)
+                    :on-keydown $ fn (e d!)
+                      if
+                        and
+                          = 13 $ :keycode e
+                          :meta? e
+                        on-submit (:content state) d!
+                  div
+                    {} (:class-name css/row-parted)
+                      :style $ {} (:padding "\"8px 2px")
+                    span $ {}
+                    button $ {} (:class-name css/button) (:inner-text "\"Ask")
+                      :on-click $ fn (e d!)
+                        ; println $ :content state
+                        on-submit (:content state) d!
+        |get-gemini-key! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn get-gemini-key! () $ let
+                key $ js/localStorage.getItem "\"gemini-key"
+              if (blank? key) (js/alert "\"Required gemini-key in localStorage")
+              , key
+        |pattern-spaced-code $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
+        |pick-model $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
+        |style-more $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-more $ {}
+              "\"&" $ {} (:text-align :center)
+                :background-color $ hsl 0 0 90
+                :border-radius 12
+                :margin 16
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn submit-message! (cursor state d!) (hint-fn async)
+            defn submit-message! (cursor state prompt-test d!) (hint-fn async)
+              if-let
+                abort $ deref *abort-control
+                do (js/console.log "\"Aborting prev") (.!abort abort)
               d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
               let
                   result $ js-await
-                    .!post axios "\"https://sf.chenyong.life/v1beta/models/gemini-1.5-pro:generateContent"
+                    .!post axios
+                      str "\"https://sf.chenyong.life/v1beta/models/" (pick-model) "\":streamGenerateContent"
                       js-object $ :contents
                         js-array $ js-object
                           :parts $ js-array
-                            js-object $ :text (:content state)
+                            js-object $ :text prompt-test
                       js-object
                         :params $ js-object
-                          :key $ js/localStorage.getItem "\"gemini-key"
-                        :headers $ js-object ("\"Content-Type" "\"application/json")
-                  answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
-                d! cursor $ -> state
+                          :key $ get-gemini-key!
+                          :alt "\"sse"
+                        :headers $ js-object (:Accept "\"text/event-stream") (; :Content-Type "\"application/json")
+                        :responseType "\"stream"
+                        :adapter "\"fetch"
+                        :signal $ let
+                            abort $ new js/AbortController
+                          reset! *abort-control abort
+                          .-signal abort
+                  stream $ .-data result
+                  reader $ ->
+                    .!pipeThrough stream $ new js/TextDecoderStream
+                    .!getReader
+                  *text $ atom "\""
+                  ; reading $ js-await (.!read reader)
+                  ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
+                ; d! cursor $ -> state
                   assoc :answer $ w-log answer
                   assoc :loading? false
+                apply-args () $ fn () (hint-fn async)
+                  let
+                      info $ js-await (.!read reader)
+                      value $ .-value info
+                      done? $ .-done info
+                    if done?
+                      d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                      let
+                          content $ -> (.!slice value 6) (js/JSON.parse) .-candidates .-0 .-content .-parts .-0 .-text
+                        swap! *text str content
+                        d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                        recur
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
+            respo.util.format :refer $ hsl
             respo.core :refer $ defcomp defeffect <> >> div button textarea span input
             respo.comp.space :refer $ =<
             reel.comp.reel :refer $ comp-reel
             app.config :refer $ dev?
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block
+            respo-ui.comp :refer $ comp-copy
     |app.config $ %{} :FileEntry
       :defs $ {}
         |dev? $ %{} :CodeEntry (:doc |)
