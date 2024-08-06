@@ -1,0 +1,15 @@
+{
+  "short_name": "Msg Gemini",
+  "name": "Msg Gemini",
+  "icons": [
+    {
+      "src": "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/google-gemini-icon.png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/Termina/msg-buffer/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#8a47de",
+  "theme_color": "#ffffff"
+}

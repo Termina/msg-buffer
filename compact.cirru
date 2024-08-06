@@ -16,14 +16,12 @@
                   states $ :states store
                   cursor $ or (:cursor states) ([])
                   state $ or (:data states)
-                    {} (:content "\"") (:answer nil) (:loading? false) (:done? false)
+                    {} (:answer nil) (:loading? false) (:done? false)
                 div
-                  {}
-                    :class-name $ str-spaced css/preset css/global css/row css/fullscreen css/gap8
-                    :style $ {} (:padding "\"8px 8px")
+                  {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
                   div
                     {} (:class-name css/expand)
-                      :style $ {} (:flex 2) (:padding "\"40px 16px 200px 16px")
+                      :style $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto)
                     if (:loading? state)
                       div ({}) (<> "\"loading..." css/font-fancy)
                       if
@@ -56,7 +54,9 @@
                   state $ either (:data states)
                     {} $ :content "\""
                 div
-                  {} $ :class-name (str-spaced css/center css/flex)
+                  {}
+                    :class-name $ str-spaced css/center style-message-box
+                    :style $ {} (:max-width 1200) (:width "\"100%") (:padding "\"8px") (:margin :auto)
                   textarea $ {}
                     :value $ :content state
                     :placeholder "\"Content"
@@ -70,26 +70,37 @@
                           = 13 $ :keycode e
                           :meta? e
                         on-submit (:content state) d!
-                  div
-                    {} (:class-name css/row-parted)
-                      :style $ {} (:padding "\"8px 2px")
-                    span $ {}
-                    button $ {} (:class-name css/button) (:inner-text "\"Ask")
-                      :on-click $ fn (e d!)
-                        ; println $ :content state
-                        on-submit (:content state) d!
+                  button $ {}
+                    :class-name $ str-spaced css/button style-submit
+                    :inner-text "\"Ask"
+                    :on-click $ fn (e d!)
+                      ; println $ :content state
+                      on-submit (:content state) d!
         |get-gemini-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
                 key $ js/localStorage.getItem "\"gemini-key"
-              if (blank? key) (js/alert "\"Required gemini-key in localStorage")
-              , key
+              if (blank? key)
+                let
+                    v $ js/prompt "\"Required gemini-key in localStorage"
+                  js/localStorage.setItem "\"gemini-key" v
+                  , v
+                , key
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
+        |style-app-global $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-app-global $ {}
+                str "\"& ." style-code-block
+                {} $ :max-width "\"90vw"
+        |style-message-box $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-box $ {}
+              "\"&" $ {} (:position :relative)
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
@@ -97,6 +108,10 @@
                 :background-color $ hsl 0 0 90
                 :border-radius 12
                 :margin 16
+        |style-submit $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-submit $ {}
+              "\"&" $ {} (:position :absolute) (:top -24) (:right 8)
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-test d!) (hint-fn async)
@@ -155,7 +170,7 @@
             reel.comp.reel :refer $ comp-reel
             app.config :refer $ dev?
             "\"axios" :default axios
-            respo-md.comp.md :refer $ comp-md-block
+            respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy
     |app.config $ %{} :FileEntry
       :defs $ {}
