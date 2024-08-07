@@ -40,6 +40,7 @@
                             div
                               {} $ :class-name style-more
                               <> "\"Streaming..." $ str-spaced css/font-fancy
+                    =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text d!)
                   when dev? $ comp-reel (>> states :reel) reel ({})
@@ -57,7 +58,6 @@
                     :placeholder "\"Content"
                     :id "\"message"
                     :class-name $ str-spaced css/textarea css/font-code! style-textbox
-                    :style $ {} (:height "\"200px") (:width "\"100%")
                     :on-input $ fn (e d!)
                       d! cursor $ assoc state :content (:value e)
                     :on-keydown $ fn (e d!)
@@ -106,7 +106,8 @@
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
-              "\"&" $ {} (:position :relative) (:max-width 1200) (:width "\"100%") (:padding "\"8px") (:margin :auto)
+              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:max-width 1200) (:width "\"100%") (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (:transform "\"translate(50%,0)")
+              "\"&:focus-within" $ {} (:opacity 1) (:transform "\"translate(50%,0)")
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-list $ {}
@@ -126,7 +127,8 @@
         |style-textbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox $ {}
-              "\"&" $ {} (:border-radius 12)
+              "\"&" $ {} (:border-radius 12) (:height "\"160px") (:width "\"100%") (:transition-duration "\"320ms")
+              "\"&:focus-within" $ {} (:height "\"260px")
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-test d!) (hint-fn async)
