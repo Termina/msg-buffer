@@ -20,8 +20,7 @@
                 div
                   {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
                   div
-                    {} (:class-name css/expand)
-                      :style $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto)
+                    {} $ :class-name (str-spaced css/expand style-message-list)
                     if (:loading? state)
                       div ({}) (<> "\"loading..." css/font-fancy)
                       if
@@ -52,15 +51,13 @@
                   state $ either (:data states)
                     {} $ :content "\""
                 div
-                  {}
-                    :class-name $ str-spaced css/center style-message-box
-                    :style $ {} (:max-width 1200) (:width "\"100%") (:padding "\"8px") (:margin :auto)
+                  {} $ :class-name (str-spaced css/center style-message-box)
                   textarea $ {}
                     :value $ :content state
                     :placeholder "\"Content"
                     :id "\"message"
                     :class-name $ str-spaced css/textarea css/font-code! style-textbox
-                    :style $ {} (:height 160) (:width "\"100%")
+                    :style $ {} (:height "\"200px") (:width "\"100%")
                     :on-input $ fn (e d!)
                       d! cursor $ assoc state :content (:value e)
                     :on-keydown $ fn (e d!)
@@ -105,11 +102,15 @@
         |style-clear $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-clear $ {}
-              "\"&" $ {} (:position :absolute) (:right 16) (:top 16) (:opacity 0.4)
+              "\"&" $ {} (:position :absolute) (:left 20) (:bottom 20) (:opacity 0.4)
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
-              "\"&" $ {} (:position :relative)
+              "\"&" $ {} (:position :relative) (:max-width 1200) (:width "\"100%") (:padding "\"8px") (:margin :auto)
+        |style-message-list $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-list $ {}
+              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto) (:overflow :scroll)
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
@@ -121,7 +122,7 @@
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
-              "\"&" $ {} (:position :absolute) (:bottom 16) (:right 16)
+              "\"&" $ {} (:position :absolute) (:bottom 20) (:right 20)
         |style-textbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox $ {}
