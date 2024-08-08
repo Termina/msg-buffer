@@ -1,14 +1,17 @@
 
 {
   "manifest_version": 3,
-  "name": "Side message",
+  "name": "Msg Gemini",
   "version": "1.0",
-  "description": "Shows how to display the same side panel on every site using the Side Panel API.",
+  "description": "interact with Gemini",
   "background": {
     "service_worker": "service-worker.js"
   },
   "action": {
     "default_title": "Click to open panel"
+  },
+  "icons": {
+    "128": "gemini-icon.png"
   },
   "content_scripts": [{
     "matches": ["<all_urls>"],

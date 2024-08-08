@@ -20,27 +20,29 @@
                 div
                   {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
                   div
-                    {} $ :class-name (str-spaced css/expand style-message-list)
-                    if (:loading? state)
-                      div ({}) (<> "\"loading..." css/font-fancy)
-                      if
-                        not $ blank? (:answer state)
-                        div ({})
-                          comp-md-block
-                            -> (:answer state) (either "\"")
-                              .!replace pattern-spaced-code $ str &newline "\"```"
-                            {}
-                          if (:done? state)
-                            div
-                              {} $ :class-name css/row-parted
-                              span $ {}
+                    {} $ :class-name (str-spaced css/expand style-message-area)
+                    div
+                      {} $ :class-name (str-spaced style-message-list)
+                      if (:loading? state)
+                        div ({}) (<> "\"loading..." css/font-fancy)
+                        if
+                          not $ blank? (:answer state)
+                          div ({})
+                            comp-md-block
+                              -> (:answer state) (either "\"")
+                                .!replace pattern-spaced-code $ str &newline "\"```"
+                              {}
+                            if (:done? state)
                               div
-                                {} $ :class-name (str-spaced css/row-middle)
-                                comp-copy $ :answer state
-                            div
-                              {} $ :class-name style-more
-                              <> "\"Streaming..." $ str-spaced css/font-fancy
-                    =< nil 200
+                                {} $ :class-name css/row-parted
+                                span $ {}
+                                div
+                                  {} $ :class-name (str-spaced css/row-middle)
+                                  comp-copy $ :answer state
+                              div
+                                {} $ :class-name style-more
+                                <> "\"Streaming..." $ str-spaced css/font-fancy
+                      =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text d!)
                   when dev? $ comp-reel (>> states :reel) reel ({})
@@ -78,6 +80,15 @@
                       :on-click $ fn (e d!)
                         d! cursor $ assoc state :content "\""
                         -> (js/document.querySelector "\"#message") (.!focus)
+        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
+          :code $ quote
+            defn first-line (tt)
+              let
+                  lines $ .!split tt &newline
+                if
+                  > (.-length lines) 1
+                  js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
+                .-0 lines
         |get-gemini-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
@@ -99,10 +110,18 @@
             defstyle style-app-global $ {}
                 str "\"& ." style-code-block
                 {} $ :max-width "\"90vw"
+              "\"&" $ {} (:color "\"#999") (:transition-duration "\"300ms")
+                :background-color $ hsl 0 0 98
+              "\"&:hover" $ {} (:color "\"#777")
+                :background-color $ hsl 0 0 100
         |style-clear $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-clear $ {}
               "\"&" $ {} (:position :absolute) (:left 20) (:bottom 20) (:opacity 0.4)
+        |style-message-area $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-area $ {}
+              "\"&" $ {} (:flex 2) (:overflow :scroll)
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
@@ -111,7 +130,7 @@
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-list $ {}
-              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto) (:overflow :scroll)
+              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto)
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
@@ -137,8 +156,7 @@
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
               d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
               let
-                  selected $ w-js-log
-                    js-await $ get-selected
+                  selected $ js-await (get-selected)
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
                   result $ js-await
                     .!post axios
@@ -176,10 +194,18 @@
                     if done?
                       d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
                       let
-                          content $ -> (.!slice value 6) (js/JSON.parse) .-candidates .-0 .-content .-parts .-0 .-text
-                        swap! *text str content
-                        d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                        recur
+                          candidate0 $ -> (.!slice value 6) (.!trim) (first-line) (js/JSON.parse) .-candidates .-0
+                          content $ .-content candidate0
+                        if (nil? content)
+                          d! cursor $ -> state
+                            assoc :answer $ str @*text &newline "\"[STOPPED: " (.-finishReason candidate0) "\"]"
+                            assoc :loading? false
+                            assoc :done? true
+                          let
+                              content $ -> candidate0 .-content .-parts .-0 .-text
+                            swap! *text str content
+                            d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                            recur
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
@@ -226,7 +252,7 @@
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
                 if (= "\"hidden" js/document.visibilityState) (persist-storage!)
-              flipped js/setInterval 60000 persist-storage!
+              ; flipped js/setInterval 60000 persist-storage!
               let
                   raw $ js/localStorage.getItem (:storage-key config/site)
                 when (some? raw)
