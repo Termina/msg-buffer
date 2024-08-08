@@ -31,7 +31,7 @@
                             comp-md-block
                               -> (:answer state) (either "\"")
                                 .!replace pattern-spaced-code $ str &newline "\"```"
-                              {}
+                              {} $ :class-name style-md-content
                             if (:done? state)
                               div
                                 {} $ :class-name css/row-parted
@@ -118,6 +118,10 @@
           :code $ quote
             defstyle style-clear $ {}
               "\"&" $ {} (:position :absolute) (:left 20) (:bottom 20) (:opacity 0.4)
+        |style-md-content $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-md-content $ {}
+              "\"& .md-p" $ {} (:margin "\"16px 0") (:line-height "\"1.6")
         |style-message-area $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-area $ {}
