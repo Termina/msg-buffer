@@ -131,19 +131,22 @@
               "\"&:focus-within" $ {} (:height "\"260px")
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn submit-message! (cursor state prompt-test d!) (hint-fn async)
+            defn submit-message! (cursor state prompt-text d!) (hint-fn async)
               if-let
                 abort $ deref *abort-control
-                do (js/console.log "\"Aborting prev") (.!abort abort)
+                do (js/console.warn "\"Aborting prev") (.!abort abort)
               d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
               let
+                  selected $ w-js-log
+                    js-await $ get-selected
+                  content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
                   result $ js-await
                     .!post axios
                       str "\"https://sf.chenyong.life/v1beta/models/" (pick-model) "\":streamGenerateContent"
                       js-object $ :contents
                         js-array $ js-object
                           :parts $ js-array
-                            js-object $ :text prompt-test
+                            js-object $ :text content
                       js-object
                         :params $ js-object
                           :key $ get-gemini-key!
@@ -189,6 +192,7 @@
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy comp-close
+            "\"../extension/get-selected" :refer $ get-selected
     |app.config $ %{} :FileEntry
       :defs $ {}
         |dev? $ %{} :CodeEntry (:doc |)

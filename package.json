@@ -10,5 +10,8 @@
     "bottom-tip": "^0.1.5",
     "vite": "^5.3.5"
   },
+  "scripts": {
+    "build": "yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
+  },
   "version": "0.0.1"
 }

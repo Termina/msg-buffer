@@ -1,0 +1,22 @@
+
+{
+  "manifest_version": 3,
+  "name": "Side message",
+  "version": "1.0",
+  "description": "Shows how to display the same side panel on every site using the Side Panel API.",
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Click to open panel"
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "match_origin_as_fallback": true,
+    "js": ["content.js"]
+  }],
+  "side_panel": {
+    "default_path": "dist/index.html"
+  },
+  "permissions": ["sidePanel", "scripting", "activeTab", "tabs"]
+}
