@@ -14,4 +14,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.contextMenus.onClicked.addListener((item, tab) => {
   let content = item.selectionText;
   chrome.runtime.sendMessage({ action: "menu-trigger", content });
+  chrome.sidePanel.open({tabId: tab.id}, () => {
+    // also try to open
+  })
 });

@@ -624,6 +624,21 @@
                                     :data $ {}
                                       |T $ %{} :Leaf (:at 1722963913549) (:by |rJG4IHzWf) (:text |js/prompt)
                                       |b $ %{} :Leaf (:at 1722448341536) (:by |rJG4IHzWf) (:text "|\"Required gemini-key in localStorage")
+                          |V $ %{} :Expr (:at 1723194578778) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |T $ %{} :Leaf (:at 1723194578778) (:by |rJG4IHzWf) (:text |if)
+                              |b $ %{} :Expr (:at 1723194578778) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1723194578778) (:by |rJG4IHzWf) (:text |blank?)
+                                  |b $ %{} :Leaf (:at 1723194578778) (:by |rJG4IHzWf) (:text |v)
+                              |h $ %{} :Expr (:at 1723194578778) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1723194578778) (:by |rJG4IHzWf) (:text |raise)
+                                  |b $ %{} :Expr (:at 1723194578778) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1723194578778) (:by |rJG4IHzWf) (:text |new)
+                                      |b $ %{} :Leaf (:at 1723194578778) (:by |rJG4IHzWf) (:text |js/Error)
+                                      |h $ %{} :Leaf (:at 1723194578778) (:by |rJG4IHzWf) (:text "|\"key is empty")
                           |X $ %{} :Expr (:at 1722963927392) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1722963929685) (:by |rJG4IHzWf) (:text |js/localStorage.setItem)
@@ -1145,7 +1160,7 @@
                                               |b $ %{} :Expr (:at 1722410389535) (:by |rJG4IHzWf)
                                                 :data $ {}
                                                   |T $ %{} :Leaf (:at 1722410391267) (:by |rJG4IHzWf) (:text |:key)
-                                                  |b $ %{} :Expr (:at 1722448303509) (:by |rJG4IHzWf)
+                                                  |b $ %{} :Expr (:at 1723194500835) (:by |rJG4IHzWf)
                                                     :data $ {}
                                                       |T $ %{} :Leaf (:at 1722448307986) (:by |rJG4IHzWf) (:text |get-gemini-key!)
                                               |h $ %{} :Expr (:at 1722446159882) (:by |rJG4IHzWf)

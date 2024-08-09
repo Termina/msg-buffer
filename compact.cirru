@@ -97,6 +97,8 @@
               if (blank? key)
                 let
                     v $ js/prompt "\"Required gemini-key in localStorage"
+                  if (blank? v)
+                    raise $ new js/Error "\"key is empty"
                   js/localStorage.setItem "\"gemini-key" v
                   , v
                 , key
