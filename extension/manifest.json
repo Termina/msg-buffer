@@ -1,4 +1,3 @@
-
 {
   "manifest_version": 3,
   "name": "Msg Gemini",
@@ -13,13 +12,15 @@
   "icons": {
     "128": "gemini-icon.png"
   },
-  "content_scripts": [{
-    "matches": ["<all_urls>"],
-    "match_origin_as_fallback": true,
-    "js": ["content.js"]
-  }],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "match_origin_as_fallback": true,
+      "js": ["content.js"]
+    }
+  ],
   "side_panel": {
     "default_path": "dist/index.html"
   },
-  "permissions": ["sidePanel", "scripting", "activeTab", "tabs"]
+  "permissions": ["sidePanel", "scripting", "activeTab", "tabs", "contextMenus"]
 }

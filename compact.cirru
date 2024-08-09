@@ -45,7 +45,8 @@
                       =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text d!)
-                  when dev? $ comp-reel (>> states :reel) reel ({})
+                  if dev? $ comp-reel (>> states :reel) reel ({})
+                  if dev? $ comp-inspect "\"Store" store nil
         |comp-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-message-box (states on-submit)
@@ -158,7 +159,8 @@
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
-              d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
+              d! $ :: :states cursor
+                -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ js-await (get-selected)
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
@@ -187,28 +189,32 @@
                   *text $ atom "\""
                   ; reading $ js-await (.!read reader)
                   ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
-                ; d! cursor $ -> state
-                  assoc :answer $ w-log answer
-                  assoc :loading? false
+                ; d! $ :: :states cursor
+                  -> state
+                    assoc :answer $ w-log answer
+                    assoc :loading? false
                 apply-args () $ fn () (hint-fn async)
                   let
                       info $ js-await (.!read reader)
                       value $ .-value info
                       done? $ .-done info
                     if done?
-                      d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                      d! $ :: :states cursor
+                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
                       let
                           candidate0 $ -> (.!slice value 6) (.!trim) (first-line) (js/JSON.parse) .-candidates .-0
                           content $ .-content candidate0
                         if (nil? content)
-                          d! cursor $ -> state
-                            assoc :answer $ str @*text &newline "\"[STOPPED: " (.-finishReason candidate0) "\"]"
-                            assoc :loading? false
-                            assoc :done? true
+                          d! $ :: :states cursor
+                            -> state
+                              assoc :answer $ str @*text &newline "\"[STOPPED: " (.-finishReason candidate0) "\"]"
+                              assoc :loading? false
+                              assoc :done? true
                           let
                               content $ -> candidate0 .-content .-parts .-0 .-text
                             swap! *text str content
-                            d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                            d! $ :: :states cursor
+                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                             recur
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
@@ -217,6 +223,7 @@
             respo.util.format :refer $ hsl
             respo.core :refer $ defcomp defeffect <> >> div button textarea span input
             respo.comp.space :refer $ =<
+            respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
             app.config :refer $ dev?
             "\"axios" :default axios
@@ -225,6 +232,9 @@
             "\"../extension/get-selected" :refer $ get-selected
     |app.config $ %{} :FileEntry
       :defs $ {}
+        |chrome-extension? $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            def chrome-extension? $ and (some? js/chrome) (some? js/chrome.runtime) (some? js/chrome.runtime.id)
         |dev? $ %{} :CodeEntry (:doc |)
           :code $ quote
             def dev? $ = "\"dev" (get-env "\"mode" "\"release")
@@ -245,6 +255,18 @@
                 and config/dev? $ not= op :states
                 js/console.log "\"Dispatch:" op
               reset! *reel $ reel-updater updater @*reel op
+        |listen-extension! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn listen-extension! () $ js/chrome.runtime.onMessage.addListener
+              fn (message sender respond!)
+                if
+                  = "\"menu-trigger" $ .-action message
+                  let
+                      content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n"  &newline &newline (.-content message)
+                      store $ :store @*reel
+                      cursor $ []
+                      state0 $ get-in store ([] :states :data)
+                    submit-message! cursor state0 content dispatch!
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn main! ()
@@ -261,6 +283,7 @@
                   raw $ js/localStorage.getItem (:storage-key config/site)
                 when (some? raw)
                   dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
+              if config/chrome-extension? $ listen-extension!
               println "|App started."
         |mount-target $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -286,7 +309,7 @@
         :code $ quote
           ns app.main $ :require
             respo.core :refer $ render! clear-cache!
-            app.comp.container :refer $ comp-container
+            app.comp.container :refer $ comp-container submit-message!
             app.updater :refer $ updater
             app.schema :as schema
             reel.util :refer $ listen-devtools!
