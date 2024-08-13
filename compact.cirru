@@ -259,8 +259,8 @@
               reset! *reel $ reel-updater updater @*reel op
         |listen-extension! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn listen-extension! () $ js/chrome.runtime.onMessage.addListener
-              fn (message sender respond!)
+            defn listen-extension! ()
+              js/chrome.runtime.onMessage.addListener $ fn (message sender respond!)
                 if
                   = "\"menu-trigger" $ .-action message
                   let
@@ -269,6 +269,7 @@
                       cursor $ []
                       state0 $ get-in store ([] :states :data)
                     submit-message! cursor state0 content dispatch!
+              js/chrome.runtime.connect $ js-object (:name |mySidepanel)
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn main! ()

@@ -1,12 +1,12 @@
 // Listen for messages
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-    // If the received message has the expected format...
-    console.log("[Side Message] msg", msg)
-    if (msg.get === 'selected') {
-        // Call the specified callback, passing
-        // the web-page's DOM content as argument
-        sendResponse(getSelectedText());
-    }
+  // If the received message has the expected format...
+  console.log("[Side Message] msg", msg);
+  if (msg.get === "selected") {
+    // Call the specified callback, passing
+    // the web-page's DOM content as argument
+    sendResponse(getSelectedText());
+  }
 });
 
 let getSelectedText = () => {
@@ -19,6 +19,6 @@ let getSelectedText = () => {
   } else {
     return "<未获取到内容>";
   }
-}
+};
 
-console.log("[Side Message] prepared content script")
+console.log("[Side Message] prepared content script");

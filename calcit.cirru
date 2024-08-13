@@ -1788,6 +1788,16 @@
                                   |h $ %{} :Leaf (:at 1723173518932) (:by |rJG4IHzWf) (:text |state0)
                                   |l $ %{} :Leaf (:at 1723173521472) (:by |rJG4IHzWf) (:text |content)
                                   |o $ %{} :Leaf (:at 1723173632238) (:by |rJG4IHzWf) (:text |dispatch!)
+              |o $ %{} :Expr (:at 1723521090613) (:by |rJG4IHzWf)
+                :data $ {}
+                  |T $ %{} :Leaf (:at 1723521097047) (:by |rJG4IHzWf) (:text |js/chrome.runtime.connect)
+                  |b $ %{} :Expr (:at 1723521097651) (:by |rJG4IHzWf)
+                    :data $ {}
+                      |T $ %{} :Leaf (:at 1723521101462) (:by |rJG4IHzWf) (:text |js-object)
+                      |b $ %{} :Expr (:at 1723521102038) (:by |rJG4IHzWf)
+                        :data $ {}
+                          |T $ %{} :Leaf (:at 1723521102663) (:by |rJG4IHzWf) (:text |:name)
+                          |b $ %{} :Leaf (:at 1723521106610) (:by |rJG4IHzWf) (:text ||mySidepanel)
         |main! $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1499755354983) (:by nil)
             :data $ {}
@@ -1911,7 +1921,7 @@
                                   |b $ %{} :Leaf (:at 1688397811073) (:by |rJG4IHzWf) (:text |raw)
               |yR $ %{} :Expr (:at 1723172966777) (:by |rJG4IHzWf)
                 :data $ {}
-                  |T $ %{} :Leaf (:at 1723172967107) (:by |rJG4IHzWf) (:text |if)
+                  |T $ %{} :Leaf (:at 1723521086239) (:by |rJG4IHzWf) (:text |if)
                   |b $ %{} :Leaf (:at 1723172973092) (:by |rJG4IHzWf) (:text |config/chrome-extension?)
                   |h $ %{} :Expr (:at 1723172974998) (:by |rJG4IHzWf)
                     :data $ {}
