@@ -54,33 +54,39 @@
                   cursor $ :cursor states
                   state $ either (:data states)
                     {} $ :content "\""
-                div
-                  {} $ :class-name (str-spaced css/center style-message-box)
-                  textarea $ {}
-                    :value $ :content state
-                    :placeholder "\"Content"
-                    :id "\"message"
-                    :class-name $ str-spaced css/textarea css/font-code! style-textbox
-                    :on-input $ fn (e d!)
-                      d! cursor $ assoc state :content (:value e)
-                    :on-keydown $ fn (e d!)
-                      if
-                        and
-                          = 13 $ :keycode e
-                          :meta? e
-                        on-submit (:content state) d!
-                  button $ {}
-                    :class-name $ str-spaced css/button style-submit
-                    :inner-text "\"Generate"
-                    :on-click $ fn (e d!)
-                      ; println $ :content state
-                      on-submit (:content state) d!
-                  if
-                    not $ blank? (:content state)
-                    comp-close $ {} (:class-name style-clear)
+                [] (effect-focus)
+                  div
+                    {} $ :class-name (str-spaced css/center style-message-box)
+                    textarea $ {}
+                      :value $ :content state
+                      :placeholder "\"Content"
+                      :id "\"message"
+                      :class-name $ str-spaced css/textarea css/font-code! style-textbox
+                      :on-input $ fn (e d!)
+                        d! cursor $ assoc state :content (:value e)
+                      :on-keydown $ fn (e d!)
+                        if
+                          and
+                            = 13 $ :keycode e
+                            :meta? e
+                          on-submit (:content state) d!
+                    button $ {}
+                      :class-name $ str-spaced css/button style-submit
+                      :inner-text "\"Generate"
                       :on-click $ fn (e d!)
-                        d! cursor $ assoc state :content "\""
-                        -> (js/document.querySelector "\"#message") (.!focus)
+                        ; println $ :content state
+                        on-submit (:content state) d!
+                    if
+                      not $ blank? (:content state)
+                      comp-close $ {} (:class-name style-clear)
+                        :on-click $ fn (e d!)
+                          d! cursor $ assoc state :content "\""
+                          -> (js/document.querySelector "\"#message") (.!focus)
+        |effect-focus $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defeffect effect-focus () (action el at?)
+              when (= action :mount)
+                .!select $ .!querySelector el "\"textarea"
         |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
           :code $ quote
             defn first-line (tt)
@@ -227,7 +233,7 @@
             respo.comp.space :refer $ =<
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
-            app.config :refer $ dev?
+            app.config :refer $ dev? chrome-extension?
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy comp-close
