@@ -16,38 +16,37 @@
                   states $ :states store
                   cursor $ or (:cursor states) ([])
                   state $ or (:data states)
-                    {} (:content "\"") (:answer nil) (:loading? false) (:done? false)
+                    {} (:answer nil) (:loading? false) (:done? false)
                 div
-                  {}
-                    :class-name $ str-spaced css/preset css/global css/row css/fullscreen css/gap8
-                    :style $ {} (:padding "\"8px 8px")
+                  {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
                   div
-                    {} (:class-name css/expand)
-                      :style $ {} (:flex 2) (:padding "\"40px 16px 200px 16px")
-                    if (:loading? state)
-                      div ({}) (<> "\"loading..." css/font-fancy)
-                      if
-                        not $ blank? (:answer state)
-                        div ({})
-                          comp-md-block
-                            -> (:answer state) (either "\"")
-                              .!replace pattern-spaced-code $ str &newline "\"```"
-                            {}
-                          if (:done? state)
-                            div
-                              {} $ :class-name css/row-parted
-                              span $ {}
+                    {} $ :class-name (str-spaced css/expand style-message-area)
+                    div
+                      {} $ :class-name (str-spaced style-message-list)
+                      if (:loading? state)
+                        div ({}) (<> "\"loading..." css/font-fancy)
+                        if
+                          not $ blank? (:answer state)
+                          div ({})
+                            comp-md-block
+                              -> (:answer state) (either "\"")
+                                .!replace pattern-spaced-code $ str &newline "\"```"
+                              {} $ :class-name style-md-content
+                            if (:done? state)
                               div
-                                {} $ :class-name (str-spaced css/row-middle)
-                                comp-copy $ :answer state
-                                =< 2 nil
-                                <> "\"Copy raw" css/font-fancy
-                            div
-                              {} $ :class-name style-more
-                              <> "\"fetching more..." $ str-spaced css/font-fancy
+                                {} $ :class-name css/row-parted
+                                span $ {}
+                                div
+                                  {} $ :class-name (str-spaced css/row-middle)
+                                  comp-copy $ :answer state
+                              div
+                                {} $ :class-name style-more
+                                <> "\"Streaming..." $ str-spaced css/font-fancy
+                      =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text d!)
-                  when dev? $ comp-reel (>> states :reel) reel ({})
+                  if dev? $ comp-reel (>> states :reel) reel ({})
+                  if dev? $ comp-inspect "\"Store" store nil
         |comp-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-message-box (states on-submit)
@@ -55,63 +54,131 @@
                   cursor $ :cursor states
                   state $ either (:data states)
                     {} $ :content "\""
-                div
-                  {} $ :class-name (str-spaced css/center css/flex)
-                  textarea $ {}
-                    :value $ :content state
-                    :placeholder "\"Content"
-                    :class-name $ str-spaced css/textarea
-                    :style $ {} (:height 160) (:width "\"100%")
-                    :on-input $ fn (e d!)
-                      d! cursor $ assoc state :content (:value e)
-                    :on-keydown $ fn (e d!)
-                      if
-                        and
-                          = 13 $ :keycode e
-                          :meta? e
-                        on-submit (:content state) d!
+                [] (effect-focus)
                   div
-                    {} (:class-name css/row-parted)
-                      :style $ {} (:padding "\"8px 2px")
-                    span $ {}
-                    button $ {} (:class-name css/button) (:inner-text "\"Ask")
+                    {} $ :class-name (str-spaced css/center style-message-box)
+                    textarea $ {}
+                      :value $ :content state
+                      :placeholder "\"Content"
+                      :id "\"message"
+                      :class-name $ str-spaced css/textarea css/font-code! style-textbox
+                      :on-input $ fn (e d!)
+                        d! cursor $ assoc state :content (:value e)
+                      :on-keydown $ fn (e d!)
+                        if
+                          and
+                            = 13 $ :keycode e
+                            :meta? e
+                          on-submit (:content state) d!
+                    button $ {}
+                      :class-name $ str-spaced css/button style-submit
+                      :inner-text "\"Generate"
                       :on-click $ fn (e d!)
                         ; println $ :content state
                         on-submit (:content state) d!
+                    if
+                      not $ blank? (:content state)
+                      comp-close $ {} (:class-name style-clear)
+                        :on-click $ fn (e d!)
+                          d! cursor $ assoc state :content "\""
+                          -> (js/document.querySelector "\"#message") (.!focus)
+        |effect-focus $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defeffect effect-focus () (action el at?)
+              when (= action :mount)
+                .!select $ .!querySelector el "\"textarea"
+        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
+          :code $ quote
+            defn first-line (tt)
+              let
+                  lines $ .!split tt &newline
+                if
+                  > (.-length lines) 1
+                  js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
+                .-0 lines
         |get-gemini-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
                 key $ js/localStorage.getItem "\"gemini-key"
-              if (blank? key) (js/alert "\"Required gemini-key in localStorage")
-              , key
+              if (blank? key)
+                let
+                    v $ js/prompt "\"Required gemini-key in localStorage"
+                  if (blank? v)
+                    raise $ new js/Error "\"key is empty"
+                  js/localStorage.setItem "\"gemini-key" v
+                  , v
+                , key
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
+        |style-app-global $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-app-global $ {}
+                str "\"& ." style-code-block
+                {} $ :max-width "\"90vw"
+              "\"&" $ {} (:color "\"#999") (:transition-duration "\"300ms")
+                :background-color $ hsl 0 0 98
+              "\"&:hover" $ {} (:color "\"#777")
+                :background-color $ hsl 0 0 100
+        |style-clear $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-clear $ {}
+              "\"&" $ {} (:position :absolute) (:left 20) (:bottom 20) (:opacity 0.4)
+        |style-md-content $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-md-content $ {}
+              "\"& .md-p" $ {} (:margin "\"16px 0") (:line-height "\"1.6")
+        |style-message-area $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-area $ {}
+              "\"&" $ {} (:flex 2) (:overflow :scroll)
+        |style-message-box $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-box $ {}
+              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:max-width 1200) (:width "\"100%") (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (:transform "\"translate(50%,0)")
+              "\"&:focus-within" $ {} (:opacity 1) (:transform "\"translate(50%,0)")
+        |style-message-list $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-list $ {}
+              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto)
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
-              "\"&" $ {} (:text-align :center)
-                :background-color $ hsl 0 0 90
+              "\"&" $ {} (:text-align :center) (:width 80)
+                :background-color $ hsl 0 0 94
                 :border-radius 12
-                :margin 16
+                :padding "\"4px 8px"
+                :margin "\"8px 0"
+        |style-submit $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-submit $ {}
+              "\"&" $ {} (:position :absolute) (:bottom 20) (:right 20)
+        |style-textbox $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-textbox $ {}
+              "\"&" $ {} (:border-radius 12) (:height "\"160px") (:width "\"100%") (:transition-duration "\"320ms")
+              "\"&:focus-within" $ {} (:height "\"260px")
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn submit-message! (cursor state prompt-test d!) (hint-fn async)
+            defn submit-message! (cursor state prompt-text d!) (hint-fn async)
               if-let
                 abort $ deref *abort-control
-                do (js/console.log "\"Aborting prev") (.!abort abort)
-              d! cursor $ -> state (assoc :answer nil) (assoc :loading? true)
+                do (js/console.warn "\"Aborting prev") (.!abort abort)
+              d! $ :: :states cursor
+                -> state (assoc :answer nil) (assoc :loading? true)
               let
+                  selected $ js-await (get-selected)
+                  content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
                   result $ js-await
                     .!post axios
                       str "\"https://sf.chenyong.life/v1beta/models/" (pick-model) "\":streamGenerateContent"
                       js-object $ :contents
                         js-array $ js-object
                           :parts $ js-array
-                            js-object $ :text prompt-test
+                            js-object $ :text content
                       js-object
                         :params $ js-object
                           :key $ get-gemini-key!
@@ -130,21 +197,33 @@
                   *text $ atom "\""
                   ; reading $ js-await (.!read reader)
                   ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
-                ; d! cursor $ -> state
-                  assoc :answer $ w-log answer
-                  assoc :loading? false
+                ; d! $ :: :states cursor
+                  -> state
+                    assoc :answer $ w-log answer
+                    assoc :loading? false
                 apply-args () $ fn () (hint-fn async)
                   let
                       info $ js-await (.!read reader)
                       value $ .-value info
                       done? $ .-done info
                     if done?
-                      d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                      d! $ :: :states cursor
+                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
                       let
-                          content $ -> (.!slice value 6) (js/JSON.parse) .-candidates .-0 .-content .-parts .-0 .-text
-                        swap! *text str content
-                        d! cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                        recur
+                          candidate0 $ -> (.!slice value 6) (.!trim) (first-line) (js/JSON.parse) .-candidates .-0
+                          content $ .-content candidate0
+                        if (nil? content)
+                          d! $ :: :states cursor
+                            -> state
+                              assoc :answer $ str @*text &newline "\"[STOPPED: " (.-finishReason candidate0) "\"]"
+                              assoc :loading? false
+                              assoc :done? true
+                          let
+                              content $ -> candidate0 .-content .-parts .-0 .-text
+                            swap! *text str content
+                            d! $ :: :states cursor
+                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                            recur
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
@@ -152,13 +231,18 @@
             respo.util.format :refer $ hsl
             respo.core :refer $ defcomp defeffect <> >> div button textarea span input
             respo.comp.space :refer $ =<
+            respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
-            app.config :refer $ dev?
+            app.config :refer $ dev? chrome-extension?
             "\"axios" :default axios
-            respo-md.comp.md :refer $ comp-md-block
-            respo-ui.comp :refer $ comp-copy
+            respo-md.comp.md :refer $ comp-md-block style-code-block
+            respo-ui.comp :refer $ comp-copy comp-close
+            "\"../extension/get-selected" :refer $ get-selected
     |app.config $ %{} :FileEntry
       :defs $ {}
+        |chrome-extension? $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            def chrome-extension? $ and (some? js/chrome) (some? js/chrome.runtime) (some? js/chrome.runtime.id)
         |dev? $ %{} :CodeEntry (:doc |)
           :code $ quote
             def dev? $ = "\"dev" (get-env "\"mode" "\"release")
@@ -179,6 +263,19 @@
                 and config/dev? $ not= op :states
                 js/console.log "\"Dispatch:" op
               reset! *reel $ reel-updater updater @*reel op
+        |listen-extension! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn listen-extension! ()
+              js/chrome.runtime.onMessage.addListener $ fn (message sender respond!)
+                if
+                  = "\"menu-trigger" $ .-action message
+                  let
+                      content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n"  &newline &newline (.-content message)
+                      store $ :store @*reel
+                      cursor $ []
+                      state0 $ get-in store ([] :states :data)
+                    submit-message! cursor state0 content dispatch!
+              js/chrome.runtime.connect $ js-object (:name |mySidepanel)
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn main! ()
@@ -190,11 +287,12 @@
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
                 if (= "\"hidden" js/document.visibilityState) (persist-storage!)
-              flipped js/setInterval 60000 persist-storage!
+              ; flipped js/setInterval 60000 persist-storage!
               let
                   raw $ js/localStorage.getItem (:storage-key config/site)
                 when (some? raw)
                   dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
+              if config/chrome-extension? $ listen-extension!
               println "|App started."
         |mount-target $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -220,7 +318,7 @@
         :code $ quote
           ns app.main $ :require
             respo.core :refer $ render! clear-cache!
-            app.comp.container :refer $ comp-container
+            app.comp.container :refer $ comp-container submit-message!
             app.updater :refer $ updater
             app.schema :as schema
             reel.util :refer $ listen-devtools!
