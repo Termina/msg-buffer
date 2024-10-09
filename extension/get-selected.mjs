@@ -1,18 +1,18 @@
 export let get_selected = () => {
   return new Promise((resolve, reject) => {
-    if (chrome?.runtime?.id == null) {
+    if (window.chrome?.runtime?.id == null) {
       console.warn("not chrome extension runtime...");
       resolve(null);
       return;
     }
     console.log("calling content script...");
-    chrome.tabs
+    window.chrome.tabs
       .query({ active: true, currentWindow: true })
       .then((x) => {
         let activeTab = x[0];
         if (activeTab) {
           let id = activeTab.id;
-          chrome.tabs.sendMessage(id, { get: "selected" }, function (response) {
+          window.chrome.tabs.sendMessage(id, { get: "selected" }, function (response) {
             // 接收来自 content.js 的返回数据
             // console.info('Content script returned: ' + response);
             resolve(response);

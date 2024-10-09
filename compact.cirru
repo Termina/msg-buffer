@@ -242,7 +242,7 @@
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def chrome-extension? $ and (some? js/chrome) (some? js/chrome.runtime) (some? js/chrome.runtime.id)
+            def chrome-extension? $ and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.id)
         |dev? $ %{} :CodeEntry (:doc |)
           :code $ quote
             def dev? $ = "\"dev" (get-env "\"mode" "\"release")

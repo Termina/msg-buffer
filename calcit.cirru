@@ -1647,15 +1647,15 @@
                   |T $ %{} :Expr (:at 1723172916349) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1723172926530) (:by |rJG4IHzWf) (:text |some?)
-                      |b $ %{} :Leaf (:at 1723172943024) (:by |rJG4IHzWf) (:text |js/chrome)
+                      |b $ %{} :Leaf (:at 1727716517207) (:by |rJG4IHzWf) (:text |js/window.chrome)
                   |b $ %{} :Expr (:at 1723172916349) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1723172926530) (:by |rJG4IHzWf) (:text |some?)
-                      |b $ %{} :Leaf (:at 1723172953620) (:by |rJG4IHzWf) (:text |js/chrome.runtime)
+                      |b $ %{} :Leaf (:at 1727716519802) (:by |rJG4IHzWf) (:text |js/window.chrome.runtime)
                   |h $ %{} :Expr (:at 1723172916349) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1723172926530) (:by |rJG4IHzWf) (:text |some?)
-                      |b $ %{} :Leaf (:at 1723172962879) (:by |rJG4IHzWf) (:text |js/chrome.runtime.id)
+                      |b $ %{} :Leaf (:at 1727716522236) (:by |rJG4IHzWf) (:text |js/window.chrome.runtime.id)
         |dev? $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1544873875614) (:by |rJG4IHzWf)
             :data $ {}
