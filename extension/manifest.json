@@ -25,7 +25,7 @@
   "commands": {
     "_execute_action": {
       "suggested_key": {
-        "mac": "MacCtrl+Command+G"
+        "mac": "Command + Ctrl + G"
       }
     }
   },

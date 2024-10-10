@@ -8,162 +8,92 @@
       :defs $ {}
         |*abort-control $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *abort-control nil)
-        |comp-container $ %{} :CodeEntry (:doc |)
+        |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defcomp comp-container (reel)
+            defn call-anthropic-msg! (cursor state prompt-text d!) (hint-fn async)
+              if-let
+                abort $ deref *abort-control
+                do (js/console.warn "\"Aborting prev") (.!abort abort)
+              d! $ :: :states cursor
+                -> state (assoc :answer nil) (assoc :loading? true)
+              d! $ :: :change-model
               let
-                  store $ :store reel
-                  states $ :states store
-                  cursor $ or (:cursor states) ([])
-                  state $ or (:data states)
-                    {} (:answer nil) (:loading? false) (:done? false)
-                div
-                  {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
-                  div
-                    {} $ :class-name (str-spaced css/expand style-message-area)
-                    div
-                      {} $ :class-name (str-spaced style-message-list)
-                      if (:loading? state)
-                        div ({}) (<> "\"loading..." css/font-fancy)
-                        if
-                          not $ blank? (:answer state)
-                          div ({})
-                            comp-md-block
-                              -> (:answer state) (either "\"")
-                                .!replace pattern-spaced-code $ str &newline "\"```"
-                              {} $ :class-name style-md-content
-                            if (:done? state)
-                              div
-                                {} $ :class-name css/row-parted
-                                span $ {}
-                                div
-                                  {} $ :class-name (str-spaced css/row-middle)
-                                  comp-copy $ :answer state
-                              div
-                                {} $ :class-name style-more
-                                <> "\"Streaming..." $ str-spaced css/font-fancy
-                      =< nil 200
-                  comp-message-box (>> states :message-box)
-                    fn (text d!) (submit-message! cursor state text d!)
-                  if dev? $ comp-reel (>> states :reel) reel ({})
-                  if dev? $ comp-inspect "\"Store" store nil
-        |comp-message-box $ %{} :CodeEntry (:doc |)
+                  selected $ js-await (get-selected)
+                  content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
+                  result $ js-await
+                    .!post axios (str "\"https://sa.chenyong.life/v1/messages")
+                      js-object
+                        :model $ get-env "\"claude-model" "\"claude-3-5-sonnet-20240620"
+                        :max_tokens 1024
+                        :stream true
+                        :messages $ js-array
+                          js-object (:role "\"user") (:content content)
+                      js-object
+                        :params $ js-object
+                        :headers $ js-object (; :Accept "\"text/event-stream") (; :Content-Type "\"application/json")
+                          "\"x-api-key" $ get-anthropic-key!
+                          "\"anthropic-version" "\"2023-06-01"
+                          "\"anthropic-dangerous-direct-browser-access" true
+                        :responseType "\"stream"
+                        :adapter "\"fetch"
+                        :signal $ let
+                            abort $ new js/AbortController
+                          reset! *abort-control abort
+                          .-signal abort
+                  stream $ .-data result
+                  reader $ ->
+                    .!pipeThrough stream $ new js/TextDecoderStream
+                    .!getReader
+                  *text $ atom (str "\"Claude AI:" &newline &newline)
+                  ; reading $ js-await (.!read reader)
+                  ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
+                ; d! $ :: :states cursor
+                  -> state
+                    assoc :answer $ w-log answer
+                    assoc :loading? false
+                apply-args () $ fn () (hint-fn async)
+                  let
+                      info $ js-await (.!read reader)
+                      value $ wo-js-log (.-value info)
+                      done? $ .-done info
+                    ; js/console.log "\"VALUE" info
+                    if (wo-log done?) (:: :unit)
+                      do (println "\"processing")
+                        let
+                            events $ -> value .split-lines
+                              filter $ fn (s) (.starts-with? s "\"data: ")
+                              map $ fn (s)
+                                -> (.strip-prefix s "\"data: ") js/JSON.parse to-calcit-data
+                          apply-args (events)
+                            fn (xs)
+                              list-match xs
+                                () $ println "\"no thing to handle in this Loop"
+                                (x0 xss)
+                                  let
+                                      stop? $ = (get x0 "\"type") "\"message_stop"
+                                    wo-js-log x0
+                                    if stop?
+                                      d! $ :: :states cursor
+                                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                                      let
+                                          content $ get-in x0 ([] "\"delta" "\"text")
+                                        if (nil? content)
+                                          do
+                                            ;nil d! $ :: :states cursor
+                                              -> state
+                                                assoc :answer $ str @*text &newline "\"[STOPPED: " (.-finishReason candidate0) "\"]"
+                                                assoc :loading? false
+                                                assoc :done? true
+                                            println "\"content is nil"
+                                            recur xss
+                                          let () (swap! *text str content)
+                                            d! $ :: :states cursor
+                                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                                            recur xss
+                        recur
+        |call-gemini-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defcomp comp-message-box (states on-submit)
-              let
-                  cursor $ :cursor states
-                  state $ either (:data states)
-                    {} $ :content "\""
-                [] (effect-focus)
-                  div
-                    {} $ :class-name (str-spaced css/center style-message-box)
-                    textarea $ {}
-                      :value $ :content state
-                      :placeholder "\"Content"
-                      :id "\"message"
-                      :class-name $ str-spaced css/textarea css/font-code! style-textbox
-                      :on-input $ fn (e d!)
-                        d! cursor $ assoc state :content (:value e)
-                      :on-keydown $ fn (e d!)
-                        if
-                          and
-                            = 13 $ :keycode e
-                            :meta? e
-                          on-submit (:content state) d!
-                    button $ {}
-                      :class-name $ str-spaced css/button style-submit
-                      :inner-text "\"Generate"
-                      :on-click $ fn (e d!)
-                        ; println $ :content state
-                        on-submit (:content state) d!
-                    if
-                      not $ blank? (:content state)
-                      comp-close $ {} (:class-name style-clear)
-                        :on-click $ fn (e d!)
-                          d! cursor $ assoc state :content "\""
-                          -> (js/document.querySelector "\"#message") (.!focus)
-        |effect-focus $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defeffect effect-focus () (action el at?)
-              when (= action :mount)
-                .!select $ .!querySelector el "\"textarea"
-        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
-          :code $ quote
-            defn first-line (tt)
-              let
-                  lines $ .!split tt &newline
-                if
-                  > (.-length lines) 1
-                  js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
-                .-0 lines
-        |get-gemini-key! $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defn get-gemini-key! () $ let
-                key $ js/localStorage.getItem "\"gemini-key"
-              if (blank? key)
-                let
-                    v $ js/prompt "\"Required gemini-key in localStorage"
-                  if (blank? v)
-                    raise $ new js/Error "\"key is empty"
-                  js/localStorage.setItem "\"gemini-key" v
-                  , v
-                , key
-        |pattern-spaced-code $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
-        |pick-model $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
-        |style-app-global $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-app-global $ {}
-                str "\"& ." style-code-block
-                {} $ :max-width "\"90vw"
-              "\"&" $ {} (:color "\"#999") (:transition-duration "\"300ms")
-                :background-color $ hsl 0 0 98
-              "\"&:hover" $ {} (:color "\"#777")
-                :background-color $ hsl 0 0 100
-        |style-clear $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-clear $ {}
-              "\"&" $ {} (:position :absolute) (:left 20) (:bottom 20) (:opacity 0.4)
-        |style-md-content $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-md-content $ {}
-              "\"& .md-p" $ {} (:margin "\"16px 0") (:line-height "\"1.6")
-        |style-message-area $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-message-area $ {}
-              "\"&" $ {} (:flex 2) (:overflow :scroll)
-        |style-message-box $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-message-box $ {}
-              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:max-width 1200) (:width "\"100%") (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (:transform "\"translate(50%,0)")
-              "\"&:focus-within" $ {} (:opacity 1) (:transform "\"translate(50%,0)")
-        |style-message-list $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-message-list $ {}
-              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto)
-        |style-more $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-more $ {}
-              "\"&" $ {} (:text-align :center) (:width 80)
-                :background-color $ hsl 0 0 94
-                :border-radius 12
-                :padding "\"4px 8px"
-                :margin "\"8px 0"
-        |style-submit $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-submit $ {}
-              "\"&" $ {} (:position :absolute) (:bottom 20) (:right 20)
-        |style-textbox $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defstyle style-textbox $ {}
-              "\"&" $ {} (:border-radius 12) (:height "\"160px") (:width "\"100%") (:transition-duration "\"320ms")
-              "\"&:focus-within" $ {} (:height "\"260px")
-        |submit-message! $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defn submit-message! (cursor state prompt-text d!) (hint-fn async)
+            defn call-gemini-msg! (cursor state prompt-text d!) (hint-fn async)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -224,12 +154,192 @@
                             d! $ :: :states cursor
                               -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                             recur
+        |comp-container $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defcomp comp-container (reel)
+              let
+                  store $ :store reel
+                  states $ :states store
+                  cursor $ or (:cursor states) ([])
+                  state $ or (:data states)
+                    {} (:answer nil) (:loading? false) (:done? false)
+                  model $ either (:model store) :gemini
+                div
+                  {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
+                  div
+                    {} $ :class-name (str-spaced css/expand style-message-area)
+                    div
+                      {} $ :class-name (str-spaced style-message-list)
+                      a $ {} (:inner-text "\"A")
+                        :class-name $ str-spaced style-a-toggler css/font-fancy
+                        :style $ {}
+                          :opacity $ if (= model :anthropic) 1 0.3
+                        :on-click $ fn (e d!)
+                          d! $ :: :change-model
+                      if (:loading? state)
+                        div ({}) (<> "\"loading..." css/font-fancy)
+                        if
+                          not $ blank? (:answer state)
+                          div ({})
+                            comp-md-block
+                              -> (:answer state) (either "\"")
+                                .!replace pattern-spaced-code $ str &newline "\"```"
+                              {} $ :class-name style-md-content
+                            if (:done? state)
+                              div
+                                {} $ :class-name css/row-parted
+                                span $ {}
+                                div
+                                  {} $ :class-name (str-spaced css/row-middle)
+                                  comp-copy $ :answer state
+                              div
+                                {} $ :class-name style-more
+                                <> "\"Streaming..." $ str-spaced css/font-fancy
+                      =< nil 200
+                  comp-message-box (>> states :message-box)
+                    fn (text d!) (submit-message! cursor state text model d!)
+                  if dev? $ comp-reel (>> states :reel) reel ({})
+                  if dev? $ comp-inspect "\"Store" store nil
+        |comp-message-box $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defcomp comp-message-box (states on-submit)
+              let
+                  cursor $ :cursor states
+                  state $ either (:data states)
+                    {} $ :content "\""
+                [] (effect-focus)
+                  div
+                    {} $ :class-name (str-spaced css/center style-message-box)
+                    textarea $ {}
+                      :value $ :content state
+                      :placeholder "\"Content"
+                      :id "\"message"
+                      :class-name $ str-spaced css/textarea css/font-code! style-textbox
+                      :on-input $ fn (e d!)
+                        d! cursor $ assoc state :content (:value e)
+                      :on-keydown $ fn (e d!)
+                        if
+                          and
+                            = 13 $ :keycode e
+                            :meta? e
+                          on-submit (:content state) d!
+                    button $ {}
+                      :class-name $ str-spaced css/button style-submit
+                      :inner-text "\"Generate"
+                      :on-click $ fn (e d!)
+                        ; println $ :content state
+                        on-submit (:content state) d!
+                    if
+                      not $ blank? (:content state)
+                      comp-close $ {} (:class-name style-clear)
+                        :on-click $ fn (e d!)
+                          d! cursor $ assoc state :content "\""
+                          -> (js/document.querySelector "\"#message") (.!focus)
+        |effect-focus $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defeffect effect-focus () (action el at?)
+              when (= action :mount)
+                .!select $ .!querySelector el "\"textarea"
+        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
+          :code $ quote
+            defn first-line (tt)
+              let
+                  lines $ .!split tt &newline
+                if
+                  > (.-length lines) 1
+                  js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
+                .-0 lines
+        |get-anthropic-key! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn get-anthropic-key! () $ let
+                key $ js/localStorage.getItem "\"claude-key"
+              if (blank? key)
+                let
+                    v $ js/prompt "\"Required claude-key in localStorage"
+                  if (blank? v)
+                    raise $ new js/Error "\"key is empty"
+                  js/localStorage.setItem "\"claude-key" v
+                  , v
+                , key
+        |get-gemini-key! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn get-gemini-key! () $ let
+                key $ js/localStorage.getItem "\"gemini-key"
+              if (blank? key)
+                let
+                    v $ js/prompt "\"Required gemini-key in localStorage"
+                  if (blank? v)
+                    raise $ new js/Error "\"key is empty"
+                  js/localStorage.setItem "\"gemini-key" v
+                  , v
+                , key
+        |pattern-spaced-code $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
+        |pick-model $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
+        |style-a-toggler $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-a-toggler $ {}
+              "\"&" $ {} (:position :absolute) (:right 16) (:top 12) (:cursor :pointer)
+        |style-app-global $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-app-global $ {}
+                str "\"& ." style-code-block
+                {} $ :max-width "\"90vw"
+              "\"&" $ {} (:color "\"#999") (:transition-duration "\"300ms")
+                :background-color $ hsl 0 0 98
+              "\"&:hover" $ {} (:color "\"#777")
+                :background-color $ hsl 0 0 100
+        |style-clear $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-clear $ {}
+              "\"&" $ {} (:position :absolute) (:left 20) (:bottom 20) (:opacity 0.4)
+        |style-md-content $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-md-content $ {}
+              "\"& .md-p" $ {} (:margin "\"16px 0") (:line-height "\"1.6")
+        |style-message-area $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-area $ {}
+              "\"&" $ {} (:flex 2) (:overflow :scroll)
+        |style-message-box $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-box $ {}
+              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:max-width 1200) (:width "\"100%") (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (:transform "\"translate(50%,0)")
+              "\"&:focus-within" $ {} (:opacity 1) (:transform "\"translate(50%,0)")
+        |style-message-list $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-list $ {}
+              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 200px 16px") (:width "\"100%") (:max-width 1200) (:margin :auto) (:position :relative)
+        |style-more $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-more $ {}
+              "\"&" $ {} (:text-align :center) (:width 80)
+                :background-color $ hsl 0 0 94
+                :border-radius 12
+                :padding "\"4px 8px"
+                :margin "\"8px 0"
+        |style-submit $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-submit $ {}
+              "\"&" $ {} (:position :absolute) (:bottom 20) (:right 20)
+        |style-textbox $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-textbox $ {}
+              "\"&" $ {} (:border-radius 12) (:height "\"160px") (:width "\"100%") (:transition-duration "\"320ms")
+              "\"&:focus-within" $ {} (:height "\"260px")
+        |submit-message! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
+              if (= model :anthropic) (call-anthropic-msg! cursor state prompt-text d!) (call-gemini-msg! cursor state prompt-text d!)
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
             respo.util.format :refer $ hsl
-            respo.core :refer $ defcomp defeffect <> >> div button textarea span input
+            respo.core :refer $ defcomp defeffect <> >> div button textarea span input a
             respo.comp.space :refer $ =<
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
@@ -274,7 +384,8 @@
                       store $ :store @*reel
                       cursor $ []
                       state0 $ get-in store ([] :states :data)
-                    submit-message! cursor state0 content dispatch!
+                      model $ either (:model store) :gemini
+                    submit-message! cursor state0 content model dispatch!
               js/chrome.runtime.connect $ js-object (:name |mySidepanel)
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -334,6 +445,7 @@
             def store $ {}
               :states $ {}
                 :cursor $ []
+              :model nil
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote (ns app.schema)
     |app.updater $ %{} :FileEntry
@@ -345,6 +457,11 @@
                   :states cursor s
                   update-states store cursor s
                 (:hydrate-storage data) data
+                (:change-model)
+                  if
+                    = (:model store) :anthropic
+                    assoc store :model :gemini
+                    assoc store :model :anthropic
                 _ $ do (eprintln "\"unknown op:" op) store
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote

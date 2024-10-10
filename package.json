@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@calcit/procs": "^0.9.5",
-    "@google/generative-ai": "^0.20.0",
+    "@google/generative-ai": "^0.21.0",
     "axios": "^1.7.7",
     "cirru-color": "^0.2.4",
     "copy-text-to-clipboard": "^3.2.0"
