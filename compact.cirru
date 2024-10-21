@@ -245,7 +245,8 @@
                     div
                       {} $ :class-name (str-spaced style-message-list)
                       a $ {}
-                        :inner-text $ turn-str (:model state)
+                        :inner-text $ turn-str
+                          or (:model state) "\"Gemini"
                         :class-name $ str-spaced style-a-toggler css/font-fancy
                         :style $ {}
                           :opacity $ if (= model :anthropic) 1 0.3
@@ -424,10 +425,8 @@
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
-              case-default
-                w-js-log $ :model state
-                call-gemini-msg! cursor state prompt-text d!
-                :anthropic $ call-anthropic-msg! cursor state prompt-text d!
+              case-default (:model state) (call-gemini-msg! cursor state prompt-text d!)
+                :claude $ call-anthropic-msg! cursor state prompt-text d!
                 :deepinfra $ call-deepinfra-msg! cursor state prompt-text d!
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote

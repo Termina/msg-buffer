@@ -1766,8 +1766,8 @@
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |::)
                                               |b $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |:item)
-                                              |h $ %{} :Leaf (:at 1729360996001) (:by |rJG4IHzWf) (:text |:claude)
-                                              |l $ %{} :Leaf (:at 1729360326714) (:by |rJG4IHzWf) (:text "|\"Claude")
+                                              |h $ %{} :Leaf (:at 1729517109263) (:by |rJG4IHzWf) (:text |:claude)
+                                              |l $ %{} :Leaf (:at 1729517105732) (:by |rJG4IHzWf) (:text "|\"Claude")
                                           |l $ %{} :Expr (:at 1729360299061) (:by |rJG4IHzWf)
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |::)
@@ -1855,10 +1855,14 @@
                                           |b $ %{} :Expr (:at 1729360661362) (:by |rJG4IHzWf)
                                             :data $ {}
                                               |D $ %{} :Leaf (:at 1729360662707) (:by |rJG4IHzWf) (:text |turn-str)
-                                              |T $ %{} :Expr (:at 1729360656731) (:by |rJG4IHzWf)
+                                              |T $ %{} :Expr (:at 1729516963082) (:by |rJG4IHzWf)
                                                 :data $ {}
-                                                  |T $ %{} :Leaf (:at 1729360659395) (:by |rJG4IHzWf) (:text |:model)
-                                                  |b $ %{} :Leaf (:at 1729360660167) (:by |rJG4IHzWf) (:text |state)
+                                                  |D $ %{} :Leaf (:at 1729516966274) (:by |rJG4IHzWf) (:text |or)
+                                                  |T $ %{} :Expr (:at 1729360656731) (:by |rJG4IHzWf)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1729360659395) (:by |rJG4IHzWf) (:text |:model)
+                                                      |b $ %{} :Leaf (:at 1729360660167) (:by |rJG4IHzWf) (:text |state)
+                                                  |b $ %{} :Leaf (:at 1729516969293) (:by |rJG4IHzWf) (:text "|\"Gemini")
                                       |h $ %{} :Expr (:at 1728102616259) (:by |rJG4IHzWf)
                                         :data $ {}
                                           |T $ %{} :Leaf (:at 1728102616259) (:by |rJG4IHzWf) (:text |:class-name)
@@ -3040,13 +3044,10 @@
               |o $ %{} :Expr (:at 1728103361255) (:by |rJG4IHzWf)
                 :data $ {}
                   |T $ %{} :Leaf (:at 1729360703921) (:by |rJG4IHzWf) (:text |case-default)
-                  |a $ %{} :Expr (:at 1729360955332) (:by |rJG4IHzWf)
+                  |a $ %{} :Expr (:at 1729360947362) (:by |rJG4IHzWf)
                     :data $ {}
-                      |D $ %{} :Leaf (:at 1729360957836) (:by |rJG4IHzWf) (:text |w-js-log)
-                      |T $ %{} :Expr (:at 1729360947362) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1729360948288) (:by |rJG4IHzWf) (:text |:model)
-                          |b $ %{} :Leaf (:at 1729360949878) (:by |rJG4IHzWf) (:text |state)
+                      |T $ %{} :Leaf (:at 1729360948288) (:by |rJG4IHzWf) (:text |:model)
+                      |b $ %{} :Leaf (:at 1729360949878) (:by |rJG4IHzWf) (:text |state)
                   |d $ %{} :Expr (:at 1729360694408) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1729360694408) (:by |rJG4IHzWf) (:text |call-gemini-msg!)
@@ -3056,7 +3057,7 @@
                       |o $ %{} :Leaf (:at 1729360694408) (:by |rJG4IHzWf) (:text |d!)
                   |h $ %{} :Expr (:at 1729360683058) (:by |rJG4IHzWf)
                     :data $ {}
-                      |D $ %{} :Leaf (:at 1729360683649) (:by |rJG4IHzWf) (:text |:anthropic)
+                      |D $ %{} :Leaf (:at 1729517120516) (:by |rJG4IHzWf) (:text |:claude)
                       |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1728103381102) (:by |rJG4IHzWf) (:text |call-anthropic-msg!)
