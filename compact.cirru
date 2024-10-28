@@ -58,7 +58,7 @@
                       done? $ .-done info
                     ; js/console.log "\"VALUE" info
                     if (wo-log done?) (:: :unit)
-                      do (println "\"processing")
+                      do (; println "\"processing")
                         let
                             events $ -> value .split-lines
                               filter $ fn (s) (.starts-with? s "\"data: ")
@@ -67,7 +67,7 @@
                           apply-args (events)
                             fn (xs)
                               list-match xs
-                                () $ println "\"no thing to handle in this Loop"
+                                () $ ;nil println "\"no thing to handle in this Loop"
                                 (x0 xss)
                                   let
                                       stop? $ = (get x0 "\"type") "\"message_stop"
@@ -93,7 +93,7 @@
                         recur
         |call-deepinfra-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-deepinfra-msg! (cursor state prompt-text d!) (hint-fn async)
+            defn call-deepinfra-msg! (cursor state prompt-text d! *text) (hint-fn async)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -121,9 +121,9 @@
                   reader $ ->
                     .!pipeThrough stream $ new js/TextDecoderStream
                     .!getReader
-                  *text $ atom (str "\"Nemotron:" &newline &newline)
                   ; reading $ js-await (.!read reader)
                   ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
+                reset! *text $ str "\"Nemotron:" &newline &newline
                 ; d! $ :: :states cursor
                   -> state
                     assoc :answer $ w-log answer
@@ -425,9 +425,18 @@
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
-              case-default (:model state) (call-gemini-msg! cursor state prompt-text d!)
-                :claude $ call-anthropic-msg! cursor state prompt-text d!
-                :deepinfra $ call-deepinfra-msg! cursor state prompt-text d!
+              let
+                  *text $ atom "\""
+                try
+                  case-default (:model state)
+                    js-await $ call-gemini-msg! cursor state prompt-text d!
+                    :claude $ js-await (call-anthropic-msg! cursor state prompt-text d!)
+                    :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
+                  fn (e)
+                    d! cursor $ -> state
+                      assoc :answer $ str @*text &newline &newline (str "\"Failed to load: " e)
+                      assoc :loading? false
+                      assoc :done? true
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
