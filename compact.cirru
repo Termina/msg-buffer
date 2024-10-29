@@ -1,7 +1,7 @@
 
 {} (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
-    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/
+    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
   :entries $ {}
   :files $ {}
     |app.comp.container $ %{} :FileEntry
@@ -58,7 +58,7 @@
                       done? $ .-done info
                     ; js/console.log "\"VALUE" info
                     if (wo-log done?) (:: :unit)
-                      do (println "\"processing")
+                      do (; println "\"processing")
                         let
                             events $ -> value .split-lines
                               filter $ fn (s) (.starts-with? s "\"data: ")
@@ -67,7 +67,7 @@
                           apply-args (events)
                             fn (xs)
                               list-match xs
-                                () $ println "\"no thing to handle in this Loop"
+                                () $ ;nil println "\"no thing to handle in this Loop"
                                 (x0 xss)
                                   let
                                       stop? $ = (get x0 "\"type") "\"message_stop"
@@ -91,6 +91,70 @@
                                               -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                                             recur xss
                         recur
+        |call-deepinfra-msg! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn call-deepinfra-msg! (cursor state prompt-text d! *text) (hint-fn async)
+              if-let
+                abort $ deref *abort-control
+                do (js/console.warn "\"Aborting prev") (.!abort abort)
+              d! $ :: :states cursor
+                -> state (assoc :answer nil) (assoc :loading? true)
+              let
+                  selected $ js-await (get-selected)
+                  content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
+                  result $ js-await
+                    .!post axios "\"https://api.deepinfra.com/v1/openai/chat/completions"
+                      js-object (:model "\"nvidia/Llama-3.1-Nemotron-70B-Instruct") (:stream true)
+                        :messages $ js-array
+                          js-object (:role "\"user") (:content content)
+                      js-object
+                        :params $ js-object
+                        :headers $ js-object (:Content-Type "\"application/json")
+                          :Authorization $ str-spaced "\"Bearer" (get-deepinfra-key!)
+                        :responseType "\"stream"
+                        :adapter "\"fetch"
+                        :signal $ let
+                            abort $ new js/AbortController
+                          reset! *abort-control abort
+                          .-signal abort
+                  stream $ .-data result
+                  reader $ ->
+                    .!pipeThrough stream $ new js/TextDecoderStream
+                    .!getReader
+                  ; reading $ js-await (.!read reader)
+                  ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
+                reset! *text $ str "\"Nemotron:" &newline &newline
+                ; d! $ :: :states cursor
+                  -> state
+                    assoc :answer $ w-log answer
+                    assoc :loading? false
+                apply-args () $ fn () (hint-fn async)
+                  let
+                      info $ js-await (.!read reader)
+                      value $ .-value info
+                      done? $ .-done info
+                    if done?
+                      d! $ :: :states cursor
+                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                      if (.starts-with? value "\": ping") (recur)
+                        if
+                          or
+                            .ends-with? (trim value) "\"[DONE]"
+                            nil? content
+                          d! $ :: :states cursor
+                            -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                          let
+                              lines $ -> (.split-lines value)
+                                filter $ fn (x)
+                                  not $ empty? x
+                            &doseq (line lines)
+                              let
+                                  candidate0 $ -> (.!slice line 6) (first-line) (js/JSON.parse) .-choices .-0
+                                  content $ or (-> candidate0 .-delta .-content) "\""
+                                swap! *text str content
+                                d! $ :: :states cursor
+                                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                            recur
         |call-gemini-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-gemini-msg! (cursor state prompt-text d!) (hint-fn async)
@@ -164,18 +228,31 @@
                   state $ or (:data states)
                     {} (:answer nil) (:loading? false) (:done? false)
                   model $ either (:model store) :gemini
+                  model-plugin $ use-modal-menu (>> states :model)
+                    {} (; :title "|Select model")
+                      :style $ {} (:width 300)
+                      :backdrop-style $ {}
+                      ; :card-class style-card
+                      ; :backdrop-class style-backdrop
+                      ; :confirm-class style-confirm
+                      :items $ [] (:: :item :gemini |Gemini) (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
+                      :on-result $ fn (result d!)
+                        d! cursor $ assoc state :model (nth result 1)
                 div
                   {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
                   div
                     {} $ :class-name (str-spaced css/expand style-message-area)
                     div
                       {} $ :class-name (str-spaced style-message-list)
-                      a $ {} (:inner-text "\"A")
+                      a $ {}
+                        :inner-text $ turn-str
+                          or (:model state) "\"Gemini"
                         :class-name $ str-spaced style-a-toggler css/font-fancy
                         :style $ {}
                           :opacity $ if (= model :anthropic) 1 0.3
                         :on-click $ fn (e d!)
-                          d! $ :: :change-model
+                          ; d! $ :: :change-model
+                          .show model-plugin d!
                       if (:loading? state)
                         div ({}) (<> "\"loading..." css/font-fancy)
                         if
@@ -198,6 +275,7 @@
                       =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text model d!)
+                  .render model-plugin
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect "\"Store" store nil
         |comp-message-box $ %{} :CodeEntry (:doc |)
@@ -244,7 +322,9 @@
           :code $ quote
             defn first-line (tt)
               let
-                  lines $ .!split tt &newline
+                  lines $ -> tt (.!split &newline)
+                    .!filter $ fn (line idx _a)
+                      not $ blank? line
                 if
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
@@ -259,6 +339,18 @@
                   if (blank? v)
                     raise $ new js/Error "\"key is empty"
                   js/localStorage.setItem "\"claude-key" v
+                  , v
+                , key
+        |get-deepinfra-key! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn get-deepinfra-key! () $ let
+                key $ js/localStorage.getItem "\"deepinfra-key"
+              if (blank? key)
+                let
+                    v $ js/prompt "\"Required deepinfra-key in localStorage"
+                  if (blank? v)
+                    raise $ new js/Error "\"key is empty"
+                  js/localStorage.setItem "\"deepinfra-key" v
                   , v
                 , key
         |get-gemini-key! $ %{} :CodeEntry (:doc |)
@@ -333,7 +425,18 @@
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
-              if (= model :anthropic) (call-anthropic-msg! cursor state prompt-text d!) (call-gemini-msg! cursor state prompt-text d!)
+              let
+                  *text $ atom "\""
+                try
+                  case-default (:model state)
+                    js-await $ call-gemini-msg! cursor state prompt-text d!
+                    :claude $ js-await (call-anthropic-msg! cursor state prompt-text d!)
+                    :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
+                  fn (e)
+                    d! cursor $ -> state
+                      assoc :answer $ str @*text &newline &newline (str "\"Failed to load: " e)
+                      assoc :loading? false
+                      assoc :done? true
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
@@ -347,6 +450,7 @@
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy comp-close
+            respo-alerts.core :refer $ use-modal-menu
             "\"../extension/get-selected" :refer $ get-selected
     |app.config $ %{} :FileEntry
       :defs $ {}
