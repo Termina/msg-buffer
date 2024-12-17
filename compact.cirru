@@ -157,7 +157,7 @@
                             recur
         |call-gemini-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-gemini-msg! (cursor state prompt-text d!) (hint-fn async)
+            defn call-gemini-msg! (variant cursor state prompt-text d!) (hint-fn async)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -168,7 +168,7 @@
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
                   result $ js-await
                     .!post axios
-                      str "\"https://sf.chenyong.life/v1beta/models/" (pick-model) "\":streamGenerateContent"
+                      str "\"https://sf.chenyong.life/v1beta/models/" (pick-model variant) "\":streamGenerateContent"
                       js-object $ :contents
                         js-array $ js-object
                           :parts $ js-array
@@ -235,7 +235,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini |Gemini) (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini "|Gemini Flash") (:: :item :gemini-pro "|Gemini Pro") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -244,15 +244,6 @@
                     {} $ :class-name (str-spaced css/expand style-message-area)
                     div
                       {} $ :class-name (str-spaced style-message-list)
-                      a $ {}
-                        :inner-text $ turn-str
-                          or (:model state) "\"Gemini"
-                        :class-name $ str-spaced style-a-toggler css/font-fancy
-                        :style $ {}
-                          :opacity $ if (= model :anthropic) 1 0.3
-                        :on-click $ fn (e d!)
-                          ; d! $ :: :change-model
-                          .show model-plugin d!
                       if (:loading? state)
                         div ({}) (<> "\"loading..." css/font-fancy)
                         if
@@ -267,8 +258,19 @@
                                 {} $ :class-name css/row-parted
                                 span $ {}
                                 div
-                                  {} $ :class-name (str-spaced css/row-middle)
-                                  comp-copy $ :answer state
+                                  {} $ :class-name (str-spaced css/row-middle css/gap8)
+                                  a $ {}
+                                    :inner-text $ turn-str
+                                      or (:model state) "\"Gemini Flash"
+                                    :class-name $ str-spaced style-a-toggler css/font-fancy
+                                    :style $ {}
+                                      :opacity $ if (= model :anthropic) 1 0.3
+                                    :on-click $ fn (e d!)
+                                      ; d! $ :: :change-model
+                                      .show model-plugin d!
+                                  div
+                                    {} $ :class-name (str-spaced css/row-middle)
+                                    comp-copy $ :answer state
                               div
                                 {} $ :class-name style-more
                                 <> "\"Streaming..." $ str-spaced css/font-fancy
@@ -370,11 +372,12 @@
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn pick-model () $ get-env "\"model" "\"gemini-1.5-flash"
+            defn pick-model (variant)
+              if (= variant :pro) "\"gemini-1.5-pro" "\"gemini-2.0-flash-exp"
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
-              "\"&" $ {} (:position :absolute) (:right 16) (:top 12) (:cursor :pointer)
+              "\"&" $ {} (:cursor :pointer)
         |style-app-global $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-app-global $ {}
@@ -387,7 +390,7 @@
         |style-clear $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-clear $ {}
-              "\"&" $ {} (:position :absolute) (:left 20) (:bottom 20) (:opacity 0.4)
+              "\"&" $ {} (:position :absolute) (:left 12) (:bottom 12) (:opacity 0.4) (:padding "\"4px 8px") (:display :inline-block) (:height "\"24px")
         |style-md-content $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-md-content $ {}
@@ -429,7 +432,8 @@
                   *text $ atom "\""
                 try
                   case-default (:model state)
-                    js-await $ call-gemini-msg! cursor state prompt-text d!
+                    js-await $ call-gemini-msg! :flash cursor state prompt-text d!
+                    :gemini-pro $ js-await (call-gemini-msg! :pro cursor state prompt-text d!)
                     :claude $ js-await (call-anthropic-msg! cursor state prompt-text d!)
                     :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
                   fn (e)
