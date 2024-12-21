@@ -253,27 +253,28 @@
                               -> (:answer state) (either "\"")
                                 .!replace pattern-spaced-code $ str &newline "\"```"
                               {} $ :class-name style-md-content
-                            if (:done? state)
-                              div
-                                {} $ :class-name css/row-parted
+                            div
+                              {} $ :class-name css/row-parted
+                              if (:done? state)
                                 span $ {}
                                 div
-                                  {} $ :class-name (str-spaced css/row-middle css/gap8)
-                                  a $ {}
-                                    :inner-text $ turn-str
-                                      or (:model state) "\"Gemini Flash"
-                                    :class-name $ str-spaced style-a-toggler css/font-fancy
-                                    :style $ {}
-                                      :opacity $ if (= model :anthropic) 1 0.3
-                                    :on-click $ fn (e d!)
-                                      ; d! $ :: :change-model
-                                      .show model-plugin d!
+                                  {} $ :class-name style-more
+                                  <> "\"Streaming..." $ str-spaced css/font-fancy
+                              div
+                                {} $ :class-name (str-spaced css/row-middle css/gap8)
+                                a $ {}
+                                  :inner-text $ turn-str
+                                    or (:model state) "\"Gemini Flash"
+                                  :class-name $ str-spaced style-a-toggler css/font-fancy
+                                  :style $ {}
+                                    :opacity $ if (= model :anthropic) 1 0.3
+                                  :on-click $ fn (e d!)
+                                    ; d! $ :: :change-model
+                                    .show model-plugin d!
+                                if (:done? state)
                                   div
                                     {} $ :class-name (str-spaced css/row-middle)
                                     comp-copy $ :answer state
-                              div
-                                {} $ :class-name style-more
-                                <> "\"Streaming..." $ str-spaced css/font-fancy
                       =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text model d!)
