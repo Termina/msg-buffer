@@ -235,7 +235,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini "|Gemini Flash") (:: :item :gemini-pro "|Gemini Pro") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini "|Gemini Flash") (:: :item :gemini-1206 "|Gemini 1206") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -255,11 +255,6 @@
                               {} $ :class-name style-md-content
                             div
                               {} $ :class-name css/row-parted
-                              if (:done? state)
-                                span $ {}
-                                div
-                                  {} $ :class-name style-more
-                                  <> "\"Streaming..." $ str-spaced css/font-fancy
                               div
                                 {} $ :class-name (str-spaced css/row-middle css/gap8)
                                 a $ {}
@@ -272,9 +267,14 @@
                                     ; d! $ :: :change-model
                                     .show model-plugin d!
                                 if (:done? state)
+                                  span $ {}
                                   div
-                                    {} $ :class-name (str-spaced css/row-middle)
-                                    comp-copy $ :answer state
+                                    {} $ :class-name style-more
+                                    <> "\"Streaming..." $ str-spaced css/font-fancy
+                              if (:done? state)
+                                div
+                                  {} $ :class-name (str-spaced css/row-middle)
+                                  comp-copy $ :answer state
                       =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text model d!)
@@ -374,7 +374,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              if (= variant :pro) "\"gemini-1.5-pro" "\"gemini-2.0-flash-exp"
+              w-log $ case-default (w-log variant) "\"gemini-2.0-flash-exp" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-1206 "\"gemini-exp-1206") (:gemini-learnlm "\"learnlm-1.5-pro-experimental")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -433,8 +433,13 @@
                   *text $ atom "\""
                 try
                   case-default (:model state)
-                    js-await $ call-gemini-msg! :flash cursor state prompt-text d!
-                    :gemini-pro $ js-await (call-gemini-msg! :pro cursor state prompt-text d!)
+                    js-await $ call-gemini-msg! (:model state) cursor state prompt-text d!
+                    :gemini-1206 $ js-await
+                      call-gemini-msg! (:model state) cursor state prompt-text d!
+                    :gemini-thinking $ js-await
+                      call-gemini-msg! (:model state) cursor state prompt-text d!
+                    :gemini-learnlm $ js-await
+                      call-gemini-msg! (:model state) cursor state prompt-text d!
                     :claude $ js-await (call-anthropic-msg! cursor state prompt-text d!)
                     :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
                   fn (e)
