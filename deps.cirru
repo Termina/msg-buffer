@@ -7,6 +7,6 @@
     |Respo/respo.calcit |0.16.12
     |Respo/respo-ui.calcit |main
     |Respo/reel.calcit |main
-    |Respo/respo-markdown.calcit |0.4.2
-    |Respo/alerts.calcit |main
+    |Respo/respo-markdown.calcit |0.4.6
+    |Respo/alerts.calcit |0.10.2
 

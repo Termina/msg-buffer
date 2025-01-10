@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "bottom-tip": "^0.1.5",
-    "vite": "^6.0.3"
+    "vite": "^6.0.5"
   },
   "scripts": {
     "build": "yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
