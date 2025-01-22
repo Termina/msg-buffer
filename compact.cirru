@@ -235,7 +235,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini "|Gemini Flash") (:: :item :gemini-1206 "|Gemini 1206") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini "|Gemini Flash") (:: :item :gemini-1206 "|Gemini Pro") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -374,7 +374,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              w-log $ case-default (w-log variant) "\"gemini-2.0-flash-exp" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-1206 "\"gemini-exp-1206") (:gemini-learnlm "\"learnlm-1.5-pro-experimental")
+              w-log $ case-default (w-log variant) "\"gemini-2.0-flash-exp" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-1206 "\"gemini-exp-1206") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -437,6 +437,8 @@
                     :gemini-1206 $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
                     :gemini-thinking $ js-await
+                      call-gemini-msg! (:model state) cursor state prompt-text d!
+                    :gemini-flash-thinking $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
                     :gemini-learnlm $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
