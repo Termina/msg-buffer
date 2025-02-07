@@ -1,7 +1,6 @@
 export let get_selected = () => {
   return new Promise((resolve, reject) => {
     if (window.chrome?.runtime?.id == null) {
-      console.warn("not chrome extension runtime...");
       resolve(null);
       return;
     }

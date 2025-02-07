@@ -227,7 +227,7 @@
                   cursor $ or (:cursor states) ([])
                   state $ or (:data states)
                     {} (:answer nil) (:loading? false) (:done? false)
-                  model $ either (:model store) :gemini
+                  model $ either (:model state) :gemini
                   model-plugin $ use-modal-menu (>> states :model)
                     {} (; :title "|Select model")
                       :style $ {} (:width 300)
@@ -235,7 +235,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini "|Gemini Flash") (:: :item :gemini-1206 "|Gemini Pro") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -245,7 +245,10 @@
                     div
                       {} $ :class-name (str-spaced style-message-list)
                       if (:loading? state)
-                        div ({}) (<> "\"loading..." css/font-fancy)
+                        div ({})
+                          <>
+                            str (turn-str model) "\" loading..."
+                            , css/font-fancy
                         if
                           not $ blank? (:answer state)
                           div ({})
@@ -257,20 +260,20 @@
                               {} $ :class-name css/row-parted
                               div
                                 {} $ :class-name (str-spaced css/row-middle css/gap8)
-                                a $ {}
-                                  :inner-text $ turn-str
-                                    or (:model state) "\"Gemini Flash"
-                                  :class-name $ str-spaced style-a-toggler css/font-fancy
-                                  :style $ {}
-                                    :opacity $ if (= model :anthropic) 1 0.3
-                                  :on-click $ fn (e d!)
-                                    ; d! $ :: :change-model
-                                    .show model-plugin d!
                                 if (:done? state)
-                                  span $ {}
+                                  a $ {}
+                                    :inner-text $ turn-str model
+                                    :class-name $ str-spaced style-a-toggler css/font-fancy
+                                    :style $ {}
+                                      :opacity $ if (= model :anthropic) 1 0.3
+                                    :on-click $ fn (e d!)
+                                      ; d! $ :: :change-model
+                                      .show model-plugin d!
                                   div
                                     {} $ :class-name style-more
-                                    <> "\"Streaming..." $ str-spaced css/font-fancy
+                                    <>
+                                      str (turn-str model) "\" streaming..."
+                                      str-spaced css/font-fancy
                               if (:done? state)
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
@@ -374,7 +377,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              w-log $ case-default (w-log variant) "\"gemini-2.0-flash-exp" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-1206 "\"gemini-exp-1206") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21")
+              case-default variant "\"gemini-2.0-flash-exp" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-pro "\"gemini-2.0-pro-exp-02-05") (:gemini-flash-lite "\"gemini-2.0-flash-lite-preview-02-05") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -412,11 +415,12 @@
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
-              "\"&" $ {} (:text-align :center) (:width 80)
+              "\"&" $ {} (:text-align :center) (:min-width 80)
                 :background-color $ hsl 0 0 94
                 :border-radius 12
                 :padding "\"4px 8px"
                 :margin "\"8px 0"
+                :white-space :nowrap
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
@@ -434,11 +438,13 @@
                 try
                   case-default (:model state)
                     js-await $ call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :gemini-1206 $ js-await
+                    :gemini-pro $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
                     :gemini-thinking $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
                     :gemini-flash-thinking $ js-await
+                      call-gemini-msg! (:model state) cursor state prompt-text d!
+                    :gemini-flash-lite $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
                     :gemini-learnlm $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
