@@ -8,6 +8,8 @@
       :defs $ {}
         |*abort-control $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *abort-control nil)
+        |*gen-ai $ %{} :CodeEntry (:doc |)
+          :code $ quote (defatom *gen-ai nil)
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text d!) (hint-fn async)
@@ -155,9 +157,11 @@
                                 d! $ :: :states cursor
                                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                             recur
-        |call-gemini-msg! $ %{} :CodeEntry (:doc |)
+        |call-gemini-msg! $ %{} :CodeEntry (:doc "|switching to Google's generative-ai-js sdk")
           :code $ quote
             defn call-gemini-msg! (variant cursor state prompt-text d!) (hint-fn async)
+              if (nil? @*gen-ai)
+                reset! *gen-ai $ new GoogleGenerativeAI (get-gemini-key!) 
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -165,59 +169,29 @@
                 -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ js-await (get-selected)
+                  gen-ai $ let
+                      ai @*gen-ai
+                    js/console.log ai
+                    , ai
+                  model-instance $ .!getGenerativeModel gen-ai
+                    js-object $ :model (pick-model variant)
+                    js-object (:baseUrl "\"https://sf.chenyong.life")
+                      :signal $ let
+                          abort $ new js/AbortController
+                        reset! *abort-control abort
+                        .-signal abort
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
-                  result $ js-await
-                    .!post axios
-                      str "\"https://sf.chenyong.life/v1beta/models/" (pick-model variant) "\":streamGenerateContent"
-                      js-object $ :contents
-                        js-array $ js-object
-                          :parts $ js-array
-                            js-object $ :text content
-                      js-object
-                        :params $ js-object
-                          :key $ get-gemini-key!
-                          :alt "\"sse"
-                        :headers $ js-object (:Accept "\"text/event-stream") (; :Content-Type "\"application/json")
-                        :responseType "\"stream"
-                        :adapter "\"fetch"
-                        :signal $ let
-                            abort $ new js/AbortController
-                          reset! *abort-control abort
-                          .-signal abort
-                  stream $ .-data result
-                  reader $ ->
-                    .!pipeThrough stream $ new js/TextDecoderStream
-                    .!getReader
+                  sdk-result $ js-await (.!generateContentStream model-instance content)
                   *text $ atom "\""
-                  ; reading $ js-await (.!read reader)
-                  ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
-                ; d! $ :: :states cursor
-                  -> state
-                    assoc :answer $ w-log answer
-                    assoc :loading? false
-                apply-args () $ fn () (hint-fn async)
-                  let
-                      info $ js-await (.!read reader)
-                      value $ .-value info
-                      done? $ .-done info
-                    if done?
-                      d! $ :: :states cursor
-                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
-                      let
-                          candidate0 $ -> (.!slice value 6) (.!trim) (first-line) (js/JSON.parse) .-candidates .-0
-                          content $ .-content candidate0
-                        if (nil? content)
-                          d! $ :: :states cursor
-                            -> state
-                              assoc :answer $ str @*text &newline "\"[STOPPED: " (.-finishReason candidate0) "\"]"
-                              assoc :loading? false
-                              assoc :done? true
-                          let
-                              content $ -> candidate0 .-content .-parts .-0 .-text
-                            swap! *text str content
-                            d! $ :: :states cursor
-                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                            recur
+                for-await-stream (.-stream sdk-result)
+                  fn (? chunk)
+                    if (some? chunk)
+                      do
+                        swap! *text str $ .!text chunk
+                        d! $ :: :states cursor
+                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    d! $ :: :states cursor
+                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
@@ -335,6 +309,9 @@
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
+        |for-await-stream $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn for-await-stream (stream f) (hint-fn async) (&raw-code "\"for await (let item of stream) {\n  f(item)\n}\n\nreturn undefined")
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
@@ -470,6 +447,7 @@
             respo-ui.comp :refer $ comp-copy comp-close
             respo-alerts.core :refer $ use-modal-menu
             "\"../extension/get-selected" :refer $ get-selected
+            "\"@google/generative-ai" :refer $ GoogleGenerativeAI
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)
