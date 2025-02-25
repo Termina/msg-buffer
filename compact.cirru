@@ -12,7 +12,7 @@
           :code $ quote (defatom *gen-ai nil)
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-anthropic-msg! (cursor state prompt-text d!) (hint-fn async)
+            defn call-anthropic-msg! (cursor state prompt-text model thinking? d!) (hint-fn async)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -25,9 +25,12 @@
                   result $ js-await
                     .!post axios (str "\"https://sa.chenyong.life/v1/messages")
                       js-object
-                        :model $ get-env "\"claude-model" "\"claude-3-5-sonnet-20240620"
+                        :model $ get-env "\"claude-model" (or model "\"claude-3-5-sonnet-latest")
                         :max_tokens 1024
                         :stream true
+                        :thinking $ if thinking?
+                          js-object (:type "\"enabled") (:budget_tokens 2000)
+                          , js/undefined
                         :messages $ js-array
                           js-object (:role "\"user") (:content content)
                       js-object
@@ -209,7 +212,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -425,7 +428,9 @@
                       call-gemini-msg! (:model state) cursor state prompt-text d!
                     :gemini-learnlm $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :claude $ js-await (call-anthropic-msg! cursor state prompt-text d!)
+                    :claude $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-5-sonnet-20241022" false d!)
+                    :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
+                    :claude-3.7-thinking $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" true d!)
                     :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
                   fn (e)
                     d! cursor $ -> state
