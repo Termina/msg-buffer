@@ -8,9 +8,11 @@
       :defs $ {}
         |*abort-control $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *abort-control nil)
+        |*gen-ai $ %{} :CodeEntry (:doc |)
+          :code $ quote (defatom *gen-ai nil)
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-anthropic-msg! (cursor state prompt-text d!) (hint-fn async)
+            defn call-anthropic-msg! (cursor state prompt-text model thinking? d!) (hint-fn async)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -23,9 +25,12 @@
                   result $ js-await
                     .!post axios (str "\"https://sa.chenyong.life/v1/messages")
                       js-object
-                        :model $ get-env "\"claude-model" "\"claude-3-5-sonnet-20240620"
+                        :model $ get-env "\"claude-model" (or model "\"claude-3-5-sonnet-latest")
                         :max_tokens 1024
                         :stream true
+                        :thinking $ if thinking?
+                          js-object (:type "\"enabled") (:budget_tokens 2000)
+                          , js/undefined
                         :messages $ js-array
                           js-object (:role "\"user") (:content content)
                       js-object
@@ -155,9 +160,11 @@
                                 d! $ :: :states cursor
                                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                             recur
-        |call-gemini-msg! $ %{} :CodeEntry (:doc |)
+        |call-gemini-msg! $ %{} :CodeEntry (:doc "|switching to Google's generative-ai-js sdk")
           :code $ quote
             defn call-gemini-msg! (variant cursor state prompt-text d!) (hint-fn async)
+              if (nil? @*gen-ai)
+                reset! *gen-ai $ new GoogleGenerativeAI (get-gemini-key!) 
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -165,59 +172,29 @@
                 -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ js-await (get-selected)
+                  gen-ai $ let
+                      ai @*gen-ai
+                    js/console.log ai
+                    , ai
+                  model-instance $ .!getGenerativeModel gen-ai
+                    js-object $ :model (pick-model variant)
+                    js-object (:baseUrl "\"https://sf.chenyong.life")
+                      :signal $ let
+                          abort $ new js/AbortController
+                        reset! *abort-control abort
+                        .-signal abort
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
-                  result $ js-await
-                    .!post axios
-                      str "\"https://sf.chenyong.life/v1beta/models/" (pick-model variant) "\":streamGenerateContent"
-                      js-object $ :contents
-                        js-array $ js-object
-                          :parts $ js-array
-                            js-object $ :text content
-                      js-object
-                        :params $ js-object
-                          :key $ get-gemini-key!
-                          :alt "\"sse"
-                        :headers $ js-object (:Accept "\"text/event-stream") (; :Content-Type "\"application/json")
-                        :responseType "\"stream"
-                        :adapter "\"fetch"
-                        :signal $ let
-                            abort $ new js/AbortController
-                          reset! *abort-control abort
-                          .-signal abort
-                  stream $ .-data result
-                  reader $ ->
-                    .!pipeThrough stream $ new js/TextDecoderStream
-                    .!getReader
+                  sdk-result $ js-await (.!generateContentStream model-instance content)
                   *text $ atom "\""
-                  ; reading $ js-await (.!read reader)
-                  ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
-                ; d! $ :: :states cursor
-                  -> state
-                    assoc :answer $ w-log answer
-                    assoc :loading? false
-                apply-args () $ fn () (hint-fn async)
-                  let
-                      info $ js-await (.!read reader)
-                      value $ .-value info
-                      done? $ .-done info
-                    if done?
-                      d! $ :: :states cursor
-                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
-                      let
-                          candidate0 $ -> (.!slice value 6) (.!trim) (first-line) (js/JSON.parse) .-candidates .-0
-                          content $ .-content candidate0
-                        if (nil? content)
-                          d! $ :: :states cursor
-                            -> state
-                              assoc :answer $ str @*text &newline "\"[STOPPED: " (.-finishReason candidate0) "\"]"
-                              assoc :loading? false
-                              assoc :done? true
-                          let
-                              content $ -> candidate0 .-content .-parts .-0 .-text
-                            swap! *text str content
-                            d! $ :: :states cursor
-                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                            recur
+                for-await-stream (.-stream sdk-result)
+                  fn (? chunk)
+                    if (some? chunk)
+                      do
+                        swap! *text str $ .!text chunk
+                        d! $ :: :states cursor
+                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    d! $ :: :states cursor
+                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
@@ -235,7 +212,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -335,6 +312,9 @@
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
+        |for-await-stream $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn for-await-stream (stream f) (hint-fn async) (&raw-code "\"for await (let item of stream) {\n  f(item)\n}\n\nreturn undefined")
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
@@ -448,7 +428,9 @@
                       call-gemini-msg! (:model state) cursor state prompt-text d!
                     :gemini-learnlm $ js-await
                       call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :claude $ js-await (call-anthropic-msg! cursor state prompt-text d!)
+                    :claude $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-5-sonnet-20241022" false d!)
+                    :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
+                    :claude-3.7-thinking $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" true d!)
                     :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
                   fn (e)
                     d! cursor $ -> state
@@ -470,6 +452,7 @@
             respo-ui.comp :refer $ comp-copy comp-close
             respo-alerts.core :refer $ use-modal-menu
             "\"../extension/get-selected" :refer $ get-selected
+            "\"@google/generative-ai" :refer $ GoogleGenerativeAI
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)

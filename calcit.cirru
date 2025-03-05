@@ -12,6 +12,12 @@
               |T $ %{} :Leaf (:at 1722536594378) (:by |rJG4IHzWf) (:text |defatom)
               |b $ %{} :Leaf (:at 1722536593016) (:by |rJG4IHzWf) (:text |*abort-control)
               |h $ %{} :Leaf (:at 1722536595729) (:by |rJG4IHzWf) (:text |nil)
+        |*gen-ai $ %{} :CodeEntry (:doc |)
+          :code $ %{} :Expr (:at 1739122298749) (:by |rJG4IHzWf)
+            :data $ {}
+              |T $ %{} :Leaf (:at 1739122331785) (:by |rJG4IHzWf) (:text |defatom)
+              |b $ %{} :Leaf (:at 1739122364386) (:by |rJG4IHzWf) (:text |*gen-ai)
+              |h $ %{} :Leaf (:at 1739122336037) (:by |rJG4IHzWf) (:text |nil)
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1728102945654) (:by |rJG4IHzWf)
             :data $ {}
@@ -22,6 +28,8 @@
                   |T $ %{} :Leaf (:at 1728103417200) (:by |rJG4IHzWf) (:text |cursor)
                   |b $ %{} :Leaf (:at 1728103417200) (:by |rJG4IHzWf) (:text |state)
                   |h $ %{} :Leaf (:at 1728103417200) (:by |rJG4IHzWf) (:text |prompt-text)
+                  |k $ %{} :Leaf (:at 1740505057826) (:by |rJG4IHzWf) (:text |model)
+                  |m $ %{} :Leaf (:at 1740505441993) (:by |rJG4IHzWf) (:text |thinking?)
                   |o $ %{} :Leaf (:at 1728103417200) (:by |rJG4IHzWf) (:text |d!)
               |l $ %{} :Expr (:at 1728103434674) (:by |rJG4IHzWf)
                 :data $ {}
@@ -128,7 +136,11 @@
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1728103808124) (:by |rJG4IHzWf) (:text |get-env)
                                               |X $ %{} :Leaf (:at 1728103816357) (:by |rJG4IHzWf) (:text "|\"claude-model")
-                                              |b $ %{} :Leaf (:at 1728103892830) (:by |rJG4IHzWf) (:text "|\"claude-3-5-sonnet-20240620")
+                                              |b $ %{} :Expr (:at 1740505140502) (:by |rJG4IHzWf)
+                                                :data $ {}
+                                                  |D $ %{} :Leaf (:at 1740505141101) (:by |rJG4IHzWf) (:text |or)
+                                                  |L $ %{} :Leaf (:at 1740505141755) (:by |rJG4IHzWf) (:text |model)
+                                                  |T $ %{} :Leaf (:at 1740505144456) (:by |rJG4IHzWf) (:text "|\"claude-3-5-sonnet-latest")
                                       |l $ %{} :Expr (:at 1728103820217) (:by |rJG4IHzWf)
                                         :data $ {}
                                           |T $ %{} :Leaf (:at 1728108999630) (:by |rJG4IHzWf) (:text |:max_tokens)
@@ -137,6 +149,25 @@
                                         :data $ {}
                                           |T $ %{} :Leaf (:at 1728103830677) (:by |rJG4IHzWf) (:text |:stream)
                                           |b $ %{} :Leaf (:at 1728103831774) (:by |rJG4IHzWf) (:text |true)
+                                      |p $ %{} :Expr (:at 1740505378217) (:by |rJG4IHzWf)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1740505381557) (:by |rJG4IHzWf) (:text |:thinking)
+                                          |b $ %{} :Expr (:at 1740505444084) (:by |rJG4IHzWf)
+                                            :data $ {}
+                                              |D $ %{} :Leaf (:at 1740505444951) (:by |rJG4IHzWf) (:text |if)
+                                              |L $ %{} :Leaf (:at 1740505445322) (:by |rJG4IHzWf) (:text |thinking?)
+                                              |T $ %{} :Expr (:at 1740505382267) (:by |rJG4IHzWf)
+                                                :data $ {}
+                                                  |T $ %{} :Leaf (:at 1740505401638) (:by |rJG4IHzWf) (:text |js-object)
+                                                  |b $ %{} :Expr (:at 1740505389855) (:by |rJG4IHzWf)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1740505394904) (:by |rJG4IHzWf) (:text |:type)
+                                                      |b $ %{} :Leaf (:at 1740505398231) (:by |rJG4IHzWf) (:text "|\"enabled")
+                                                  |h $ %{} :Expr (:at 1740505403199) (:by |rJG4IHzWf)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1740505407608) (:by |rJG4IHzWf) (:text |:budget_tokens)
+                                                      |b $ %{} :Leaf (:at 1740505412735) (:by |rJG4IHzWf) (:text |2000)
+                                              |b $ %{} :Leaf (:at 1740505452856) (:by |rJG4IHzWf) (:text |js/undefined)
                                       |q $ %{} :Expr (:at 1728103833150) (:by |rJG4IHzWf)
                                         :data $ {}
                                           |T $ %{} :Leaf (:at 1728103835251) (:by |rJG4IHzWf) (:text |:messages)
@@ -1144,7 +1175,7 @@
                                               |b $ %{} :Expr (:at 1729363060032) (:by |rJG4IHzWf)
                                                 :data $ {}
                                                   |T $ %{} :Leaf (:at 1729363060032) (:by |rJG4IHzWf) (:text |recur)
-        |call-gemini-msg! $ %{} :CodeEntry (:doc |)
+        |call-gemini-msg! $ %{} :CodeEntry (:doc "|switching to Google's generative-ai-js sdk")
           :code $ %{} :Expr (:at 1728102928322) (:by |rJG4IHzWf)
             :data $ {}
               |T $ %{} :Leaf (:at 1728102928322) (:by |rJG4IHzWf) (:text |defn)
@@ -1160,6 +1191,25 @@
                 :data $ {}
                   |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |hint-fn)
                   |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |async)
+              |m $ %{} :Expr (:at 1739122349055) (:by |rJG4IHzWf)
+                :data $ {}
+                  |T $ %{} :Leaf (:at 1739122349562) (:by |rJG4IHzWf) (:text |if)
+                  |b $ %{} :Expr (:at 1739122352502) (:by |rJG4IHzWf)
+                    :data $ {}
+                      |D $ %{} :Leaf (:at 1739122379208) (:by |rJG4IHzWf) (:text |nil?)
+                      |T $ %{} :Leaf (:at 1739122375154) (:by |rJG4IHzWf) (:text |@*gen-ai)
+                  |h $ %{} :Expr (:at 1739122380603) (:by |rJG4IHzWf)
+                    :data $ {}
+                      |T $ %{} :Leaf (:at 1739122382117) (:by |rJG4IHzWf) (:text |reset!)
+                      |b $ %{} :Leaf (:at 1739122384664) (:by |rJG4IHzWf) (:text |*gen-ai)
+                      |h $ %{} :Expr (:at 1739122389504) (:by |rJG4IHzWf)
+                        :data $ {}
+                          |T $ %{} :Leaf (:at 1739122389504) (:by |rJG4IHzWf) (:text |new)
+                          |b $ %{} :Leaf (:at 1739122389504) (:by |rJG4IHzWf) (:text |GoogleGenerativeAI)
+                          |e $ %{} :Expr (:at 1739122403333) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |T $ %{} :Leaf (:at 1739122403333) (:by |rJG4IHzWf) (:text |get-gemini-key!)
+                          |h $ %{} :Leaf (:at 1739122392683) (:by |rJG4IHzWf) (:text |)
               |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
                 :data $ {}
                   |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |if-let)
@@ -1217,6 +1267,71 @@
                               |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
                                 :data $ {}
                                   |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |get-selected)
+                      |X $ %{} :Expr (:at 1739122412316) (:by |rJG4IHzWf)
+                        :data $ {}
+                          |T $ %{} :Leaf (:at 1739122415296) (:by |rJG4IHzWf) (:text |gen-ai)
+                          |b $ %{} :Expr (:at 1739122424972) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |D $ %{} :Leaf (:at 1739122426118) (:by |rJG4IHzWf) (:text |let)
+                              |T $ %{} :Expr (:at 1739122427584) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Expr (:at 1739122427836) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |D $ %{} :Leaf (:at 1739122430036) (:by |rJG4IHzWf) (:text |ai)
+                                      |T $ %{} :Leaf (:at 1739122423490) (:by |rJG4IHzWf) (:text |@*gen-ai)
+                              |X $ %{} :Expr (:at 1739122432742) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1739122436223) (:by |rJG4IHzWf) (:text |js/console.log)
+                                  |b $ %{} :Leaf (:at 1739122437380) (:by |rJG4IHzWf) (:text |ai)
+                              |b $ %{} :Leaf (:at 1739122431636) (:by |rJG4IHzWf) (:text |ai)
+                      |Z $ %{} :Expr (:at 1739122484245) (:by |rJG4IHzWf)
+                        :data $ {}
+                          |T $ %{} :Leaf (:at 1739122494998) (:by |rJG4IHzWf) (:text |model-instance)
+                          |b $ %{} :Expr (:at 1739122496640) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |T $ %{} :Leaf (:at 1739122506755) (:by |rJG4IHzWf) (:text |.!getGenerativeModel)
+                              |X $ %{} :Leaf (:at 1739122508942) (:by |rJG4IHzWf) (:text |gen-ai)
+                              |b $ %{} :Expr (:at 1739122511159) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |D $ %{} :Leaf (:at 1739122516284) (:by |rJG4IHzWf) (:text |js-object)
+                                  |T $ %{} :Expr (:at 1739122519106) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |D $ %{} :Leaf (:at 1739122521151) (:by |rJG4IHzWf) (:text |:model)
+                                      |T $ %{} :Expr (:at 1739122500574) (:by |rJG4IHzWf)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1739122500574) (:by |rJG4IHzWf) (:text |pick-model)
+                                          |b $ %{} :Leaf (:at 1739122500574) (:by |rJG4IHzWf) (:text |variant)
+                              |h $ %{} :Expr (:at 1739122522360) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1739122525876) (:by |rJG4IHzWf) (:text |js-object)
+                                  |b $ %{} :Expr (:at 1739122527867) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1739122531212) (:by |rJG4IHzWf) (:text |:baseUrl)
+                                      |b $ %{} :Leaf (:at 1739122538667) (:by |rJG4IHzWf) (:text "|\"https://sf.chenyong.life")
+                                  |h $ %{} :Expr (:at 1739123218728) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |D $ %{} :Leaf (:at 1739123222550) (:by |rJG4IHzWf) (:text |:signal)
+                                      |T $ %{} :Expr (:at 1739123217935) (:by |rJG4IHzWf)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |let)
+                                          |b $ %{} :Expr (:at 1739123217935) (:by |rJG4IHzWf)
+                                            :data $ {}
+                                              |T $ %{} :Expr (:at 1739123217935) (:by |rJG4IHzWf)
+                                                :data $ {}
+                                                  |T $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |abort)
+                                                  |b $ %{} :Expr (:at 1739123217935) (:by |rJG4IHzWf)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |new)
+                                                      |b $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |js/AbortController)
+                                          |h $ %{} :Expr (:at 1739123217935) (:by |rJG4IHzWf)
+                                            :data $ {}
+                                              |T $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |reset!)
+                                              |b $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |*abort-control)
+                                              |h $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |abort)
+                                          |l $ %{} :Expr (:at 1739123217935) (:by |rJG4IHzWf)
+                                            :data $ {}
+                                              |T $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |.-signal)
+                                              |b $ %{} :Leaf (:at 1739123217935) (:by |rJG4IHzWf) (:text |abort)
                       |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |content)
@@ -1230,140 +1345,17 @@
                                   |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |or)
                                   |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |selected)
                                   |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"<未找到内容>")
-                      |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                      |e $ %{} :Expr (:at 1739122590087) (:by |rJG4IHzWf)
                         :data $ {}
-                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |result)
-                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                          |T $ %{} :Leaf (:at 1739122598560) (:by |rJG4IHzWf) (:text |sdk-result)
+                          |b $ %{} :Expr (:at 1739122600054) (:by |rJG4IHzWf)
                             :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-await)
-                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                              |T $ %{} :Leaf (:at 1739122604221) (:by |rJG4IHzWf) (:text |js-await)
+                              |b $ %{} :Expr (:at 1739122604696) (:by |rJG4IHzWf)
                                 :data $ {}
-                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.!post)
-                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |axios)
-                                  |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |str)
-                                      |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"https://sf.chenyong.life/v1beta/models/")
-                                      |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |pick-model)
-                                          |b $ %{} :Leaf (:at 1734454276820) (:by |rJG4IHzWf) (:text |variant)
-                                      |l $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\":streamGenerateContent")
-                                  |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-object)
-                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:contents)
-                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-array)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-object)
-                                                  |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:parts)
-                                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-array)
-                                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                            :data $ {}
-                                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-object)
-                                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                                :data $ {}
-                                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:text)
-                                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |content)
-                                  |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-object)
-                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:params)
-                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-object)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:key)
-                                                  |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |get-gemini-key!)
-                                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:alt)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"sse")
-                                      |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:headers)
-                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-object)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:Accept)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"text/event-stream")
-                                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |;)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:Content-Type)
-                                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"application/json")
-                                      |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:responseType)
-                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"stream")
-                                      |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:adapter)
-                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"fetch")
-                                      |q $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:signal)
-                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |let)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |abort)
-                                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |new)
-                                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js/AbortController)
-                                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |reset!)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |*abort-control)
-                                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |abort)
-                                              |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-signal)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |abort)
-                      |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |stream)
-                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-data)
-                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |result)
-                      |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |reader)
-                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.!pipeThrough)
-                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |stream)
-                                  |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |new)
-                                      |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js/TextDecoderStream)
-                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.!getReader)
+                                  |T $ %{} :Leaf (:at 1739122624236) (:by |rJG4IHzWf) (:text |.!generateContentStream)
+                                  |X $ %{} :Leaf (:at 1739122622305) (:by |rJG4IHzWf) (:text |model-instance)
+                                  |b $ %{} :Leaf (:at 1739122615629) (:by |rJG4IHzWf) (:text |content)
                       |q $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |*text)
@@ -1371,262 +1363,93 @@
                             :data $ {}
                               |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |atom)
                               |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"")
-                      |s $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |;)
-                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |reading)
-                          |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-await)
-                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.!read)
-                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |reader)
-                      |t $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |;)
-                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |answer)
-                          |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |result)
-                              |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-data)
-                              |l $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-candidates)
-                              |o $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-0)
-                              |q $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-content)
-                              |s $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-parts)
-                              |t $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-0)
-                              |u $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-text)
-                  |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                  |e $ %{} :Expr (:at 1739123450753) (:by |rJG4IHzWf)
                     :data $ {}
-                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |;)
-                      |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |d!)
-                      |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                      |D $ %{} :Leaf (:at 1739123458708) (:by |rJG4IHzWf) (:text |for-await-stream)
+                      |T $ %{} :Expr (:at 1739122644334) (:by |rJG4IHzWf)
                         :data $ {}
-                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |::)
-                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:states)
-                          |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |cursor)
-                          |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |state)
-                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:answer)
-                                  |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |w-log)
-                                      |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |answer)
-                              |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:loading?)
-                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |false)
-                  |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                    :data $ {}
-                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |apply-args)
-                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                          |D $ %{} :Leaf (:at 1739122645870) (:by |rJG4IHzWf) (:text |.-stream)
+                          |T $ %{} :Leaf (:at 1739122643376) (:by |rJG4IHzWf) (:text |sdk-result)
+                      |b $ %{} :Expr (:at 1739123463729) (:by |rJG4IHzWf)
                         :data $ {}
-                      |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |fn)
-                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                          |T $ %{} :Leaf (:at 1739123463981) (:by |rJG4IHzWf) (:text |fn)
+                          |b $ %{} :Expr (:at 1739123464282) (:by |rJG4IHzWf)
                             :data $ {}
-                          |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                              |D $ %{} :Leaf (:at 1739123913291) (:by |rJG4IHzWf) (:text |?)
+                              |T $ %{} :Leaf (:at 1739123465595) (:by |rJG4IHzWf) (:text |chunk)
+                          |l $ %{} :Expr (:at 1739123925658) (:by |rJG4IHzWf)
                             :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |hint-fn)
-                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |async)
-                          |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |let)
-                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                              |D $ %{} :Leaf (:at 1739123926251) (:by |rJG4IHzWf) (:text |if)
+                              |L $ %{} :Expr (:at 1739123927417) (:by |rJG4IHzWf)
                                 :data $ {}
-                                  |T $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |info)
-                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js-await)
-                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.!read)
-                                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |reader)
-                                  |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |value)
-                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-value)
-                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |info)
-                                  |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                    :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |done?)
-                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                        :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-done)
-                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |info)
-                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                  |T $ %{} :Leaf (:at 1739123929094) (:by |rJG4IHzWf) (:text |some?)
+                                  |b $ %{} :Leaf (:at 1739123931239) (:by |rJG4IHzWf) (:text |chunk)
+                              |T $ %{} :Expr (:at 1739123932215) (:by |rJG4IHzWf)
                                 :data $ {}
-                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |if)
-                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |done?)
-                                  |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                  |D $ %{} :Leaf (:at 1739123932676) (:by |rJG4IHzWf) (:text |do)
+                                  |T $ %{} :Expr (:at 1739123745232) (:by |rJG4IHzWf)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |d!)
-                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                      |T $ %{} :Leaf (:at 1739123745232) (:by |rJG4IHzWf) (:text |swap!)
+                                      |b $ %{} :Leaf (:at 1739123745232) (:by |rJG4IHzWf) (:text |*text)
+                                      |h $ %{} :Leaf (:at 1739123745232) (:by |rJG4IHzWf) (:text |str)
+                                      |l $ %{} :Expr (:at 1739123752902) (:by |rJG4IHzWf)
                                         :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |::)
-                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:states)
-                                          |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |cursor)
-                                          |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |state)
-                                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:answer)
-                                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |@*text)
-                                              |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:loading?)
-                                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |false)
-                                              |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:done?)
-                                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |true)
-                                  |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                          |T $ %{} :Leaf (:at 1739123752902) (:by |rJG4IHzWf) (:text |.!text)
+                                          |b $ %{} :Leaf (:at 1739123752902) (:by |rJG4IHzWf) (:text |chunk)
+                                  |b $ %{} :Expr (:at 1739123935511) (:by |rJG4IHzWf)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |let)
-                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                      |T $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |d!)
+                                      |b $ %{} :Expr (:at 1739123935511) (:by |rJG4IHzWf)
                                         :data $ {}
-                                          |T $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                          |T $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |::)
+                                          |b $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |:states)
+                                          |h $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |cursor)
+                                          |l $ %{} :Expr (:at 1739123935511) (:by |rJG4IHzWf)
                                             :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |candidate0)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                              |T $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |->)
+                                              |b $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |state)
+                                              |h $ %{} :Expr (:at 1739123935511) (:by |rJG4IHzWf)
                                                 :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                                                  |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.!slice)
-                                                      |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |value)
-                                                      |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |6)
-                                                  |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.!trim)
-                                                  |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |first-line)
-                                                  |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |js/JSON.parse)
-                                                  |q $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-candidates)
-                                                  |s $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-0)
-                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |content)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                                  |T $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |assoc)
+                                                  |b $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |:answer)
+                                                  |h $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |@*text)
+                                              |l $ %{} :Expr (:at 1739123935511) (:by |rJG4IHzWf)
                                                 :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-content)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |candidate0)
-                                      |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
+                                                  |T $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |assoc)
+                                                  |b $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |:loading?)
+                                                  |h $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |false)
+                                              |o $ %{} :Expr (:at 1739123935511) (:by |rJG4IHzWf)
+                                                :data $ {}
+                                                  |T $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |assoc)
+                                                  |b $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |:done?)
+                                                  |h $ %{} :Leaf (:at 1739123935511) (:by |rJG4IHzWf) (:text |false)
+                          |o $ %{} :Expr (:at 1739123944378) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |T $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |d!)
+                              |b $ %{} :Expr (:at 1739123944378) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |::)
+                                  |b $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |:states)
+                                  |h $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |cursor)
+                                  |l $ %{} :Expr (:at 1739123944378) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |->)
+                                      |b $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |state)
+                                      |h $ %{} :Expr (:at 1739123944378) (:by |rJG4IHzWf)
                                         :data $ {}
-                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |if)
-                                          |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |nil?)
-                                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |content)
-                                          |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |d!)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |::)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:states)
-                                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |cursor)
-                                                  |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                                                      |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |state)
-                                                      |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:answer)
-                                                          |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                            :data $ {}
-                                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |str)
-                                                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |@*text)
-                                                              |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |&newline)
-                                                              |l $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"[STOPPED: ")
-                                                              |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                                :data $ {}
-                                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-finishReason)
-                                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |candidate0)
-                                                              |q $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text "|\"]")
-                                                      |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:loading?)
-                                                          |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |false)
-                                                      |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:done?)
-                                                          |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |true)
-                                          |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                            :data $ {}
-                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |let)
-                                              |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |content)
-                                                      |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |candidate0)
-                                                          |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-content)
-                                                          |l $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-parts)
-                                                          |o $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-0)
-                                                          |q $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |.-text)
-                                              |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |swap!)
-                                                  |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |*text)
-                                                  |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |str)
-                                                  |l $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |content)
-                                              |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |d!)
-                                                  |b $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |::)
-                                                      |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:states)
-                                                      |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |cursor)
-                                                      |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |->)
-                                                          |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |state)
-                                                          |h $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                            :data $ {}
-                                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:answer)
-                                                              |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |@*text)
-                                                          |l $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                            :data $ {}
-                                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:loading?)
-                                                              |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |false)
-                                                          |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                            :data $ {}
-                                                              |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |assoc)
-                                                              |b $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |:done?)
-                                                              |h $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |false)
-                                              |o $ %{} :Expr (:at 1728103023953) (:by |rJG4IHzWf)
-                                                :data $ {}
-                                                  |T $ %{} :Leaf (:at 1728103023953) (:by |rJG4IHzWf) (:text |recur)
+                                          |T $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |assoc)
+                                          |b $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |:answer)
+                                          |h $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |@*text)
+                                      |l $ %{} :Expr (:at 1739123944378) (:by |rJG4IHzWf)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |assoc)
+                                          |b $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |:loading?)
+                                          |h $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |false)
+                                      |o $ %{} :Expr (:at 1739123944378) (:by |rJG4IHzWf)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |assoc)
+                                          |b $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |:done?)
+                                          |h $ %{} :Leaf (:at 1739123944378) (:by |rJG4IHzWf) (:text |true)
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1499755354983) (:by nil)
             :data $ {}
@@ -1799,8 +1622,20 @@
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |::)
                                               |b $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |:item)
-                                              |h $ %{} :Leaf (:at 1729517109263) (:by |rJG4IHzWf) (:text |:claude)
-                                              |l $ %{} :Leaf (:at 1729517105732) (:by |rJG4IHzWf) (:text "|\"Claude")
+                                              |h $ %{} :Leaf (:at 1740504985229) (:by |rJG4IHzWf) (:text |:claude)
+                                              |l $ %{} :Leaf (:at 1740505331952) (:by |rJG4IHzWf) (:text "|\"Claude 3.5")
+                                          |j $ %{} :Expr (:at 1729360299061) (:by |rJG4IHzWf)
+                                            :data $ {}
+                                              |T $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |::)
+                                              |b $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |:item)
+                                              |h $ %{} :Leaf (:at 1740504990738) (:by |rJG4IHzWf) (:text |:claude-3.7)
+                                              |l $ %{} :Leaf (:at 1740504996212) (:by |rJG4IHzWf) (:text "|\"Claude 3.7")
+                                          |k $ %{} :Expr (:at 1729360299061) (:by |rJG4IHzWf)
+                                            :data $ {}
+                                              |T $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |::)
+                                              |b $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |:item)
+                                              |h $ %{} :Leaf (:at 1740505000420) (:by |rJG4IHzWf) (:text |:claude-3.7-thinking)
+                                              |l $ %{} :Leaf (:at 1740505007441) (:by |rJG4IHzWf) (:text "|\"Claude 3.7 Thinking")
                                           |l $ %{} :Expr (:at 1729360299061) (:by |rJG4IHzWf)
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |::)
@@ -2492,6 +2327,23 @@
                     :data $ {}
                       |T $ %{} :Leaf (:at 1723138346137) (:by |rJG4IHzWf) (:text |.-0)
                       |b $ %{} :Leaf (:at 1723138348088) (:by |rJG4IHzWf) (:text |lines)
+        |for-await-stream $ %{} :CodeEntry (:doc |)
+          :code $ %{} :Expr (:at 1739123475552) (:by |rJG4IHzWf)
+            :data $ {}
+              |T $ %{} :Leaf (:at 1739123475552) (:by |rJG4IHzWf) (:text |defn)
+              |b $ %{} :Leaf (:at 1739123475552) (:by |rJG4IHzWf) (:text |for-await-stream)
+              |h $ %{} :Expr (:at 1739123475552) (:by |rJG4IHzWf)
+                :data $ {}
+                  |H $ %{} :Leaf (:at 1739123479211) (:by |rJG4IHzWf) (:text |stream)
+                  |S $ %{} :Leaf (:at 1739123481934) (:by |rJG4IHzWf) (:text |f)
+              |j $ %{} :Expr (:at 1739123684182) (:by |rJG4IHzWf)
+                :data $ {}
+                  |T $ %{} :Leaf (:at 1739123686792) (:by |rJG4IHzWf) (:text |hint-fn)
+                  |b $ %{} :Leaf (:at 1739123689149) (:by |rJG4IHzWf) (:text |async)
+              |l $ %{} :Expr (:at 1739123482633) (:by |rJG4IHzWf)
+                :data $ {}
+                  |T $ %{} :Leaf (:at 1739123485827) (:by |rJG4IHzWf) (:text |&raw-code)
+                  |b $ %{} :Leaf (:at 1739123553981) (:by |rJG4IHzWf) (:text "|\"for await (let item of stream) {\n  f(item)\n}\n\nreturn undefined")
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1728104563284) (:by |rJG4IHzWf)
             :data $ {}
@@ -3254,6 +3106,38 @@
                                       |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
                                       |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
                                       |l $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |prompt-text)
+                                      |n $ %{} :Leaf (:at 1740505295278) (:by |rJG4IHzWf) (:text "|\"claude-3-5-sonnet-20241022")
+                                      |o $ %{} :Leaf (:at 1740505433867) (:by |rJG4IHzWf) (:text |false)
+                                      |q $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |d!)
+                          |k $ %{} :Expr (:at 1729360683058) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |D $ %{} :Leaf (:at 1740505039932) (:by |rJG4IHzWf) (:text |:claude-3.7)
+                              |T $ %{} :Expr (:at 1730141328566) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
+                                  |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1728103381102) (:by |rJG4IHzWf) (:text |call-anthropic-msg!)
+                                      |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
+                                      |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
+                                      |l $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |prompt-text)
+                                      |n $ %{} :Leaf (:at 1740505300325) (:by |rJG4IHzWf) (:text "|\"claude-3-7-sonnet-20250219")
+                                      |o $ %{} :Leaf (:at 1740505436178) (:by |rJG4IHzWf) (:text |false)
+                                      |q $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |d!)
+                          |kT $ %{} :Expr (:at 1729360683058) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |D $ %{} :Leaf (:at 1740505050970) (:by |rJG4IHzWf) (:text |:claude-3.7-thinking)
+                              |T $ %{} :Expr (:at 1730141328566) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
+                                  |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1728103381102) (:by |rJG4IHzWf) (:text |call-anthropic-msg!)
+                                      |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
+                                      |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
+                                      |l $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |prompt-text)
+                                      |n $ %{} :Leaf (:at 1740505301933) (:by |rJG4IHzWf) (:text "|\"claude-3-7-sonnet-20250219")
+                                      |o $ %{} :Leaf (:at 1740505437884) (:by |rJG4IHzWf) (:text |true)
                                       |q $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |d!)
                           |l $ %{} :Expr (:at 1729360685834) (:by |rJG4IHzWf)
                             :data $ {}
@@ -3415,6 +3299,13 @@
                     |h $ %{} :Expr (:at 1723104992888) (:by |rJG4IHzWf)
                       :data $ {}
                         |T $ %{} :Leaf (:at 1723105000472) (:by |rJG4IHzWf) (:text |get-selected)
+                |zj $ %{} :Expr (:at 1739122267726) (:by |rJG4IHzWf)
+                  :data $ {}
+                    |T $ %{} :Leaf (:at 1739122268627) (:by |rJG4IHzWf) (:text "|\"@google/generative-ai")
+                    |b $ %{} :Leaf (:at 1739122270617) (:by |rJG4IHzWf) (:text |:refer)
+                    |h $ %{} :Expr (:at 1739122274807) (:by |rJG4IHzWf)
+                      :data $ {}
+                        |T $ %{} :Leaf (:at 1739122275363) (:by |rJG4IHzWf) (:text |GoogleGenerativeAI)
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)
