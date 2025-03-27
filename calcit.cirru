@@ -2557,7 +2557,7 @@
                   |h $ %{} :Expr (:at 1735371297708) (:by |rJG4IHzWf)
                     :data $ {}
                       |D $ %{} :Leaf (:at 1738811261843) (:by |rJG4IHzWf) (:text |:gemini-pro)
-                      |T $ %{} :Leaf (:at 1738811274919) (:by |rJG4IHzWf) (:text "|\"gemini-2.0-pro-exp-02-05")
+                      |T $ %{} :Leaf (:at 1743091467195) (:by |rJG4IHzWf) (:text "|\"gemini-2.5-pro-exp-03-25")
                   |j $ %{} :Expr (:at 1738811293395) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1738811298297) (:by |rJG4IHzWf) (:text |:gemini-flash-lite)

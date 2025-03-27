@@ -1,14 +1,14 @@
 {
   "dependencies": {
-    "@calcit/procs": "^0.9.8",
-    "@google/generative-ai": "^0.21.0",
-    "axios": "^1.7.9",
+    "@calcit/procs": "^0.9.9",
+    "@google/generative-ai": "^0.24.0",
+    "axios": "^1.8.4",
     "cirru-color": "^0.2.4",
     "copy-text-to-clipboard": "^3.2.0"
   },
   "devDependencies": {
     "bottom-tip": "^0.1.5",
-    "vite": "^6.0.11"
+    "vite": "^6.2.3"
   },
   "scripts": {
     "build": "yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
