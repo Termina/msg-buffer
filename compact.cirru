@@ -184,9 +184,18 @@
                         reset! *abort-control abort
                         .-signal abort
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
-                  sdk-result $ js-await (.!generateContentStream model-instance content)
+                  json? $ .!includes prompt-text "\"{{json}}"
+                  sdk-result $ js-await
+                    .!generateContentStream model-instance $ js-object
+                      :contents $ js-array
+                        js-object (:role "\"user")
+                          :parts $ js-array
+                            js-object $ :text content
+                      :generationConfig $ if json?
+                        js-object $ "\"responseMimeType" "\"application/json"
+                        , js/undefined
                   *text $ atom "\""
-                for-await-stream (.-stream sdk-result)
+                js-await $ for-await-stream (.-stream sdk-result)
                   fn (? chunk)
                     if (some? chunk)
                       do
@@ -194,7 +203,18 @@
                         d! $ :: :states cursor
                           -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                     d! $ :: :states cursor
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                d! $ :: :states cursor
+                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+        |comp-abort $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn comp-abort (t)
+              span $ {} (:class-name css/font-fancy)
+                :inner-text $ or t "\"✕"
+                :on-click $ fn (e d!)
+                  if-let
+                    abort $ deref *abort-control
+                    do (js/console.warn "\"Aborting prev") (.!abort abort)
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
@@ -223,9 +243,7 @@
                       {} $ :class-name (str-spaced style-message-list)
                       if (:loading? state)
                         div ({})
-                          <>
-                            str (turn-str model) "\" loading..."
-                            , css/font-fancy
+                          comp-abort $ str (turn-str model) "\" loading... ✕"
                         if
                           not $ blank? (:answer state)
                           div ({})
@@ -248,9 +266,7 @@
                                       .show model-plugin d!
                                   div
                                     {} $ :class-name style-more
-                                    <>
-                                      str (turn-str model) "\" streaming..."
-                                      str-spaced css/font-fancy
+                                    comp-abort $ str (turn-str model) "\" streaming... ✕"
                               if (:done? state)
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
