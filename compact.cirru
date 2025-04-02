@@ -184,7 +184,16 @@
                         reset! *abort-control abort
                         .-signal abort
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
-                  sdk-result $ js-await (.!generateContentStream model-instance content)
+                  json? $ .!includes prompt-text "\"{{json}}"
+                  sdk-result $ js-await
+                    .!generateContentStream model-instance $ js-object
+                      :contents $ js-array
+                        js-object (:role "\"user")
+                          :parts $ js-array
+                            js-object $ :text content
+                      :generationConfig $ if json?
+                        js-object $ "\"responseMimeType" "\"application/json"
+                        , js/undefined
                   *text $ atom "\""
                 js-await $ for-await-stream (.-stream sdk-result)
                   fn (? chunk)
