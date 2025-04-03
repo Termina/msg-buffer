@@ -183,8 +183,8 @@
                           abort $ new js/AbortController
                         reset! *abort-control abort
                         .-signal abort
-                  content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
-                  json? $ .!includes prompt-text "\"{{json}}"
+                  content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
+                  json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
                   sdk-result $ js-await
                     .!generateContentStream model-instance $ js-object
                       :contents $ js-array
@@ -209,12 +209,17 @@
         |comp-abort $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn comp-abort (t)
-              span $ {} (:class-name css/font-fancy)
-                :inner-text $ or t "\"✕"
-                :on-click $ fn (e d!)
-                  if-let
-                    abort $ deref *abort-control
-                    do (js/console.warn "\"Aborting prev") (.!abort abort)
+              span
+                {}
+                  :class-name $ str-spaced css/font-fancy css/row-middle style-more
+                  :style $ {} (:cursor :pointer)
+                  :on-click $ fn (e d!)
+                    if-let
+                      abort $ deref *abort-control
+                      do (js/console.warn "\"Aborting prev") (.!abort abort)
+                <> t
+                =< 8 nil
+                <> "\"✕" style-abort-close
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
@@ -243,14 +248,18 @@
                       {} $ :class-name (str-spaced style-message-list)
                       if (:loading? state)
                         div ({})
-                          comp-abort $ str (turn-str model) "\" loading... ✕"
+                          comp-abort $ str (turn-str model) "\" loading..."
                         if
                           not $ blank? (:answer state)
                           div ({})
-                            comp-md-block
-                              -> (:answer state) (either "\"")
-                                .!replace pattern-spaced-code $ str &newline "\"```"
-                              {} $ :class-name style-md-content
+                            if
+                              json-pattern? $ :answer state
+                              pre $ {} (:class-name style-code-content)
+                                :inner-text $ :answer state
+                              comp-md-block
+                                -> (:answer state) (either "\"")
+                                  .!replace pattern-spaced-code $ str &newline "\"```"
+                                {} $ :class-name style-md-content
                             div
                               {} $ :class-name css/row-parted
                               div
@@ -264,9 +273,8 @@
                                     :on-click $ fn (e d!)
                                       ; d! $ :: :change-model
                                       .show model-plugin d!
-                                  div
-                                    {} $ :class-name style-more
-                                    comp-abort $ str (turn-str model) "\" streaming... ✕"
+                                  div ({})
+                                    comp-abort $ str (turn-str model) "\" streaming..."
                               if (:done? state)
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
@@ -367,6 +375,10 @@
                   js/localStorage.setItem "\"gemini-key" v
                   , v
                 , key
+        |json-pattern? $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn json-pattern? (text)
+              or (.!startsWith text "\"{") (.!startsWith text "\"[")
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
@@ -378,6 +390,10 @@
           :code $ quote
             defstyle style-a-toggler $ {}
               "\"&" $ {} (:cursor :pointer)
+        |style-abort-close $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-abort-close $ {}
+              "\"&" $ {} (:vertical-align :top) (:font-size 10)
         |style-app-global $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-app-global $ {}
@@ -391,6 +407,10 @@
           :code $ quote
             defstyle style-clear $ {}
               "\"&" $ {} (:position :absolute) (:left 12) (:bottom 12) (:opacity 0.4) (:padding "\"4px 8px") (:display :inline-block) (:height "\"24px")
+        |style-code-content $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-code-content $ {}
+              "\"&" $ {} (:line-height "\"1.5") (:font-size 13)
         |style-md-content $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-md-content $ {}
@@ -413,10 +433,13 @@
             defstyle style-more $ {}
               "\"&" $ {} (:text-align :center) (:min-width 80)
                 :background-color $ hsl 0 0 94
-                :border-radius 12
-                :padding "\"4px 8px"
+                :border-radius 16
+                :padding "\"4px 12px"
                 :margin "\"8px 0"
                 :white-space :nowrap
+                :display :inline-flex
+              "\"&:hover" $ {}
+                :box-shadow $ str "\"1px 1px 4px " (hsl 0 0 0 0.2)
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
@@ -458,7 +481,7 @@
           ns app.comp.container $ :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
             respo.util.format :refer $ hsl
-            respo.core :refer $ defcomp defeffect <> >> div button textarea span input a
+            respo.core :refer $ defcomp defeffect <> >> div button textarea span input a pre
             respo.comp.space :refer $ =<
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
