@@ -248,7 +248,7 @@
                       {} $ :class-name (str-spaced style-message-list)
                       if (:loading? state)
                         div ({})
-                          comp-abort $ str (turn-str model) "\" loading..."
+                          memof1-call-by :abort-loading comp-abort $ str (turn-str model) "\" loading..."
                         if
                           not $ blank? (:answer state)
                           div ({})
@@ -256,7 +256,7 @@
                               json-pattern? $ :answer state
                               pre $ {} (:class-name style-code-content)
                                 :inner-text $ :answer state
-                              comp-md-block
+                              memof1-call comp-md-block
                                 -> (:answer state) (either "\"")
                                   .!replace pattern-spaced-code $ str &newline "\"```"
                                 {} $ :class-name style-md-content
@@ -274,7 +274,7 @@
                                       ; d! $ :: :change-model
                                       .show model-plugin d!
                                   div ({})
-                                    comp-abort $ str (turn-str model) "\" streaming..."
+                                    memof1-call-by :abort-streaming comp-abort $ str (turn-str model) "\" streaming..."
                               if (:done? state)
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
@@ -308,6 +308,18 @@
                             = 13 $ :keycode e
                             :meta? e
                           on-submit (:content state) d!
+                      :on-focus $ fn (e d!)
+                        let
+                            target $ .-target (:event e)
+                            class-list $ .-classList target
+                          if
+                            not $ .!contains class-list "\"focus-within"
+                            .!add class-list "\"focus-within"
+                      :on-blur $ fn (e d!)
+                        let
+                            target $ .-target (:event e)
+                            class-list $ .-classList target
+                          if (.!contains class-list "\"focus-within") (.!remove class-list "\"focus-within")
                     button $ {}
                       :class-name $ str-spaced css/button style-submit
                       :inner-text "\"Generate"
@@ -422,7 +434,7 @@
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
-              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:max-width 1200) (:width "\"100%") (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (:transform "\"translate(50%,0)")
+              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:max-width 1200) (:width "\"100%") (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (:transform "\"translate(50%,0)") (:transform-properties "\"height")
               "\"&:focus-within" $ {} (:opacity 1) (:transform "\"translate(50%,0)")
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -448,7 +460,7 @@
           :code $ quote
             defstyle style-textbox $ {}
               "\"&" $ {} (:border-radius 12) (:height "\"160px") (:width "\"100%") (:transition-duration "\"320ms")
-              "\"&:focus-within" $ {} (:height "\"260px")
+              "\"&.focus-within" $ {} (:height "\"260px")
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
@@ -492,6 +504,7 @@
             respo-alerts.core :refer $ use-modal-menu
             "\"../extension/get-selected" :refer $ get-selected
             "\"@google/generative-ai" :refer $ GoogleGenerativeAI
+            memof.once :refer $ memof1-call memof1-call-by
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)
