@@ -306,7 +306,7 @@
                         if
                           and
                             = 13 $ :keycode e
-                            :meta? e
+                            or (:meta? e) (:ctrl? e)
                           on-submit (:content state) d!
                       :on-focus $ fn (e d!)
                         let
@@ -459,8 +459,8 @@
         |style-textbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox $ {}
-              "\"&" $ {} (:border-radius 12) (:height "\"160px") (:width "\"100%") (:transition-duration "\"320ms")
-              "\"&.focus-within" $ {} (:height "\"260px")
+              "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms")
+              "\"&.focus-within" $ {} (:height "\"max(260px,40vh)")
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
