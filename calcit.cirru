@@ -1767,6 +1767,12 @@
                                               |b $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |:item)
                                               |h $ %{} :Leaf (:at 1738811150998) (:by |rJG4IHzWf) (:text |:gemini-pro)
                                               |l $ %{} :Leaf (:at 1737566015302) (:by |rJG4IHzWf) (:text "||Gemini Pro")
+                                          |eD $ %{} :Expr (:at 1729360299061) (:by |rJG4IHzWf)
+                                            :data $ {}
+                                              |T $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |::)
+                                              |b $ %{} :Leaf (:at 1729360299061) (:by |rJG4IHzWf) (:text |:item)
+                                              |h $ %{} :Leaf (:at 1744649694650) (:by |rJG4IHzWf) (:text |:gemini-pro-1.5)
+                                              |l $ %{} :Leaf (:at 1744649696565) (:by |rJG4IHzWf) (:text "||Gemini Pro 1.5")
                                           |eT $ %{} :Expr (:at 1738811378124) (:by |rJG4IHzWf)
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1738811378124) (:by |rJG4IHzWf) (:text |::)
@@ -2868,7 +2874,11 @@
                   |h $ %{} :Expr (:at 1735371297708) (:by |rJG4IHzWf)
                     :data $ {}
                       |D $ %{} :Leaf (:at 1738811261843) (:by |rJG4IHzWf) (:text |:gemini-pro)
-                      |T $ %{} :Leaf (:at 1743091467195) (:by |rJG4IHzWf) (:text "|\"gemini-2.5-pro-exp-03-25")
+                      |T $ %{} :Leaf (:at 1744649733621) (:by |rJG4IHzWf) (:text "|\"gemini-2.5-pro-exp-03-25")
+                  |i $ %{} :Expr (:at 1744649669592) (:by |rJG4IHzWf)
+                    :data $ {}
+                      |T $ %{} :Leaf (:at 1744649677644) (:by |rJG4IHzWf) (:text |:gemini-pro-1.5)
+                      |b $ %{} :Leaf (:at 1744649679858) (:by |rJG4IHzWf) (:text "|\"gemini-1.5-pro")
                   |j $ %{} :Expr (:at 1738811293395) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1738811298297) (:by |rJG4IHzWf) (:text |:gemini-flash-lite)
@@ -3186,7 +3196,7 @@
                           |h $ %{} :Expr (:at 1723008334962) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1723008334962) (:by |rJG4IHzWf) (:text |:padding)
-                              |b $ %{} :Leaf (:at 1723008334962) (:by |rJG4IHzWf) (:text "|\"40px 16px 200px 16px")
+                              |b $ %{} :Leaf (:at 1744649982981) (:by |rJG4IHzWf) (:text "|\"40px 16px 32vh 16px")
                           |l $ %{} :Expr (:at 1723008334962) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1723008334962) (:by |rJG4IHzWf) (:text |:width)
