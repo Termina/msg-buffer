@@ -303,7 +303,8 @@
                       {} $ :class-name (str-spaced style-message-list)
                       if
                         = :imagin-3 $ w-js-log model
-                        img $ {} (:class-name "\"show-image")
+                        img $ {}
+                          :class-name $ str-spaced style-image "\"show-image"
                       if (:loading? state)
                         div ({})
                           memof1-call-by :abort-loading comp-abort $ str (turn-str model) "\" loading..."
@@ -481,6 +482,11 @@
           :code $ quote
             defstyle style-code-content $ {}
               "\"&" $ {} (:line-height "\"1.5") (:font-size 13)
+        |style-image $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-image $ {}
+              "\"&" $ {} (:max-width "\"100%") (:border-radius "\"6px")
+                :border $ str "\"1px solid " (hsl 0 0 90)
         |style-md-content $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-md-content $ {}
