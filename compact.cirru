@@ -206,6 +206,61 @@
                       -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+        |call-imagin-msg! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn call-imagin-msg! (variant cursor state prompt-text d!) (hint-fn async)
+              if (nil? @*gen-ai)
+                reset! *gen-ai $ new GoogleGenAI
+                  js-object $ :apiKey (get-gemini-key!)
+              if-let
+                target $ js/document.querySelector "\".show-image"
+                .!setAttribute target "\"src" "\""
+              if-let
+                abort $ deref *abort-control
+                do (js/console.warn "\"Aborting prev") (.!abort abort)
+              d! $ :: :states cursor
+                -> state (assoc :answer nil) (assoc :loading? true)
+              let
+                  selected $ js-await (get-selected)
+                  gen-ai $ let
+                      ai @*gen-ai
+                    js/console.log ai
+                    , ai
+                  content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
+                  sdk-result $ js-await
+                    .!generateContent (.-models gen-ai)
+                      js-object (:model "\"gemini-2.0-flash-exp-image-generation") (:contents content)
+                        :config $ js-object
+                          :httpOptions $ js-object (:baseUrl "\"https://sf.chenyong.life")
+                          :signal $ let
+                              abort $ new js/AbortController
+                            reset! *abort-control abort
+                            .-signal abort
+                          :responseModalities $ js-array (.-TEXT Modality) (.-IMAGE Modality)
+                  *text $ atom "\""
+                js-await $ -> sdk-result .-candidates .-0 .-content .-parts
+                  .!forEach $ fn (? chunk _a _b)
+                    if (some? chunk)
+                      if-let
+                        text $ .-text chunk
+                        do (swap! *text str text)
+                          d! $ :: :states cursor
+                            -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                        if-let
+                          image-data $ .-inlineData chunk
+                          let
+                              image-blob $ base64ToBlob (.-data image-data)
+                              url $ js/URL.createObjectURL image-blob
+                              target $ js/document.querySelector "\".show-image"
+                            -> target $ .!setAttribute "\"src" url
+                            ; js/URL.revokeObjectURL url
+                            do (swap! *text str "\"(image ready)")
+                              d! $ :: :states cursor
+                                -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    d! $ :: :states cursor
+                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                d! $ :: :states cursor
+                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |comp-abort $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn comp-abort (t)
@@ -237,7 +292,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :imagin-3 "\"Imagin 3") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -246,6 +301,9 @@
                     {} $ :class-name (str-spaced css/expand style-message-area)
                     div
                       {} $ :class-name (str-spaced style-message-list)
+                      if
+                        = :imagin-3 $ w-js-log model
+                        img $ {} (:class-name "\"show-image")
                       if (:loading? state)
                         div ({})
                           memof1-call-by :abort-loading comp-abort $ str (turn-str model) "\" loading..."
@@ -460,25 +518,22 @@
           :code $ quote
             defstyle style-textbox $ {}
               "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms")
-              "\"&.focus-within" $ {} (:height "\"max(260px,40vh)")
+              "\"&.focus-within" $ {} (:height "\"max(240px,32vh)")
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
               let
                   *text $ atom "\""
+                  model $ :model state
                 try
-                  case-default (:model state)
-                    js-await $ call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :gemini-pro $ js-await
-                      call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :gemini-thinking $ js-await
-                      call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :gemini-flash-thinking $ js-await
-                      call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :gemini-flash-lite $ js-await
-                      call-gemini-msg! (:model state) cursor state prompt-text d!
-                    :gemini-learnlm $ js-await
-                      call-gemini-msg! (:model state) cursor state prompt-text d!
+                  case-default model
+                    js-await $ call-gemini-msg! model cursor state prompt-text d!
+                    :gemini-pro $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    :imagin-3 $ js-await (call-imagin-msg! model cursor state prompt-text d!)
+                    :gemini-thinking $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    :gemini-flash-thinking $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    :gemini-flash-lite $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    :gemini-learnlm $ js-await (call-gemini-msg! model cursor state prompt-text d!)
                     :claude $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-5-sonnet-20241022" false d!)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
                     :claude-3.7-thinking $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" true d!)
@@ -493,7 +548,7 @@
           ns app.comp.container $ :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
             respo.util.format :refer $ hsl
-            respo.core :refer $ defcomp defeffect <> >> div button textarea span input a pre
+            respo.core :refer $ defcomp defeffect <> >> div button textarea span input a pre img
             respo.comp.space :refer $ =<
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
@@ -505,6 +560,8 @@
             "\"../extension/get-selected" :refer $ get-selected
             "\"@google/generative-ai" :refer $ GoogleGenerativeAI
             memof.once :refer $ memof1-call memof1-call-by
+            "\"@google/genai" :refer $ GoogleGenAI Modality
+            "\"../lib/image" :refer $ base64ToBlob
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)
