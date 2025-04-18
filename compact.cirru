@@ -10,6 +10,8 @@
           :code $ quote (defatom *abort-control nil)
         |*gen-ai $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *gen-ai nil)
+        |*gen-ai-new $ %{} :CodeEntry (:doc |)
+          :code $ quote (defatom *gen-ai-new nil)
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!) (hint-fn async)
@@ -206,11 +208,64 @@
                       -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+        |call-genai-msg! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn call-genai-msg! (variant cursor state prompt-text d!) (hint-fn async)
+              if (nil? @*gen-ai-new)
+                reset! *gen-ai-new $ new GoogleGenAI
+                  js-object $ :apiKey (get-gemini-key!)
+              if-let
+                abort $ deref *abort-control
+                do (js/console.warn "\"Aborting prev") (.!abort abort)
+              d! $ :: :states cursor
+                -> state (assoc :answer nil) (assoc :loading? true)
+              let
+                  selected $ js-await (get-selected)
+                  gen-ai $ let
+                      ai @*gen-ai-new
+                    js/console.log ai
+                    , ai
+                  content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
+                  json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
+                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}")
+                  sdk-result $ js-await
+                    .!generateContentStream (.-models gen-ai)
+                      js-object
+                        :model $ pick-model variant
+                        :contents $ js-array
+                          js-object (:role "\"user")
+                            :parts $ js-array
+                              js-object $ :text content
+                        :config $ js/Object.assign
+                          js-object
+                            :thinkingConfig $ js-object
+                              :thinkingBudget $ if think? 2000 0
+                              :includeThoughts think?
+                            :httpOptions $ js-object (:baseUrl "\"https://sf.chenyong.life")
+                              :signal $ let
+                                  abort $ new js/AbortController
+                                reset! *abort-control abort
+                                .-signal abort
+                          if json?
+                            js-object $ "\"responseMimeType" "\"application/json"
+                            , js/undefined
+                  *text $ atom "\""
+                js-await $ for-await-stream sdk-result
+                  fn (? chunk)
+                    if (some? chunk)
+                      do
+                        swap! *text str $ .-text chunk
+                        d! $ :: :states cursor
+                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    d! $ :: :states cursor
+                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                d! $ :: :states cursor
+                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |call-imagin-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-imagin-msg! (variant cursor state prompt-text d!) (hint-fn async)
-              if (nil? @*gen-ai)
-                reset! *gen-ai $ new GoogleGenAI
+              if (nil? @*gen-ai-new)
+                reset! *gen-ai-new $ new GoogleGenAI
                   js-object $ :apiKey (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
@@ -223,7 +278,7 @@
               let
                   selected $ js-await (get-selected)
                   gen-ai $ let
-                      ai @*gen-ai
+                      ai @*gen-ai-new
                     js/console.log ai
                     , ai
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
@@ -292,7 +347,7 @@
                       ; :card-class style-card
                       ; :backdrop-class style-backdrop
                       ; :confirm-class style-confirm
-                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :imagin-3 "\"Imagin 3") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
+                      :items $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :imagin-3 "\"Imagin 3") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :gemma "|Gemma 3 27b") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                 div
@@ -301,8 +356,7 @@
                     {} $ :class-name (str-spaced css/expand style-message-area)
                     div
                       {} $ :class-name (str-spaced style-message-list)
-                      if
-                        = :imagin-3 $ w-js-log model
+                      if (= :imagin-3 model)
                         img $ {}
                           :class-name $ str-spaced style-image "\"show-image"
                       if (:loading? state)
@@ -456,7 +510,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-2.0-flash-exp" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-pro "\"gemini-2.5-pro-exp-03-25") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite-preview-02-05") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21")
+              case-default variant "\"gemini-2.5-flash-preview-04-17" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-pro "\"gemini-2.5-pro-exp-03-25") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite-preview-02-05") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21") (:gemma "\"gemma-3-27b-it")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -503,7 +557,7 @@
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-list $ {}
-              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 32vh 16px") (:width "\"100%") (:max-width 1200) (:margin :auto) (:position :relative)
+              "\"&" $ {} (:flex 2) (:padding "\"40px 16px 20vh 16px") (:width "\"100%") (:max-width 1200) (:margin :auto) (:position :relative)
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
@@ -539,6 +593,7 @@
                     :gemini-thinking $ js-await (call-gemini-msg! model cursor state prompt-text d!)
                     :gemini-flash-thinking $ js-await (call-gemini-msg! model cursor state prompt-text d!)
                     :gemini-flash-lite $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text d!)
                     :gemini-learnlm $ js-await (call-gemini-msg! model cursor state prompt-text d!)
                     :claude $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-5-sonnet-20241022" false d!)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
