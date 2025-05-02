@@ -225,7 +225,7 @@
                   selected $ js-await (get-selected)
                   gen-ai $ let
                       ai @*gen-ai-new
-                    js/console.log ai
+                    ; js/console.log ai
                     , ai
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
@@ -248,6 +248,10 @@
                                   abort $ new js/AbortController
                                 reset! *abort-control abort
                                 .-signal abort
+                            :abortSignal $ let
+                                abort $ new js/AbortController
+                              reset! *abort-control abort
+                              .-signal abort
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
@@ -500,7 +504,8 @@
           :code $ quote
             defeffect effect-focus () (action el at?)
               when (= action :mount)
-                .!select $ .!querySelector el "\"textarea"
+                js/setTimeout $ fn ()
+                  .!select $ .!querySelector el "\"textarea"
         |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
           :code $ quote
             defn first-line (tt)
@@ -650,14 +655,15 @@
                   model $ :model state
                 try
                   case-default model
-                    js-await $ call-gemini-msg! model cursor state prompt-text d!
-                    :gemini-pro $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    js-await $ call-genai-msg! model cursor state prompt-text d!
+                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text d!)
+                    :gemini-1.5-pro $ js-await (call-genai-msg! model cursor state prompt-text d!)
                     :imagin-3 $ js-await (call-imagin-msg! model cursor state prompt-text d!)
-                    :gemini-thinking $ js-await (call-gemini-msg! model cursor state prompt-text d!)
-                    :gemini-flash-thinking $ js-await (call-gemini-msg! model cursor state prompt-text d!)
-                    :gemini-flash-lite $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text d!)
+                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text d!)
+                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text d!)
                     :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text d!)
-                    :gemini-learnlm $ js-await (call-gemini-msg! model cursor state prompt-text d!)
+                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text d!)
                     :claude $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-5-sonnet-20241022" false d!)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
                     :claude-3.7-thinking $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" true d!)
@@ -686,7 +692,7 @@
             respo-ui.comp :refer $ comp-copy comp-close
             respo-alerts.core :refer $ use-modal-menu
             "\"../extension/get-selected" :refer $ get-selected
-            "\"@google/generative-ai" :refer $ GoogleGenerativeAI
+            ; "\"@google/generative-ai" :refer $ GoogleGenerativeAI
             memof.once :refer $ memof1-call memof1-call-by
             "\"@google/genai" :refer $ GoogleGenAI Modality
             "\"../lib/image" :refer $ base64ToBlob

@@ -1662,6 +1662,7 @@
                                       |b $ %{} :Leaf (:at 1744996582983) (:by |rJG4IHzWf) (:text |@*gen-ai-new)
                               |h $ %{} :Expr (:at 1744996505254) (:by |rJG4IHzWf)
                                 :data $ {}
+                                  |D $ %{} :Leaf (:at 1746206962793) (:by |rJG4IHzWf) (:text |;)
                                   |T $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |js/console.log)
                                   |b $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |ai)
                               |l $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |ai)
@@ -1821,6 +1822,30 @@
                                                                     :data $ {}
                                                                       |T $ %{} :Leaf (:at 1744997158804) (:by |rJG4IHzWf) (:text |.-signal)
                                                                       |b $ %{} :Leaf (:at 1744997158804) (:by |rJG4IHzWf) (:text |abort)
+                                                  |l $ %{} :Expr (:at 1746207120795) (:by |rJG4IHzWf)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1746207173015) (:by |rJG4IHzWf) (:text |:abortSignal)
+                                                      |b $ %{} :Expr (:at 1746207120795) (:by |rJG4IHzWf)
+                                                        :data $ {}
+                                                          |T $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |let)
+                                                          |b $ %{} :Expr (:at 1746207120795) (:by |rJG4IHzWf)
+                                                            :data $ {}
+                                                              |T $ %{} :Expr (:at 1746207120795) (:by |rJG4IHzWf)
+                                                                :data $ {}
+                                                                  |T $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |abort)
+                                                                  |b $ %{} :Expr (:at 1746207120795) (:by |rJG4IHzWf)
+                                                                    :data $ {}
+                                                                      |T $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |new)
+                                                                      |b $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |js/AbortController)
+                                                          |h $ %{} :Expr (:at 1746207120795) (:by |rJG4IHzWf)
+                                                            :data $ {}
+                                                              |T $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |reset!)
+                                                              |b $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |*abort-control)
+                                                              |h $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |abort)
+                                                          |l $ %{} :Expr (:at 1746207120795) (:by |rJG4IHzWf)
+                                                            :data $ {}
+                                                              |T $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |.-signal)
+                                                              |b $ %{} :Leaf (:at 1746207120795) (:by |rJG4IHzWf) (:text |abort)
                                               |T $ %{} :Expr (:at 1744996505254) (:by |rJG4IHzWf)
                                                 :data $ {}
                                                   |T $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |if)
@@ -3859,14 +3884,22 @@
                       |T $ %{} :Leaf (:at 1723603402548) (:by |rJG4IHzWf) (:text |=)
                       |b $ %{} :Leaf (:at 1723603405327) (:by |rJG4IHzWf) (:text |action)
                       |h $ %{} :Leaf (:at 1723603407398) (:by |rJG4IHzWf) (:text |:mount)
-                  |h $ %{} :Expr (:at 1723603417488) (:by |rJG4IHzWf)
+                  |h $ %{} :Expr (:at 1746207358366) (:by |rJG4IHzWf)
                     :data $ {}
-                      |D $ %{} :Leaf (:at 1723603471483) (:by |rJG4IHzWf) (:text |.!select)
-                      |T $ %{} :Expr (:at 1723603407983) (:by |rJG4IHzWf)
+                      |D $ %{} :Leaf (:at 1746207360911) (:by |rJG4IHzWf) (:text |js/setTimeout)
+                      |T $ %{} :Expr (:at 1746207361619) (:by |rJG4IHzWf)
                         :data $ {}
-                          |D $ %{} :Leaf (:at 1723603414646) (:by |rJG4IHzWf) (:text |.!querySelector)
-                          |T $ %{} :Leaf (:at 1723603408532) (:by |rJG4IHzWf) (:text |el)
-                          |b $ %{} :Leaf (:at 1723603416886) (:by |rJG4IHzWf) (:text "|\"textarea")
+                          |D $ %{} :Leaf (:at 1746207363230) (:by |rJG4IHzWf) (:text |fn)
+                          |L $ %{} :Expr (:at 1746207363586) (:by |rJG4IHzWf)
+                            :data $ {}
+                          |T $ %{} :Expr (:at 1723603417488) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |D $ %{} :Leaf (:at 1723603471483) (:by |rJG4IHzWf) (:text |.!select)
+                              |T $ %{} :Expr (:at 1723603407983) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |D $ %{} :Leaf (:at 1723603414646) (:by |rJG4IHzWf) (:text |.!querySelector)
+                                  |T $ %{} :Leaf (:at 1723603408532) (:by |rJG4IHzWf) (:text |el)
+                                  |b $ %{} :Leaf (:at 1723603416886) (:by |rJG4IHzWf) (:text "|\"textarea")
         |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
           :code $ %{} :Expr (:at 1723138240850) (:by |rJG4IHzWf)
             :data $ {}
@@ -4806,7 +4839,7 @@
                               |D $ %{} :Leaf (:at 1730141326796) (:by |rJG4IHzWf) (:text |js-await)
                               |T $ %{} :Expr (:at 1729360694408) (:by |rJG4IHzWf)
                                 :data $ {}
-                                  |T $ %{} :Leaf (:at 1729360694408) (:by |rJG4IHzWf) (:text |call-gemini-msg!)
+                                  |T $ %{} :Leaf (:at 1746206977434) (:by |rJG4IHzWf) (:text |call-genai-msg!)
                                   |X $ %{} :Leaf (:at 1744739435930) (:by |rJG4IHzWf) (:text |model)
                                   |b $ %{} :Leaf (:at 1729360694408) (:by |rJG4IHzWf) (:text |cursor)
                                   |h $ %{} :Leaf (:at 1729360694408) (:by |rJG4IHzWf) (:text |state)
@@ -4820,7 +4853,21 @@
                                   |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
                                   |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1734454213951) (:by |rJG4IHzWf) (:text |call-gemini-msg!)
+                                      |T $ %{} :Leaf (:at 1746206976099) (:by |rJG4IHzWf) (:text |call-genai-msg!)
+                                      |X $ %{} :Leaf (:at 1744739438563) (:by |rJG4IHzWf) (:text |model)
+                                      |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
+                                      |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
+                                      |l $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |prompt-text)
+                                      |q $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |d!)
+                          |hD $ %{} :Expr (:at 1729360683058) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |D $ %{} :Leaf (:at 1746206985273) (:by |rJG4IHzWf) (:text |:gemini-1.5-pro)
+                              |T $ %{} :Expr (:at 1730141328566) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
+                                  |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1746206976099) (:by |rJG4IHzWf) (:text |call-genai-msg!)
                                       |X $ %{} :Leaf (:at 1744739438563) (:by |rJG4IHzWf) (:text |model)
                                       |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
                                       |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
@@ -4848,7 +4895,7 @@
                                   |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
                                   |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1734454213951) (:by |rJG4IHzWf) (:text |call-gemini-msg!)
+                                      |T $ %{} :Leaf (:at 1746206973600) (:by |rJG4IHzWf) (:text |call-genai-msg!)
                                       |X $ %{} :Leaf (:at 1744739443230) (:by |rJG4IHzWf) (:text |model)
                                       |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
                                       |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
@@ -4862,7 +4909,7 @@
                                   |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
                                   |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1734454213951) (:by |rJG4IHzWf) (:text |call-gemini-msg!)
+                                      |T $ %{} :Leaf (:at 1746206971920) (:by |rJG4IHzWf) (:text |call-genai-msg!)
                                       |X $ %{} :Leaf (:at 1744739445332) (:by |rJG4IHzWf) (:text |model)
                                       |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
                                       |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
@@ -4876,7 +4923,7 @@
                                   |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
                                   |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1734454213951) (:by |rJG4IHzWf) (:text |call-gemini-msg!)
+                                      |T $ %{} :Leaf (:at 1746206970182) (:by |rJG4IHzWf) (:text |call-genai-msg!)
                                       |X $ %{} :Leaf (:at 1744739447463) (:by |rJG4IHzWf) (:text |model)
                                       |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
                                       |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
@@ -4904,7 +4951,7 @@
                                   |D $ %{} :Leaf (:at 1730141331118) (:by |rJG4IHzWf) (:text |js-await)
                                   |T $ %{} :Expr (:at 1728103381694) (:by |rJG4IHzWf)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1734454213951) (:by |rJG4IHzWf) (:text |call-gemini-msg!)
+                                      |T $ %{} :Leaf (:at 1746206968523) (:by |rJG4IHzWf) (:text |call-genai-msg!)
                                       |X $ %{} :Leaf (:at 1744739451997) (:by |rJG4IHzWf) (:text |model)
                                       |b $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |cursor)
                                       |h $ %{} :Leaf (:at 1728103384687) (:by |rJG4IHzWf) (:text |state)
@@ -5179,6 +5226,7 @@
                         |T $ %{} :Leaf (:at 1723105000472) (:by |rJG4IHzWf) (:text |get-selected)
                 |zj $ %{} :Expr (:at 1739122267726) (:by |rJG4IHzWf)
                   :data $ {}
+                    |D $ %{} :Leaf (:at 1746206998486) (:by |rJG4IHzWf) (:text |;)
                     |T $ %{} :Leaf (:at 1739122268627) (:by |rJG4IHzWf) (:text "|\"@google/generative-ai")
                     |b $ %{} :Leaf (:at 1739122270617) (:by |rJG4IHzWf) (:text |:refer)
                     |h $ %{} :Expr (:at 1739122274807) (:by |rJG4IHzWf)
