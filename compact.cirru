@@ -222,7 +222,8 @@
               d! $ :: :states cursor
                 -> state (assoc :answer nil) (assoc :loading? true)
               let
-                  selected $ js-await (get-selected)
+                  selected $ if (.includes? prompt-text "\"{{selected}}")
+                    js-await $ get-selected
                   gen-ai $ let
                       ai @*gen-ai-new
                     ; js/console.log ai
@@ -230,6 +231,7 @@
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
                   think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}")
+                  search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
                       js-object
@@ -252,6 +254,8 @@
                                 abort $ new js/AbortController
                               reset! *abort-control abort
                               .-signal abort
+                            :tools $ js-array
+                              js-object $ :googleSearch (js-object)
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
