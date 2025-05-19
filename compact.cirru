@@ -585,7 +585,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-2.5-flash-preview-04-17" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-pro "\"gemini-2.5-pro-exp-03-25") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite-preview-02-05") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-2.5-flash-preview-04-17" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-pro "\"gemini-2.5-pro-preview-05-06") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite-preview-02-05") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21") (:gemma "\"gemma-3-27b-it")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -699,7 +699,6 @@
             respo-ui.comp :refer $ comp-copy comp-close
             respo-alerts.core :refer $ use-modal-menu
             "\"../extension/get-selected" :refer $ get-selected
-            ; "\"@google/generative-ai" :refer $ GoogleGenerativeAI
             memof.once :refer $ memof1-call memof1-call-by
             "\"@google/genai" :refer $ GoogleGenAI Modality
             "\"../lib/image" :refer $ base64ToBlob

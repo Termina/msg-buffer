@@ -4322,7 +4322,7 @@
                   |h $ %{} :Expr (:at 1735371297708) (:by |rJG4IHzWf)
                     :data $ {}
                       |D $ %{} :Leaf (:at 1738811261843) (:by |rJG4IHzWf) (:text |:gemini-pro)
-                      |T $ %{} :Leaf (:at 1744649733621) (:by |rJG4IHzWf) (:text "|\"gemini-2.5-pro-exp-03-25")
+                      |T $ %{} :Leaf (:at 1746635195165) (:by |rJG4IHzWf) (:text "|\"gemini-2.5-pro-preview-05-06")
                   |i $ %{} :Expr (:at 1744649669592) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1744649677644) (:by |rJG4IHzWf) (:text |:gemini-pro-1.5)
@@ -5269,14 +5269,6 @@
                     |h $ %{} :Expr (:at 1723104992888) (:by |rJG4IHzWf)
                       :data $ {}
                         |T $ %{} :Leaf (:at 1723105000472) (:by |rJG4IHzWf) (:text |get-selected)
-                |zj $ %{} :Expr (:at 1739122267726) (:by |rJG4IHzWf)
-                  :data $ {}
-                    |D $ %{} :Leaf (:at 1746206998486) (:by |rJG4IHzWf) (:text |;)
-                    |T $ %{} :Leaf (:at 1739122268627) (:by |rJG4IHzWf) (:text "|\"@google/generative-ai")
-                    |b $ %{} :Leaf (:at 1739122270617) (:by |rJG4IHzWf) (:text |:refer)
-                    |h $ %{} :Expr (:at 1739122274807) (:by |rJG4IHzWf)
-                      :data $ {}
-                        |T $ %{} :Leaf (:at 1739122275363) (:by |rJG4IHzWf) (:text |GoogleGenerativeAI)
                 |zn $ %{} :Expr (:at 1743789279617) (:by |rJG4IHzWf)
                   :data $ {}
                     |T $ %{} :Leaf (:at 1743789289349) (:by |rJG4IHzWf) (:text |memof.once)
