@@ -245,7 +245,7 @@
                             :thinkingConfig $ js-object
                               :thinkingBudget $ if think? 2000 0
                               :includeThoughts think?
-                            :httpOptions $ js-object (:baseUrl "\"https://sf.chenyong.life")
+                            :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
                               :signal $ let
                                   abort $ new js/AbortController
                                 reset! *abort-control abort
