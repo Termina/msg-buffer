@@ -224,7 +224,7 @@
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |call-genai-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-genai-msg! (variant cursor state prompt-text d!) (hint-fn async)
+            defn call-genai-msg! (variant cursor state prompt-text d! *text) (hint-fn async)
               if (nil? @*gen-ai-new)
                 reset! *gen-ai-new $ new GoogleGenAI
                   js-object $ :apiKey (get-gemini-key!)
@@ -267,7 +267,6 @@
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
-                  *text $ atom "\""
                 js-await $ for-await-stream sdk-result
                   fn (? chunk)
                     if (some? chunk)
@@ -663,16 +662,16 @@
                   model $ :model state
                 try
                   case-default model
-                    js-await $ call-genai-msg! model cursor state prompt-text d!
-                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text d!)
-                    :gemini-1.5-pro $ js-await (call-genai-msg! model cursor state prompt-text d!)
+                    js-await $ call-genai-msg! model cursor state prompt-text d! *text
+                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
+                    :gemini-1.5-pro $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
                     :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state prompt-text d!)
                     :imagen-3 $ js-await (call-imagen-3-msg! model cursor state prompt-text d!)
-                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text d!)
-                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text d!)
-                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text d!)
-                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text d!)
-                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text d!)
+                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
+                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
+                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
+                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
+                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
                     :claude $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-5-sonnet-20241022" false d!)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
                     :claude-3.7-thinking $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" true d!)
