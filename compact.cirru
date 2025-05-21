@@ -12,6 +12,8 @@
           :code $ quote (defatom *gen-ai nil)
         |*gen-ai-new $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *gen-ai-new nil)
+        |*image-cache $ %{} :CodeEntry (:doc |)
+          :code $ quote (defatom *image-cache nil)
         |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter")
           :code $ quote (defatom *openai nil)
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
@@ -164,6 +166,62 @@
                                 d! $ :: :states cursor
                                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                             recur
+        |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn call-flash-imagen-msg! (variant cursor state prompt-text d!) (hint-fn async)
+              if (nil? @*gen-ai-new)
+                reset! *gen-ai-new $ new GoogleGenAI
+                  js-object $ :apiKey (get-gemini-key!)
+              if-let
+                target $ js/document.querySelector "\".show-image"
+                .!setAttribute target "\"src" "\""
+              if-let
+                abort $ deref *abort-control
+                do (js/console.warn "\"Aborting prev") (.!abort abort)
+              clear-image-cache!
+              d! $ :: :states cursor
+                -> state (assoc :answer nil) (assoc :loading? true)
+              let
+                  selected $ js-await (get-selected)
+                  gen-ai $ let
+                      ai @*gen-ai-new
+                    js/console.log ai
+                    , ai
+                  content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
+                  sdk-result $ js-await
+                    .!generateContent (.-models gen-ai)
+                      js-object (:model "\"gemini-2.0-flash-exp-image-generation") (:contents content)
+                        :config $ js-object
+                          :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
+                          :signal $ let
+                              abort $ new js/AbortController
+                            reset! *abort-control abort
+                            .-signal abort
+                          :responseModalities $ js-array (.-TEXT Modality) (.-IMAGE Modality)
+                  *text $ atom "\""
+                js-await $ -> sdk-result .-candidates .-0 .-content .-parts
+                  .!forEach $ fn (? chunk _a _b)
+                    if (some? chunk)
+                      if-let
+                        text $ .-text chunk
+                        do (swap! *text str text)
+                          d! $ :: :states cursor
+                            -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                        if-let
+                          image-data $ .-inlineData chunk
+                          let
+                              image-blob $ base64ToBlob (.-data image-data)
+                              url $ js/URL.createObjectURL image-blob
+                              target $ js/document.querySelector "\".show-image"
+                            -> target $ .!setAttribute "\"src" url
+                            reset! *image-cache url
+                            do (swap! *text str "\"(image ready)")
+                              d! $ :: :states cursor
+                                -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    d! $ :: :states cursor
+                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                d! $ :: :states cursor
+                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |call-genai-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text d!) (hint-fn async)
@@ -221,9 +279,9 @@
                       -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
-        |call-imagin-msg! $ %{} :CodeEntry (:doc |)
+        |call-imagen-3-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-imagin-msg! (variant cursor state prompt-text d!) (hint-fn async)
+            defn call-imagen-3-msg! (variant cursor state prompt-text d!) (hint-fn async)
               if (nil? @*gen-ai-new)
                 reset! *gen-ai-new $ new GoogleGenAI
                   js-object $ :apiKey (get-gemini-key!)
@@ -233,47 +291,36 @@
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
+              clear-image-cache!
               d! $ :: :states cursor
                 -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ js-await (get-selected)
                   gen-ai $ let
                       ai @*gen-ai-new
-                    js/console.log ai
                     , ai
-                  content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
-                  sdk-result $ js-await
-                    .!generateContent (.-models gen-ai)
-                      js-object (:model "\"gemini-2.0-flash-exp-image-generation") (:contents content)
-                        :config $ js-object
+                  response $ js-await
+                    .!generateImages (.-models gen-ai)
+                      js-object (:model "\"imagen-3.0-generate-002") (:prompt prompt-text)
+                        :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
                           :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
                           :signal $ let
                               abort $ new js/AbortController
                             reset! *abort-control abort
                             .-signal abort
-                          :responseModalities $ js-array (.-TEXT Modality) (.-IMAGE Modality)
+                          ; :responseModalities $ js-array (.-TEXT Modality) (.-IMAGE Modality)
                   *text $ atom "\""
-                js-await $ -> sdk-result .-candidates .-0 .-content .-parts
-                  .!forEach $ fn (? chunk _a _b)
-                    if (some? chunk)
-                      if-let
-                        text $ .-text chunk
-                        do (swap! *text str text)
-                          d! $ :: :states cursor
-                            -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                        if-let
-                          image-data $ .-inlineData chunk
-                          let
-                              image-blob $ base64ToBlob (.-data image-data)
-                              url $ js/URL.createObjectURL image-blob
-                              target $ js/document.querySelector "\".show-image"
-                            -> target $ .!setAttribute "\"src" url
-                            ; js/URL.revokeObjectURL url
-                            do (swap! *text str "\"(image ready)")
-                              d! $ :: :states cursor
-                                -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                    d! $ :: :states cursor
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                if-let
+                  image-data $ -> response .-generatedImages .-0 .-image .-imageBytes
+                  let
+                      image-blob $ base64ToBlob image-data
+                      url $ js/URL.createObjectURL image-blob
+                      target $ js/document.querySelector "\".show-image"
+                    reset! *image-cache url
+                    -> target $ .!setAttribute "\"src" url
+                    do (swap! *text str "\"(image ready)")
+                      d! $ :: :states cursor
+                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |call-openrouter! $ %{} :CodeEntry (:doc |)
@@ -325,6 +372,10 @@
                       -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+        |clear-image-cache! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn clear-image-cache! () $ if-let (url @*image-cache)
+              do (js/URL.revokeObjectURL url) (reset! *image-cache nil)
         |comp-abort $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn comp-abort (t)
@@ -365,7 +416,8 @@
                     {} $ :class-name (str-spaced css/expand style-message-area)
                     div
                       {} $ :class-name (str-spaced style-message-list)
-                      if (= :imagin-3 model)
+                      if
+                        or (= :imagen-3 model) (= :flash-imagen model)
                         img $ {}
                           :class-name $ str-spaced style-image "\"show-image"
                       if (:loading? state)
@@ -528,7 +580,7 @@
               or (.!startsWith text "\"{") (.!startsWith text "\"[")
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :imagin-3 "\"Imagin 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-3.7-sonnet "\"Openrouter Claude 3.7 Sonnet") (:: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek/deepseek-chat-v3-0324:free") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-3.7-sonnet "\"Openrouter Claude 3.7 Sonnet") (:: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek/deepseek-chat-v3-0324:free") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
@@ -615,7 +667,8 @@
                     js-await $ call-genai-msg! model cursor state prompt-text d!
                     :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text d!)
                     :gemini-1.5-pro $ js-await (call-genai-msg! model cursor state prompt-text d!)
-                    :imagin-3 $ js-await (call-imagin-msg! model cursor state prompt-text d!)
+                    :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state prompt-text d!)
+                    :imagen-3 $ js-await (call-imagen-3-msg! model cursor state prompt-text d!)
                     :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text d!)
                     :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text d!)
                     :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text d!)
