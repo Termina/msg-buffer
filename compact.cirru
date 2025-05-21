@@ -420,6 +420,15 @@
                         or (= :imagen-3 model) (= :flash-imagen model)
                         img $ {}
                           :class-name $ str-spaced style-image "\"show-image"
+                      div ({})
+                        a $ {}
+                          :inner-text $ or (turn-str model) "\"-"
+                          :class-name $ str-spaced style-a-toggler css/font-fancy
+                          :style $ {}
+                            :opacity $ if (= model :anthropic) 1 0.3
+                          :on-click $ fn (e d!)
+                            ; d! $ :: :change-model
+                            .show model-plugin d!
                       if (:loading? state)
                         div ({})
                           memof1-call-by :abort-loading comp-abort $ str (turn-str model) "\" loading..."
@@ -438,17 +447,8 @@
                               {} $ :class-name css/row-parted
                               div
                                 {} $ :class-name (str-spaced css/row-middle css/gap8)
-                                if (:done? state)
-                                  a $ {}
-                                    :inner-text $ turn-str model
-                                    :class-name $ str-spaced style-a-toggler css/font-fancy
-                                    :style $ {}
-                                      :opacity $ if (= model :anthropic) 1 0.3
-                                    :on-click $ fn (e d!)
-                                      ; d! $ :: :change-model
-                                      .show model-plugin d!
-                                  div ({})
-                                    memof1-call-by :abort-streaming comp-abort $ str (turn-str model) "\" streaming..."
+                                if (:done? state) nil $ div ({})
+                                  memof1-call-by :abort-streaming comp-abort $ str (turn-str model) "\" streaming..."
                               if (:done? state)
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
