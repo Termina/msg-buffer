@@ -164,52 +164,6 @@
                                 d! $ :: :states cursor
                                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                             recur
-        |call-gemini-msg! $ %{} :CodeEntry (:doc "|switching to Google's generative-ai-js sdk")
-          :code $ quote
-            defn call-gemini-msg! (variant cursor state prompt-text d!) (hint-fn async)
-              if (nil? @*gen-ai)
-                reset! *gen-ai $ new GoogleGenerativeAI (get-gemini-key!) 
-              if-let
-                abort $ deref *abort-control
-                do (js/console.warn "\"Aborting prev") (.!abort abort)
-              d! $ :: :states cursor
-                -> state (assoc :answer nil) (assoc :loading? true)
-              let
-                  selected $ js-await (get-selected)
-                  gen-ai $ let
-                      ai @*gen-ai
-                    js/console.log ai
-                    , ai
-                  model-instance $ .!getGenerativeModel gen-ai
-                    js-object $ :model (pick-model variant)
-                    js-object (:baseUrl "\"https://sf.chenyong.life")
-                      :signal $ let
-                          abort $ new js/AbortController
-                        reset! *abort-control abort
-                        .-signal abort
-                  content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
-                  json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
-                  sdk-result $ js-await
-                    .!generateContentStream model-instance $ js-object
-                      :contents $ js-array
-                        js-object (:role "\"user")
-                          :parts $ js-array
-                            js-object $ :text content
-                      :generationConfig $ if json?
-                        js-object $ "\"responseMimeType" "\"application/json"
-                        , js/undefined
-                  *text $ atom "\""
-                js-await $ for-await-stream (.-stream sdk-result)
-                  fn (? chunk)
-                    if (some? chunk)
-                      do
-                        swap! *text str $ .!text chunk
-                        d! $ :: :states cursor
-                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                    d! $ :: :states cursor
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                d! $ :: :states cursor
-                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |call-genai-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text d!) (hint-fn async)
@@ -242,20 +196,16 @@
                               js-object $ :text content
                         :config $ js/Object.assign
                           js-object
-                            :thinkingConfig $ js-object
-                              :thinkingBudget $ if think? 2000 0
-                              :includeThoughts think?
+                            :thinkingConfig $ if think?
+                              js-object (:thinkingBudget 200) (:includeThoughts think?)
                             :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
                               :signal $ let
                                   abort $ new js/AbortController
                                 reset! *abort-control abort
                                 .-signal abort
-                            :abortSignal $ let
-                                abort $ new js/AbortController
-                              reset! *abort-control abort
-                              .-signal abort
                             :tools $ js-array
                               js-object $ :googleSearch (js-object)
+                              js-object $ :urlContext (js-object)
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
@@ -296,7 +246,7 @@
                     .!generateContent (.-models gen-ai)
                       js-object (:model "\"gemini-2.0-flash-exp-image-generation") (:contents content)
                         :config $ js-object
-                          :httpOptions $ js-object (:baseUrl "\"https://sf.chenyong.life")
+                          :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
                           :signal $ let
                               abort $ new js/AbortController
                             reset! *abort-control abort
@@ -578,14 +528,14 @@
               or (.!startsWith text "\"{") (.!startsWith text "\"[")
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :imagin-3 "\"Imagin 3") (:: :item :gemini-flash-thinking "|Gemini Flash thinking") (:: :item :gemini-thinking "|Gemini thinking") (:: :item :gemini-learnlm "|Gemini LearnLM") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-3.7-sonnet "\"Openrouter Claude 3.7 Sonnet") (:: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek/deepseek-chat-v3-0324:free") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :imagin-3 "\"Imagin 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-3.7-sonnet "\"Openrouter Claude 3.7 Sonnet") (:: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek/deepseek-chat-v3-0324:free") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-2.5-flash-preview-04-17" (:gemini-thinking "\"gemini-2.0-flash-thinking-exp-1219") (:gemini-pro "\"gemini-2.5-pro-preview-05-06") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite-preview-02-05") (:gemini-learnlm "\"learnlm-1.5-pro-experimental") (:gemini-flash-thinking "\"gemini-2.0-flash-thinking-exp-01-21") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-05-06") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
