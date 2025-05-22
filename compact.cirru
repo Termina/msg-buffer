@@ -257,13 +257,13 @@
                             :thinkingConfig $ if think?
                               js-object (:thinkingBudget 200) (:includeThoughts think?)
                             :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
-                              :signal $ let
-                                  abort $ new js/AbortController
-                                reset! *abort-control abort
-                                .-signal abort
                             :tools $ js-array
                               js-object $ :googleSearch (js-object)
                               js-object $ :urlContext (js-object)
+                            :abortSignal $ let
+                                abort $ new js/AbortController
+                              reset! *abort-control abort
+                              .-signal abort
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
@@ -415,11 +415,7 @@
                   div
                     {} $ :class-name (str-spaced css/expand style-message-area)
                     div
-                      {} $ :class-name (str-spaced style-message-list)
-                      if
-                        or (= :imagen-3 model) (= :flash-imagen model)
-                        img $ {}
-                          :class-name $ str-spaced style-image "\"show-image"
+                      {} $ :class-name (str-spaced css/column style-message-list)
                       div ({})
                         a $ {}
                           :inner-text $ or (turn-str model) "\"-"
@@ -429,9 +425,12 @@
                           :on-click $ fn (e d!)
                             ; d! $ :: :change-model
                             .show model-plugin d!
+                      if
+                        or (= :imagen-3 model) (= :flash-imagen model)
+                        img $ {}
+                          :class-name $ str-spaced style-image "\"show-image"
                       if (:loading? state)
-                        div ({})
-                          memof1-call-by :abort-loading comp-abort $ str (turn-str model) "\" loading..."
+                        div ({}) (memof1-call-by :abort-loading comp-abort "\"Loading...")
                         if
                           not $ blank? (:answer state)
                           div ({})
@@ -616,7 +615,7 @@
         |style-image $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-image $ {}
-              "\"&" $ {} (:max-width "\"100%") (:border-radius "\"6px")
+              "\"&" $ {} (:max-width "\"100%") (:align-self :flex-start) (:border-radius "\"6px")
                 :border $ str "\"1px solid " (hsl 0 0 90)
         |style-md-content $ %{} :CodeEntry (:doc |)
           :code $ quote
