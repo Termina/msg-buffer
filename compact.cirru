@@ -286,7 +286,7 @@
                   js-object $ :apiKey (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
-                .!setAttribute target "\"src" "\""
+                .!removeAttribute target "\"src"
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -307,7 +307,6 @@
                               abort $ new js/AbortController
                             reset! *abort-control abort
                             .-signal abort
-                          ; :responseModalities $ js-array (.-TEXT Modality) (.-IMAGE Modality)
                   *text $ atom "\""
                 if-let
                   image-data $ -> response .-generatedImages .-0 .-image .-imageBytes
@@ -415,15 +414,6 @@
                     {} $ :class-name (str-spaced css/expand style-message-area)
                     div
                       {} $ :class-name (str-spaced css/column style-message-list)
-                      div ({})
-                        a $ {}
-                          :inner-text $ or (turn-str model) "\"-"
-                          :class-name $ str-spaced style-a-toggler css/font-fancy
-                          :style $ {}
-                            :opacity $ if (= model :anthropic) 1 0.3
-                          :on-click $ fn (e d!)
-                            ; d! $ :: :change-model
-                            .show model-plugin d!
                       if
                         or (= :imagen-3 model) (= :flash-imagen model)
                         img $ {}
@@ -451,6 +441,15 @@
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
                                   comp-copy $ :answer state
+                      div ({})
+                        a $ {}
+                          :inner-text $ or (turn-str model) "\"-"
+                          :class-name $ str-spaced style-a-toggler css/font-fancy
+                          :style $ {}
+                            :opacity $ if (= model :anthropic) 1 0.3
+                          :on-click $ fn (e d!)
+                            ; d! $ :: :change-model
+                            .show model-plugin d!
                       =< nil 200
                   comp-message-box (>> states :message-box)
                     fn (text d!) (submit-message! cursor state text model d!)
