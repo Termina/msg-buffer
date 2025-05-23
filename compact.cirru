@@ -324,7 +324,7 @@
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |call-openrouter! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-openrouter! (cursor state prompt-text variant thinking? d!) (hint-fn async)
+            defn call-openrouter! (cursor state prompt-text variant thinking? d! *text) (hint-fn async)
               if (nil? @*openai)
                 reset! *openai $ new OpenAI
                   js-object (:baseURL "\"https://openrouter.ai/api/v1")
@@ -360,7 +360,6 @@
                             abort $ new js/AbortController
                           reset! *abort-control abort
                           .-signal abort
-                  *text $ atom "\""
                 js-await $ js-for-await sdk-result
                   fn (? chunk) (; js/console.log "\"[CHUNK]" chunk)
                     if (some? chunk)
@@ -674,11 +673,11 @@
                     :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
                     :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
-                    :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-sonnet-4" true d!)
-                    :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-opus-4" true d!)
-                    :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-3.7-sonnet:thinking" true d!)
-                    :openrouter/openai/gpt-4o $ js-await (call-openrouter! cursor state prompt-text "\"openai/gpt-4o" true d!)
-                    :openrouter/deepseek/deepseek-chat-v3-0324:free $ js-await (call-openrouter! cursor state prompt-text "\"deepseek/deepseek-chat-v3-0324:free" true d!)
+                    :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-sonnet-4" true d! *text)
+                    :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-opus-4" true d! *text)
+                    :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-3.7-sonnet:thinking" true d! *text)
+                    :openrouter/openai/gpt-4o $ js-await (call-openrouter! cursor state prompt-text "\"openai/gpt-4o" true d! *text)
+                    :openrouter/deepseek/deepseek-chat-v3-0324:free $ js-await (call-openrouter! cursor state prompt-text "\"deepseek/deepseek-chat-v3-0324:free" true d! *text)
                   fn (e)
                     d! cursor $ -> state
                       assoc :answer $ str @*text &newline &newline (str "\"Failed to load: " e)

@@ -2433,6 +2433,7 @@
                   |m $ %{} :Leaf (:at 1745685454534) (:by |rJG4IHzWf) (:text |variant)
                   |n $ %{} :Leaf (:at 1745685801126) (:by |rJG4IHzWf) (:text |thinking?)
                   |o $ %{} :Leaf (:at 1745685233559) (:by |rJG4IHzWf) (:text |d!)
+                  |q $ %{} :Leaf (:at 1748025578181) (:by |rJG4IHzWf) (:text |*text)
               |l $ %{} :Expr (:at 1745685233559) (:by |rJG4IHzWf)
                 :data $ {}
                   |T $ %{} :Leaf (:at 1745685233559) (:by |rJG4IHzWf) (:text |hint-fn)
@@ -2683,13 +2684,6 @@
                                                     :data $ {}
                                                       |T $ %{} :Leaf (:at 1745687616641) (:by |rJG4IHzWf) (:text |.-signal)
                                                       |b $ %{} :Leaf (:at 1745687616641) (:by |rJG4IHzWf) (:text |abort)
-                      |s $ %{} :Expr (:at 1745685233559) (:by |rJG4IHzWf)
-                        :data $ {}
-                          |T $ %{} :Leaf (:at 1745685233559) (:by |rJG4IHzWf) (:text |*text)
-                          |b $ %{} :Expr (:at 1745685233559) (:by |rJG4IHzWf)
-                            :data $ {}
-                              |T $ %{} :Leaf (:at 1745685233559) (:by |rJG4IHzWf) (:text |atom)
-                              |b $ %{} :Leaf (:at 1745685233559) (:by |rJG4IHzWf) (:text "|\"")
                   |h $ %{} :Expr (:at 1745685233559) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1745685233559) (:by |rJG4IHzWf) (:text |js-await)
@@ -5024,6 +5018,7 @@
                                       |q $ %{} :Leaf (:at 1747976519471) (:by |rJG4IHzWf) (:text "|\"anthropic/claude-sonnet-4")
                                       |s $ %{} :Leaf (:at 1745685140141) (:by |rJG4IHzWf) (:text |true)
                                       |t $ %{} :Leaf (:at 1745685140141) (:by |rJG4IHzWf) (:text |d!)
+                                      |u $ %{} :Leaf (:at 1748025566243) (:by |rJG4IHzWf) (:text |*text)
                           |oT $ %{} :Expr (:at 1745685102239) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1747976558180) (:by |rJG4IHzWf) (:text |:openrouter/anthropic/claude-opus-4)
@@ -5039,6 +5034,7 @@
                                       |q $ %{} :Leaf (:at 1747976565669) (:by |rJG4IHzWf) (:text "|\"anthropic/claude-opus-4")
                                       |s $ %{} :Leaf (:at 1745685140141) (:by |rJG4IHzWf) (:text |true)
                                       |t $ %{} :Leaf (:at 1745685140141) (:by |rJG4IHzWf) (:text |d!)
+                                      |u $ %{} :Leaf (:at 1748025567276) (:by |rJG4IHzWf) (:text |*text)
                           |p $ %{} :Expr (:at 1745685102239) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1745687404021) (:by |rJG4IHzWf) (:text |:openrouter/anthropic/claude-3.7-sonnet:thinking)
@@ -5054,6 +5050,7 @@
                                       |q $ %{} :Leaf (:at 1745687406250) (:by |rJG4IHzWf) (:text "|\"anthropic/claude-3.7-sonnet:thinking")
                                       |s $ %{} :Leaf (:at 1745685140141) (:by |rJG4IHzWf) (:text |true)
                                       |t $ %{} :Leaf (:at 1745685140141) (:by |rJG4IHzWf) (:text |d!)
+                                      |u $ %{} :Leaf (:at 1748025568936) (:by |rJG4IHzWf) (:text |*text)
                           |q $ %{} :Expr (:at 1745685166963) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1745685174460) (:by |rJG4IHzWf) (:text |:openrouter/openai/gpt-4o)
@@ -5069,6 +5066,7 @@
                                       |o $ %{} :Leaf (:at 1745685205788) (:by |rJG4IHzWf) (:text "|\"openai/gpt-4o")
                                       |q $ %{} :Leaf (:at 1745685193575) (:by |rJG4IHzWf) (:text |true)
                                       |s $ %{} :Leaf (:at 1745685193575) (:by |rJG4IHzWf) (:text |d!)
+                                      |t $ %{} :Leaf (:at 1748025573786) (:by |rJG4IHzWf) (:text |*text)
                           |s $ %{} :Expr (:at 1745685166963) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1745687737112) (:by |rJG4IHzWf) (:text |:openrouter/deepseek/deepseek-chat-v3-0324:free)
@@ -5084,6 +5082,7 @@
                                       |o $ %{} :Leaf (:at 1745687738969) (:by |rJG4IHzWf) (:text "|\"deepseek/deepseek-chat-v3-0324:free")
                                       |q $ %{} :Leaf (:at 1745685193575) (:by |rJG4IHzWf) (:text |true)
                                       |s $ %{} :Leaf (:at 1745685193575) (:by |rJG4IHzWf) (:text |d!)
+                                      |t $ %{} :Leaf (:at 1748025574626) (:by |rJG4IHzWf) (:text |*text)
                       |b $ %{} :Expr (:at 1730141201947) (:by |rJG4IHzWf)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1730141203451) (:by |rJG4IHzWf) (:text |fn)
