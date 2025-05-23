@@ -257,7 +257,8 @@
                           js-object
                             :thinkingConfig $ if think?
                               js-object (:thinkingBudget 200) (:includeThoughts think?)
-                            :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
+                            :httpOptions $ js-object
+                              :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
                             :tools $ js-array
                               js-object $ :googleSearch (js-object)
                               js-object $ :urlContext (js-object)

@@ -1921,7 +1921,11 @@
                                                           |b $ %{} :Expr (:at 1744997158804) (:by |rJG4IHzWf)
                                                             :data $ {}
                                                               |T $ %{} :Leaf (:at 1744997158804) (:by |rJG4IHzWf) (:text |:baseUrl)
-                                                              |b $ %{} :Leaf (:at 1747726903552) (:by |rJG4IHzWf) (:text "|\"https://ja.chenyong.life")
+                                                              |b $ %{} :Expr (:at 1748026642892) (:by |rJG4IHzWf)
+                                                                :data $ {}
+                                                                  |D $ %{} :Leaf (:at 1748026644971) (:by |rJG4IHzWf) (:text |get-env)
+                                                                  |L $ %{} :Leaf (:at 1748026648309) (:by |rJG4IHzWf) (:text "|\"gemini-host")
+                                                                  |T $ %{} :Leaf (:at 1747726903552) (:by |rJG4IHzWf) (:text "|\"https://ja.chenyong.life")
                                                   |o $ %{} :Expr (:at 1746251349330) (:by |rJG4IHzWf)
                                                     :data $ {}
                                                       |T $ %{} :Leaf (:at 1746251353156) (:by |rJG4IHzWf) (:text |:tools)
