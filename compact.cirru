@@ -231,8 +231,9 @@
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
-              d! $ :: :states cursor
-                -> state (assoc :answer nil) (assoc :loading? true)
+              js/setTimeout $ fn ()
+                d! $ :: :states cursor
+                  -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ if (.includes? prompt-text "\"{{selected}}")
                     js-await $ get-selected
@@ -333,8 +334,9 @@
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
-              d! $ :: :states cursor
-                -> state (assoc :answer nil) (assoc :loading? true)
+              js/setTimeout $ fn ()
+                d! $ :: :states cursor
+                  -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ js-await (get-selected)
                   openai $ let
@@ -577,7 +579,7 @@
               or (.!startsWith text "\"{") (.!startsWith text "\"[")
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash") (:: :item :gemini-flash-lite "|Gemini Flash Lite") (:: :item :gemini-pro "|Gemini Pro") (:: :item :gemini-pro-1.5 "|Gemini Pro 1.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-3.7-sonnet "\"Openrouter Claude 3.7 Sonnet") (:: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek/deepseek-chat-v3-0324:free") (:: :item :claude "\"Claude 3.5") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :claude-3.7-thinking "\"Claude 3.7 Thinking") (:: :item :deepinfra "\"Deepinfra")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 2.5") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2") (:: :item :gemini-pro "|Gemini Pro 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4 "\"Openrouter Claude Sonnet 4") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek-chat-v3-0324:free") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :deepinfra "\"Deepinfra") (; :: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking")
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
@@ -663,7 +665,6 @@
                   case-default model
                     js-await $ call-genai-msg! model cursor state prompt-text d! *text
                     :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
-                    :gemini-1.5-pro $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
                     :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state prompt-text d!)
                     :imagen-3 $ js-await (call-imagen-3-msg! model cursor state prompt-text d!)
                     :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
@@ -671,11 +672,10 @@
                     :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
                     :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
                     :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
-                    :claude $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-5-sonnet-20241022" false d!)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
-                    :claude-3.7-thinking $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" true d!)
                     :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
-                    :openrouter/anthropic/claude-3.7-sonnet $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-3.7-sonnet" true d!)
+                    :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-sonnet-4" true d!)
+                    :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-opus-4" true d!)
                     :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-3.7-sonnet:thinking" true d!)
                     :openrouter/openai/gpt-4o $ js-await (call-openrouter! cursor state prompt-text "\"openai/gpt-4o" true d!)
                     :openrouter/deepseek/deepseek-chat-v3-0324:free $ js-await (call-openrouter! cursor state prompt-text "\"deepseek/deepseek-chat-v3-0324:free" true d!)
