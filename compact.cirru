@@ -8,8 +8,6 @@
       :defs $ {}
         |*abort-control $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *abort-control nil)
-        |*gen-ai $ %{} :CodeEntry (:doc |)
-          :code $ quote (defatom *gen-ai nil)
         |*gen-ai-new $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *gen-ai-new nil)
         |*image-cache $ %{} :CodeEntry (:doc |)
@@ -245,6 +243,7 @@
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
                   think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}")
                   search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
+                  has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
                       js-object
@@ -259,9 +258,13 @@
                               js-object (:thinkingBudget 200) (:includeThoughts think?)
                             :httpOptions $ js-object
                               :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
-                            :tools $ js-array
-                              js-object $ :googleSearch (js-object)
-                              js-object $ :urlContext (js-object)
+                            :tools $ ->
+                              js-array
+                                if search? $ js-object
+                                  :googleSearch $ js-object
+                                if has-url? $ js-object
+                                  :urlContext $ js-object
+                              .!filter $ fn (x & _a) x
                             :abortSignal $ let
                                 abort $ new js/AbortController
                               reset! *abort-control abort
