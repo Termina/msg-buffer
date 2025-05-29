@@ -1814,6 +1814,11 @@
                                   |T $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |.!includes)
                                   |b $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |prompt-text)
                                   |h $ %{} :Leaf (:at 1744996916963) (:by |rJG4IHzWf) (:text "|\"{{THINK}}")
+                              |l $ %{} :Expr (:at 1744996909128) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |.!includes)
+                                  |b $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |prompt-text)
+                                  |h $ %{} :Leaf (:at 1748542999652) (:by |rJG4IHzWf) (:text "|\"???")
                       |pT $ %{} :Expr (:at 1744996903853) (:by |rJG4IHzWf)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1746251262598) (:by |rJG4IHzWf) (:text |search?)
@@ -2056,7 +2061,7 @@
                       |T $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |js-await)
                       |b $ %{} :Expr (:at 1744996505254) (:by |rJG4IHzWf)
                         :data $ {}
-                          |T $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |for-await-stream)
+                          |T $ %{} :Leaf (:at 1748542953279) (:by |rJG4IHzWf) (:text |js-for-await)
                           |b $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |sdk-result)
                           |h $ %{} :Expr (:at 1744996505254) (:by |rJG4IHzWf)
                             :data $ {}
@@ -3963,23 +3968,6 @@
                     :data $ {}
                       |T $ %{} :Leaf (:at 1723138346137) (:by |rJG4IHzWf) (:text |.-0)
                       |b $ %{} :Leaf (:at 1723138348088) (:by |rJG4IHzWf) (:text |lines)
-        |for-await-stream $ %{} :CodeEntry (:doc |)
-          :code $ %{} :Expr (:at 1739123475552) (:by |rJG4IHzWf)
-            :data $ {}
-              |T $ %{} :Leaf (:at 1739123475552) (:by |rJG4IHzWf) (:text |defn)
-              |b $ %{} :Leaf (:at 1739123475552) (:by |rJG4IHzWf) (:text |for-await-stream)
-              |h $ %{} :Expr (:at 1739123475552) (:by |rJG4IHzWf)
-                :data $ {}
-                  |H $ %{} :Leaf (:at 1739123479211) (:by |rJG4IHzWf) (:text |stream)
-                  |S $ %{} :Leaf (:at 1739123481934) (:by |rJG4IHzWf) (:text |f)
-              |j $ %{} :Expr (:at 1739123684182) (:by |rJG4IHzWf)
-                :data $ {}
-                  |T $ %{} :Leaf (:at 1739123686792) (:by |rJG4IHzWf) (:text |hint-fn)
-                  |b $ %{} :Leaf (:at 1739123689149) (:by |rJG4IHzWf) (:text |async)
-              |l $ %{} :Expr (:at 1739123482633) (:by |rJG4IHzWf)
-                :data $ {}
-                  |T $ %{} :Leaf (:at 1739123485827) (:by |rJG4IHzWf) (:text |&raw-code)
-                  |b $ %{} :Leaf (:at 1739123553981) (:by |rJG4IHzWf) (:text "|\"for await (let item of stream) {\n  f(item)\n}\n\nreturn undefined")
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1728104563284) (:by |rJG4IHzWf)
             :data $ {}

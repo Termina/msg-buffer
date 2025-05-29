@@ -241,7 +241,7 @@
                     , ai
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
-                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}")
+                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???")
                   search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   sdk-result $ js-await
@@ -277,7 +277,7 @@
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
-                js-await $ for-await-stream sdk-result
+                js-await $ js-for-await sdk-result
                   fn (? chunk)
                     if (some? chunk)
                       do
@@ -529,9 +529,6 @@
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
-        |for-await-stream $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defn for-await-stream (stream f) (hint-fn async) (&raw-code "\"for await (let item of stream) {\n  f(item)\n}\n\nreturn undefined")
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
