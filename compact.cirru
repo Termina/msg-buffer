@@ -255,7 +255,8 @@
                         :config $ js/Object.assign
                           js-object
                             :thinkingConfig $ if think?
-                              js-object (:thinkingBudget 200) (:includeThoughts think?)
+                              js-object (:thinkingBudget 1000) (:includeThoughts think?)
+                              js-object (:thinkingBudget 0) (:includeThoughts false)
                             :httpOptions $ js-object
                               :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
                             :tools $ let
@@ -280,7 +281,7 @@
                   fn (? chunk)
                     if (some? chunk)
                       do
-                        swap! *text str $ .-text chunk
+                        swap! *text str $ either (.-text chunk) js/chunk.candidates[0].content.parts[0].text
                         d! $ :: :states cursor
                           -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                     d! $ :: :states cursor
