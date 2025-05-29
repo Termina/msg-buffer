@@ -258,13 +258,17 @@
                               js-object (:thinkingBudget 200) (:includeThoughts think?)
                             :httpOptions $ js-object
                               :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
-                            :tools $ ->
-                              js-array
-                                if search? $ js-object
-                                  :googleSearch $ js-object
-                                if has-url? $ js-object
-                                  :urlContext $ js-object
-                              .!filter $ fn (x & _a) x
+                            :tools $ let
+                                t $ ->
+                                  js-array
+                                    if search? $ js-object
+                                      :googleSearch $ js-object
+                                    if has-url? $ js-object
+                                      :urlContext $ js-object
+                                  .!filter $ fn (x & _a) x
+                              if
+                                = 0 $ .-length t
+                                , js/undefined t
                             :abortSignal $ let
                                 abort $ new js/AbortController
                               reset! *abort-control abort
@@ -440,8 +444,7 @@
                               {} $ :class-name css/row-parted
                               div
                                 {} $ :class-name (str-spaced css/row-middle css/gap8)
-                                if (:done? state) nil $ div ({})
-                                  memof1-call-by :abort-streaming comp-abort $ str (turn-str model) "\" streaming..."
+                                if (:done? state) nil $ div ({}) (memof1-call-by :abort-streaming comp-abort "\"Streaming...")
                               if (:done? state)
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
