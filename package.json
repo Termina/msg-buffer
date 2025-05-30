@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "bottom-tip": "^0.1.5",
-    "vite": "^6.3.5"
+    "vite": "npm:rolldown-vite@latest"
   },
   "scripts": {
     "build": "yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
