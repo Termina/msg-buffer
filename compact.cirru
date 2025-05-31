@@ -281,7 +281,10 @@
                   fn (? chunk)
                     if (some? chunk)
                       do
-                        swap! *text str $ either (.-text chunk) js/chunk.candidates[0].content.parts[0].text
+                        swap! *text str $ let
+                            t $ either (.-text chunk) js/chunk.candidates[0].content?.parts?.[0]?.text
+                          if (nil? t) (js/console.warn "\"empty text in:" chunk)
+                          , t
                         d! $ :: :states cursor
                           -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                     d! $ :: :states cursor
