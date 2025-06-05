@@ -239,15 +239,15 @@
                       ai @*gen-ai-new
                     ; js/console.log ai
                     , ai
+                  model $ pick-model variant
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
-                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???")
+                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???") (.!includes model "\"pro")
                   search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
-                      js-object
-                        :model $ pick-model variant
+                      js-object (:model model)
                         :contents $ js-array
                           js-object (:role "\"user")
                             :parts $ js-array
@@ -593,7 +593,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-05-06") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-06-05") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
