@@ -239,15 +239,16 @@
                       ai @*gen-ai-new
                     ; js/console.log ai
                     , ai
+                  model $ pick-model variant
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
-                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}")
+                  pro? $ .!includes model "\"pro"
+                  think? $ or pro? (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???")
                   search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
-                      js-object
-                        :model $ pick-model variant
+                      js-object (:model model)
                         :contents $ js-array
                           js-object (:role "\"user")
                             :parts $ js-array
@@ -255,7 +256,10 @@
                         :config $ js/Object.assign
                           js-object
                             :thinkingConfig $ if think?
-                              js-object (:thinkingBudget 200) (:includeThoughts think?)
+                              js-object
+                                :thinkingBudget $ if pro? 10000 1000
+                                :includeThoughts think?
+                              js-object (:thinkingBudget 0) (:includeThoughts false)
                             :httpOptions $ js-object
                               :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
                             :tools $ let
@@ -276,11 +280,14 @@
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
-                js-await $ for-await-stream sdk-result
+                js-await $ js-for-await sdk-result
                   fn (? chunk)
                     if (some? chunk)
                       do
-                        swap! *text str $ .-text chunk
+                        swap! *text str $ let
+                            t $ either (.-text chunk) js/chunk.candidates[0].content?.parts?.[0]?.text
+                          if (nil? t) (js/console.warn "\"empty text in:" chunk)
+                          , t
                         d! $ :: :states cursor
                           -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                     d! $ :: :states cursor
@@ -528,9 +535,6 @@
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
-        |for-await-stream $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defn for-await-stream (stream f) (hint-fn async) (&raw-code "\"for await (let item of stream) {\n  f(item)\n}\n\nreturn undefined")
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
@@ -592,7 +596,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-05-06") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-06-05") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
