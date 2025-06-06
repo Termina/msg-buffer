@@ -1805,12 +1805,21 @@
                                   |T $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |.!includes)
                                   |b $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |prompt-text)
                                   |h $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text "|\"{{JSON}}")
+                      |oT $ %{} :Expr (:at 1749214913624) (:by |rJG4IHzWf)
+                        :data $ {}
+                          |T $ %{} :Leaf (:at 1749214916044) (:by |rJG4IHzWf) (:text |pro?)
+                          |b $ %{} :Expr (:at 1749214919071) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |T $ %{} :Leaf (:at 1749214919071) (:by |rJG4IHzWf) (:text |.!includes)
+                              |b $ %{} :Leaf (:at 1749214919071) (:by |rJG4IHzWf) (:text |model)
+                              |h $ %{} :Leaf (:at 1749214919071) (:by |rJG4IHzWf) (:text "|\"pro")
                       |p $ %{} :Expr (:at 1744996903853) (:by |rJG4IHzWf)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1744996906007) (:by |rJG4IHzWf) (:text |think?)
                           |b $ %{} :Expr (:at 1744996909128) (:by |rJG4IHzWf)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |or)
+                              |X $ %{} :Leaf (:at 1749214923512) (:by |rJG4IHzWf) (:text |pro?)
                               |b $ %{} :Expr (:at 1744996909128) (:by |rJG4IHzWf)
                                 :data $ {}
                                   |T $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |.!includes)
@@ -1826,11 +1835,6 @@
                                   |T $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |.!includes)
                                   |b $ %{} :Leaf (:at 1744996909128) (:by |rJG4IHzWf) (:text |prompt-text)
                                   |h $ %{} :Leaf (:at 1748542999652) (:by |rJG4IHzWf) (:text "|\"???")
-                              |o $ %{} :Expr (:at 1749146426412) (:by |rJG4IHzWf)
-                                :data $ {}
-                                  |T $ %{} :Leaf (:at 1749146429586) (:by |rJG4IHzWf) (:text |.!includes)
-                                  |b $ %{} :Leaf (:at 1749146432153) (:by |rJG4IHzWf) (:text |model)
-                                  |h $ %{} :Leaf (:at 1749146434355) (:by |rJG4IHzWf) (:text "|\"pro")
                       |pT $ %{} :Expr (:at 1744996903853) (:by |rJG4IHzWf)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1746251262598) (:by |rJG4IHzWf) (:text |search?)
@@ -1931,7 +1935,12 @@
                                                               |b $ %{} :Expr (:at 1744997012706) (:by |rJG4IHzWf)
                                                                 :data $ {}
                                                                   |T $ %{} :Leaf (:at 1744997025055) (:by |rJG4IHzWf) (:text |:thinkingBudget)
-                                                                  |b $ %{} :Leaf (:at 1748538638845) (:by |rJG4IHzWf) (:text |1000)
+                                                                  |b $ %{} :Expr (:at 1749214931417) (:by |rJG4IHzWf)
+                                                                    :data $ {}
+                                                                      |D $ %{} :Leaf (:at 1749214932109) (:by |rJG4IHzWf) (:text |if)
+                                                                      |L $ %{} :Leaf (:at 1749214934176) (:by |rJG4IHzWf) (:text |pro?)
+                                                                      |P $ %{} :Leaf (:at 1749214935230) (:by |rJG4IHzWf) (:text |10000)
+                                                                      |T $ %{} :Leaf (:at 1749214930647) (:by |rJG4IHzWf) (:text |1000)
                                                               |h $ %{} :Expr (:at 1744997028120) (:by |rJG4IHzWf)
                                                                 :data $ {}
                                                                   |T $ %{} :Leaf (:at 1744997034803) (:by |rJG4IHzWf) (:text |:includeThoughts)

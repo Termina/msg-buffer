@@ -242,7 +242,8 @@
                   model $ pick-model variant
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
-                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???") (.!includes model "\"pro")
+                  pro? $ .!includes model "\"pro"
+                  think? $ or pro? (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???")
                   search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   sdk-result $ js-await
@@ -255,7 +256,9 @@
                         :config $ js/Object.assign
                           js-object
                             :thinkingConfig $ if think?
-                              js-object (:thinkingBudget 1000) (:includeThoughts think?)
+                              js-object
+                                :thinkingBudget $ if pro? 10000 1000
+                                :includeThoughts think?
                               js-object (:thinkingBudget 0) (:includeThoughts false)
                             :httpOptions $ js-object
                               :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
