@@ -4330,6 +4330,12 @@
                       |b $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |:item)
                       |h $ %{} :Leaf (:at 1748166638641) (:by |rJG4IHzWf) (:text |:openrouter/google/gemini-2.5-pro-preview)
                       |l $ %{} :Leaf (:at 1748166654166) (:by |rJG4IHzWf) (:text "|\"Openrouter Google Gemini 2.5 pro preview")
+                  |xT $ %{} :Expr (:at 1746250322424) (:by |rJG4IHzWf)
+                    :data $ {}
+                      |T $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |::)
+                      |b $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |:item)
+                      |h $ %{} :Leaf (:at 1750310998437) (:by |rJG4IHzWf) (:text |:openrouter/google/gemini-2.5-flash-preview-05-20)
+                      |l $ %{} :Leaf (:at 1750310878642) (:by |rJG4IHzWf) (:text "|\"Openrouter Google Gemini 2.5 flash preview")
                   |y $ %{} :Expr (:at 1746250322424) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |::)
@@ -5163,6 +5169,22 @@
                                       |h $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |state)
                                       |l $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |prompt-text)
                                       |o $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text "|\"google/gemini-2.5-pro-preview")
+                                      |q $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |true)
+                                      |s $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |d!)
+                                      |t $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |*text)
+                          |pj $ %{} :Expr (:at 1748166676858) (:by |rJG4IHzWf)
+                            :data $ {}
+                              |T $ %{} :Leaf (:at 1750310922655) (:by |rJG4IHzWf) (:text |:openrouter/google/gemini-2.5-flash-preview-05-20)
+                              |b $ %{} :Expr (:at 1748166676858) (:by |rJG4IHzWf)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |js-await)
+                                  |b $ %{} :Expr (:at 1748166676858) (:by |rJG4IHzWf)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |call-openrouter!)
+                                      |b $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |cursor)
+                                      |h $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |state)
+                                      |l $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |prompt-text)
+                                      |o $ %{} :Leaf (:at 1750310927031) (:by |rJG4IHzWf) (:text "|\"google/gemini-2.5-flash-preview-05-20")
                                       |q $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |true)
                                       |s $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |d!)
                                       |t $ %{} :Leaf (:at 1748166676858) (:by |rJG4IHzWf) (:text |*text)
