@@ -1939,8 +1939,8 @@
                                                                     :data $ {}
                                                                       |D $ %{} :Leaf (:at 1749214932109) (:by |rJG4IHzWf) (:text |if)
                                                                       |L $ %{} :Leaf (:at 1749214934176) (:by |rJG4IHzWf) (:text |pro?)
-                                                                      |P $ %{} :Leaf (:at 1749214935230) (:by |rJG4IHzWf) (:text |10000)
-                                                                      |T $ %{} :Leaf (:at 1749214930647) (:by |rJG4IHzWf) (:text |1000)
+                                                                      |P $ %{} :Leaf (:at 1750480722797) (:by |rJG4IHzWf) (:text |3200)
+                                                                      |T $ %{} :Leaf (:at 1750480717671) (:by |rJG4IHzWf) (:text |800)
                                                               |h $ %{} :Expr (:at 1744997028120) (:by |rJG4IHzWf)
                                                                 :data $ {}
                                                                   |T $ %{} :Leaf (:at 1744997034803) (:by |rJG4IHzWf) (:text |:includeThoughts)
