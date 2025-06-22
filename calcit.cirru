@@ -1935,12 +1935,16 @@
                                                               |b $ %{} :Expr (:at 1744997012706) (:by |rJG4IHzWf)
                                                                 :data $ {}
                                                                   |T $ %{} :Leaf (:at 1744997025055) (:by |rJG4IHzWf) (:text |:thinkingBudget)
-                                                                  |b $ %{} :Expr (:at 1749214931417) (:by |rJG4IHzWf)
+                                                                  |b $ %{} :Expr (:at 1750528524912) (:by |rJG4IHzWf)
                                                                     :data $ {}
-                                                                      |D $ %{} :Leaf (:at 1749214932109) (:by |rJG4IHzWf) (:text |if)
-                                                                      |L $ %{} :Leaf (:at 1749214934176) (:by |rJG4IHzWf) (:text |pro?)
-                                                                      |P $ %{} :Leaf (:at 1750480722797) (:by |rJG4IHzWf) (:text |3200)
-                                                                      |T $ %{} :Leaf (:at 1750480717671) (:by |rJG4IHzWf) (:text |800)
+                                                                      |T $ %{} :Leaf (:at 1750528526996) (:by |rJG4IHzWf) (:text |get-env)
+                                                                      |b $ %{} :Leaf (:at 1750528532080) (:by |rJG4IHzWf) (:text "|\"think-budget")
+                                                                      |h $ %{} :Expr (:at 1750528534947) (:by |rJG4IHzWf)
+                                                                        :data $ {}
+                                                                          |T $ %{} :Leaf (:at 1750528534947) (:by |rJG4IHzWf) (:text |if)
+                                                                          |b $ %{} :Leaf (:at 1750528534947) (:by |rJG4IHzWf) (:text |pro?)
+                                                                          |h $ %{} :Leaf (:at 1750528534947) (:by |rJG4IHzWf) (:text |3200)
+                                                                          |l $ %{} :Leaf (:at 1750528534947) (:by |rJG4IHzWf) (:text |800)
                                                               |h $ %{} :Expr (:at 1744997028120) (:by |rJG4IHzWf)
                                                                 :data $ {}
                                                                   |T $ %{} :Leaf (:at 1744997034803) (:by |rJG4IHzWf) (:text |:includeThoughts)
