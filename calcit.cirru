@@ -2122,7 +2122,7 @@
                                                             :data $ {}
                                                               |T $ %{} :Leaf (:at 1748538835014) (:by |rJG4IHzWf) (:text |.-text)
                                                               |b $ %{} :Leaf (:at 1748538835681) (:by |rJG4IHzWf) (:text |chunk)
-                                                          |h $ %{} :Leaf (:at 1748709491239) (:by |rJG4IHzWf) (:text |js/chunk.candidates[0].content?.parts?.[0]?.text)
+                                                          |h $ %{} :Leaf (:at 1750612851485) (:by |rJG4IHzWf) (:text |js/chunk.candidates?.[0]?.content?.parts?.[0]?.text)
                                               |X $ %{} :Expr (:at 1748709548606) (:by |rJG4IHzWf)
                                                 :data $ {}
                                                   |T $ %{} :Leaf (:at 1748709548178) (:by |rJG4IHzWf) (:text |if)
@@ -2135,7 +2135,17 @@
                                                       |T $ %{} :Leaf (:at 1748709554462) (:by |rJG4IHzWf) (:text |js/console.warn)
                                                       |b $ %{} :Leaf (:at 1748709563563) (:by |rJG4IHzWf) (:text "|\"empty text in:")
                                                       |h $ %{} :Leaf (:at 1748709565201) (:by |rJG4IHzWf) (:text |chunk)
-                                              |b $ %{} :Leaf (:at 1748709546954) (:by |rJG4IHzWf) (:text |t)
+                                              |b $ %{} :Expr (:at 1750612893053) (:by |rJG4IHzWf)
+                                                :data $ {}
+                                                  |D $ %{} :Leaf (:at 1750612893946) (:by |rJG4IHzWf) (:text |or)
+                                                  |T $ %{} :Leaf (:at 1748709546954) (:by |rJG4IHzWf) (:text |t)
+                                                  |X $ %{} :Expr (:at 1750612914330) (:by |rJG4IHzWf)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1750612915159) (:by |rJG4IHzWf) (:text |->)
+                                                      |b $ %{} :Leaf (:at 1750612918018) (:by |rJG4IHzWf) (:text |chunk)
+                                                      |h $ %{} :Leaf (:at 1750612937772) (:by |rJG4IHzWf) (:text |.?-promptFeedback)
+                                                      |l $ %{} :Leaf (:at 1750612936266) (:by |rJG4IHzWf) (:text |.?-blockReason)
+                                                  |b $ %{} :Leaf (:at 1750612956571) (:by |rJG4IHzWf) (:text "|\"__BLANK__")
                                       |h $ %{} :Expr (:at 1744996505254) (:by |rJG4IHzWf)
                                         :data $ {}
                                           |T $ %{} :Leaf (:at 1744996505254) (:by |rJG4IHzWf) (:text |d!)
