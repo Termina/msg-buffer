@@ -230,8 +230,8 @@
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
               js/setTimeout $ fn ()
-                d! $ :: :states cursor
-                  -> state (assoc :answer nil) (assoc :loading? true)
+                d! $ :: :states-merge cursor state
+                  {} (:answer nil) (:loading? true)
               let
                   selected $ if (.includes? prompt-text "\"{{selected}}")
                     js-await $ get-selected
@@ -288,12 +288,12 @@
                             t $ either (.-text chunk) js/chunk.candidates?.[0]?.content?.parts?.[0]?.text
                           if (nil? t) (js/console.warn "\"empty text in:" chunk)
                           or t (-> chunk .?-promptFeedback .?-blockReason) "\"__BLANK__"
-                        d! $ :: :states cursor
-                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                    d! $ :: :states cursor
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                d! $ :: :states cursor
-                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                        d! $ :: :states-merge cursor state
+                          {} (:answer @*text) (:loading? false) (:done? false)
+                    d! $ :: :states-merge cursor state
+                      {} (:answer @*text) (:loading? false) (:done? false)
+                d! $ :: :states-merge cursor state
+                  {} (:answer @*text) (:loading? false) (:done? true)
         |call-imagen-3-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-imagen-3-msg! (variant cursor state prompt-text d!) (hint-fn async)
@@ -350,8 +350,8 @@
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
               js/setTimeout $ fn ()
-                d! $ :: :states cursor
-                  -> state (assoc :answer nil) (assoc :loading? true)
+                d! $ :: :states-merge cursor state
+                  {} (:answer nil) (:loading? true)
               let
                   selected $ js-await (get-selected)
                   openai $ let
@@ -380,12 +380,12 @@
                     if (some? chunk)
                       do
                         swap! *text str $ -> chunk .-choices .-0 .-delta .-content (or "\"")
-                        d! $ :: :states cursor
-                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                    d! $ :: :states cursor
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                d! $ :: :states cursor
-                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                        d! $ :: :states-merge cursor state
+                          {} (:answer @*text) (:loading? false) (:done? false)
+                    d! $ :: :states-merge cursor state
+                      {} (:answer @*text) (:loading? false) (:done? false)
+                d! $ :: :states-merge cursor state
+                  {} (:answer @*text) (:loading? false) (:done? true)
         |clear-image-cache! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn clear-image-cache! () $ if-let (url @*image-cache)
@@ -823,6 +823,7 @@
               tag-match op
                   :states cursor s
                   update-states store cursor s
+                (:states-merge cursor s changes) (update-states-merge store cursor s changes)
                 (:hydrate-storage data) data
                 (:change-model)
                   if
@@ -833,4 +834,4 @@
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
-            respo.cursor :refer $ update-states
+            respo.cursor :refer $ update-states update-states-merge
