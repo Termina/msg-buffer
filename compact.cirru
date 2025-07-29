@@ -230,8 +230,8 @@
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
               js/setTimeout $ fn ()
-                d! $ :: :states cursor
-                  -> state (assoc :answer nil) (assoc :loading? true)
+                d! $ :: :states-merge cursor state
+                  {} (:answer nil) (:loading? true)
               let
                   selected $ if (.includes? prompt-text "\"{{selected}}")
                     js-await $ get-selected
@@ -239,15 +239,16 @@
                       ai @*gen-ai-new
                     ; js/console.log ai
                     , ai
+                  model $ pick-model variant
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
-                  think? $ or (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}")
+                  pro? $ .!includes model "\"pro"
+                  think? $ or pro? (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???")
                   search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
-                      js-object
-                        :model $ pick-model variant
+                      js-object (:model model)
                         :contents $ js-array
                           js-object (:role "\"user")
                             :parts $ js-array
@@ -255,7 +256,10 @@
                         :config $ js/Object.assign
                           js-object
                             :thinkingConfig $ if think?
-                              js-object (:thinkingBudget 200) (:includeThoughts think?)
+                              js-object
+                                :thinkingBudget $ get-env "\"think-budget" (if pro? 3200 800)
+                                :includeThoughts think?
+                              js-object (:thinkingBudget 0) (:includeThoughts false)
                             :httpOptions $ js-object
                               :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
                             :tools $ let
@@ -276,17 +280,20 @@
                           if json?
                             js-object $ "\"responseMimeType" "\"application/json"
                             , js/undefined
-                js-await $ for-await-stream sdk-result
+                js-await $ js-for-await sdk-result
                   fn (? chunk)
                     if (some? chunk)
                       do
-                        swap! *text str $ .-text chunk
-                        d! $ :: :states cursor
-                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                    d! $ :: :states cursor
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                d! $ :: :states cursor
-                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                        swap! *text str $ let
+                            t $ either (.-text chunk) js/chunk.candidates?.[0]?.content?.parts?.[0]?.text
+                          if (nil? t) (js/console.warn "\"empty text in:" chunk)
+                          or t (-> chunk .?-promptFeedback .?-blockReason) "\"__BLANK__"
+                        d! $ :: :states-merge cursor state
+                          {} (:answer @*text) (:loading? false) (:done? false)
+                    d! $ :: :states-merge cursor state
+                      {} (:answer @*text) (:loading? false) (:done? false)
+                d! $ :: :states-merge cursor state
+                  {} (:answer @*text) (:loading? false) (:done? true)
         |call-imagen-3-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-imagen-3-msg! (variant cursor state prompt-text d!) (hint-fn async)
@@ -343,8 +350,8 @@
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
               js/setTimeout $ fn ()
-                d! $ :: :states cursor
-                  -> state (assoc :answer nil) (assoc :loading? true)
+                d! $ :: :states-merge cursor state
+                  {} (:answer nil) (:loading? true)
               let
                   selected $ js-await (get-selected)
                   openai $ let
@@ -373,12 +380,12 @@
                     if (some? chunk)
                       do
                         swap! *text str $ -> chunk .-choices .-0 .-delta .-content (or "\"")
-                        d! $ :: :states cursor
-                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                    d! $ :: :states cursor
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                d! $ :: :states cursor
-                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+                        d! $ :: :states-merge cursor state
+                          {} (:answer @*text) (:loading? false) (:done? false)
+                    d! $ :: :states-merge cursor state
+                      {} (:answer @*text) (:loading? false) (:done? false)
+                d! $ :: :states-merge cursor state
+                  {} (:answer @*text) (:loading? false) (:done? true)
         |clear-image-cache! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn clear-image-cache! () $ if-let (url @*image-cache)
@@ -528,9 +535,6 @@
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
-        |for-await-stream $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defn for-await-stream (stream f) (hint-fn async) (&raw-code "\"for await (let item of stream) {\n  f(item)\n}\n\nreturn undefined")
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
@@ -585,14 +589,14 @@
               or (.!startsWith text "\"{") (.!startsWith text "\"[")
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 2.5") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2") (:: :item :gemini-pro "|Gemini Pro 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4 "\"Openrouter Claude Sonnet 4") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek-chat-v3-0324:free") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :deepinfra "\"Deepinfra") (; :: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 2.5") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2") (:: :item :gemini-pro "|Gemini Pro 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4 "\"Openrouter Claude Sonnet 4") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek-chat-v3-0324:free") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :deepinfra "\"Deepinfra") (; :: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking")
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-05-06") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-06-05") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -684,6 +688,7 @@
                     :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-opus-4" true d! *text)
                     :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-3.7-sonnet:thinking" true d! *text)
                     :openrouter/google/gemini-2.5-pro-preview $ js-await (call-openrouter! cursor state prompt-text "\"google/gemini-2.5-pro-preview" true d! *text)
+                    :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await (call-openrouter! cursor state prompt-text "\"google/gemini-2.5-flash-preview-05-20" true d! *text)
                     :openrouter/openai/gpt-4o $ js-await (call-openrouter! cursor state prompt-text "\"openai/gpt-4o" true d! *text)
                     :openrouter/deepseek/deepseek-chat-v3-0324:free $ js-await (call-openrouter! cursor state prompt-text "\"deepseek/deepseek-chat-v3-0324:free" true d! *text)
                   fn (e)
@@ -818,6 +823,7 @@
               tag-match op
                   :states cursor s
                   update-states store cursor s
+                (:states-merge cursor s changes) (update-states-merge store cursor s changes)
                 (:hydrate-storage data) data
                 (:change-model)
                   if
@@ -828,4 +834,4 @@
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
-            respo.cursor :refer $ update-states
+            respo.cursor :refer $ update-states update-states-merge
