@@ -3335,15 +3335,6 @@
                                                         :data $ {}
                                                           |T $ %{} :Leaf (:at 1722482347320) (:by |rJG4IHzWf) (:text |either)
                                                           |b $ %{} :Leaf (:at 1722482347683) (:by |rJG4IHzWf) (:text "|\"")
-                                                      |h $ %{} :Expr (:at 1746250528169) (:by |rJG4IHzWf)
-                                                        :data $ {}
-                                                          |b $ %{} :Leaf (:at 1746250528169) (:by |rJG4IHzWf) (:text |.!replace)
-                                                          |h $ %{} :Leaf (:at 1746250528169) (:by |rJG4IHzWf) (:text |pattern-spaced-code)
-                                                          |l $ %{} :Expr (:at 1746250528169) (:by |rJG4IHzWf)
-                                                            :data $ {}
-                                                              |T $ %{} :Leaf (:at 1746250528169) (:by |rJG4IHzWf) (:text |str)
-                                                              |b $ %{} :Leaf (:at 1746250528169) (:by |rJG4IHzWf) (:text |&newline)
-                                                              |h $ %{} :Leaf (:at 1746250528169) (:by |rJG4IHzWf) (:text "|\"```")
                                                   |h $ %{} :Expr (:at 1722445823902) (:by |rJG4IHzWf)
                                                     :data $ {}
                                                       |T $ %{} :Leaf (:at 1722445823902) (:by |rJG4IHzWf) (:text |{})

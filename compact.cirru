@@ -445,7 +445,6 @@
                                 :inner-text $ :answer state
                               memof1-call comp-md-block
                                 -> (:answer state) (either "\"")
-                                  .!replace pattern-spaced-code $ str &newline "\"```"
                                 {} $ :class-name style-md-content
                             div
                               {} $ :class-name css/row-parted
