@@ -496,15 +496,23 @@
                         :on-focus $ fn (e d!)
                           let
                               target $ .-target (:event e)
+                              box $ .-parentElement (.-parentElement target)
                               class-list $ .-classList target
+                              box-class $ .-classList box
                             if
                               not $ .!contains class-list "\"focus-within"
                               .!add class-list "\"focus-within"
+                            if
+                              not $ .!contains box-class "\"focus-within"
+                              .!add box-class "\"focus-within"
                         :on-blur $ fn (e d!)
                           let
                               target $ .-target (:event e)
+                              box $ .-parentElement (.-parentElement target)
                               class-list $ .-classList target
+                              box-class $ .-classList box
                             if (.!contains class-list "\"focus-within") (.!remove class-list "\"focus-within")
+                            if (.!contains box-class "\"focus-within") (.!remove box-class "\"focus-within")
                       =< nil 4
                       div
                         {} $ :class-name css/row-parted
@@ -672,9 +680,12 @@
         |style-message-box-panel $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box-panel $ {}
-              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:width "\"100%")
+              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 1) (:width "\"100%")
+                :background-color $ hsl 0 0 100 0.7
+                :border-top $ str "\"1px solid " (hsl 0 0 80 0.6)
+              "\"&.focus-within" $ {}
                 :background-color $ hsl 0 0 100 0.9
-                :border-top $ str "\"1px solid " (hsl 0 0 80 0.5)
+                :box-shadow $ str "\"0 0px 8px " (hsl 0 0 0 0.3)
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-list $ {}
@@ -699,7 +710,7 @@
           :code $ quote
             defstyle style-textbox $ {}
               "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
-              "\"&.focus-within" $ {} (:height "\"max(240px,32vh)") (:border :none)
+              "\"&.focus-within" $ {} (:height "\"max(240px,32vh)") (:border :none) (:box-shadow :none)
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!) (hint-fn async)
