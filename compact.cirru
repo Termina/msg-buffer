@@ -222,7 +222,7 @@
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
         |call-genai-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-genai-msg! (variant cursor state prompt-text d! *text) (hint-fn async)
+            defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text) (hint-fn async)
               if (nil? @*gen-ai-new)
                 reset! *gen-ai-new $ new GoogleGenAI
                   js-object $ :apiKey (get-gemini-key!)
@@ -243,8 +243,6 @@
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
                   pro? $ .!includes model "\"pro"
-                  think? $ or pro? (.!includes prompt-text "\"{{think}}") (.!includes prompt-text "\"{{THINK}}") (.!includes prompt-text "\"???")
-                  search? $ or (.!includes prompt-text "\"{{search}}") (.!includes prompt-text "\"{{SEARCH}}")
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
@@ -466,8 +464,8 @@
                             .show model-plugin d!
                       =< nil 200
                   comp-message-box (>> states :message-box)
-                    fn (text d!) (submit-message! cursor state text model d!)
-                  .render model-plugin
+                    fn (text search? think? d!) (submit-message! cursor state text search? think? model d!)
+                  model-plugin.render
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect "\"Store" store nil
         |comp-message-box $ %{} :CodeEntry (:doc |)
@@ -476,47 +474,83 @@
               let
                   cursor $ :cursor states
                   state $ either (:data states)
-                    {} $ :content "\""
+                    {} (:content "\"") (:search? false) (:think? false)
                 [] (effect-focus)
                   div
-                    {} $ :class-name (str-spaced css/center style-message-box)
-                    textarea $ {}
-                      :value $ :content state
-                      :placeholder "\"Content"
-                      :id "\"message"
-                      :class-name $ str-spaced css/textarea css/font-code! style-textbox
-                      :on-input $ fn (e d!)
-                        d! cursor $ assoc state :content (:value e)
-                      :on-keydown $ fn (e d!)
-                        if
-                          and
-                            = 13 $ :keycode e
-                            or (:meta? e) (:ctrl? e)
-                          on-submit (:content state) d!
-                      :on-focus $ fn (e d!)
-                        let
-                            target $ .-target (:event e)
-                            class-list $ .-classList target
+                    {} $ :class-name (str-spaced css/center style-message-box-panel)
+                    div
+                      {} $ :class-name (str-spaced css/column style-message-box)
+                      textarea $ {}
+                        :value $ :content state
+                        :placeholder "\"Prompt to try LLM..."
+                        :id "\"message"
+                        :class-name $ str-spaced css/textarea css/font-code! style-textbox
+                        :on-input $ fn (e d!)
+                          d! cursor $ assoc state :content (:value e)
+                        :on-keydown $ fn (e d!)
                           if
-                            not $ .!contains class-list "\"focus-within"
-                            .!add class-list "\"focus-within"
-                      :on-blur $ fn (e d!)
-                        let
-                            target $ .-target (:event e)
-                            class-list $ .-classList target
-                          if (.!contains class-list "\"focus-within") (.!remove class-list "\"focus-within")
-                    button $ {}
-                      :class-name $ str-spaced css/button style-submit
-                      :inner-text "\"Generate"
-                      :on-click $ fn (e d!)
-                        ; println $ :content state
-                        on-submit (:content state) d!
-                    if
-                      not $ blank? (:content state)
-                      comp-close $ {} (:class-name style-clear)
-                        :on-click $ fn (e d!)
-                          d! cursor $ assoc state :content "\""
-                          -> (js/document.querySelector "\"#message") (.!focus)
+                            and
+                              = 13 $ :keycode e
+                              or (:meta? e) (:ctrl? e)
+                            on-submit (:content state) (:search? state) (:think? state) d!
+                        :on-focus $ fn (e d!)
+                          let
+                              target $ .-target (:event e)
+                              box $ .-parentElement (.-parentElement target)
+                              class-list $ .-classList target
+                              box-class $ .-classList box
+                            if
+                              not $ .!contains class-list "\"focus-within"
+                              .!add class-list "\"focus-within"
+                            if
+                              not $ .!contains box-class "\"focus-within"
+                              .!add box-class "\"focus-within"
+                        :on-blur $ fn (e d!)
+                          let
+                              target $ .-target (:event e)
+                              box $ .-parentElement (.-parentElement target)
+                              class-list $ .-classList target
+                              box-class $ .-classList box
+                            if (.!contains class-list "\"focus-within") (.!remove class-list "\"focus-within")
+                            if (.!contains box-class "\"focus-within") (.!remove box-class "\"focus-within")
+                      =< nil 4
+                      div
+                        {} $ :class-name css/row-parted
+                        if
+                          not $ blank? (:content state)
+                          comp-close $ {} (:class-name style-clear)
+                            :on-click $ fn (e d!)
+                              d! cursor $ assoc state :content "\""
+                              -> (js/document.querySelector "\"#message") (.!focus)
+                          span $ {} (:class-name style-clear)
+                        div
+                          {} $ :class-name (str-spaced css/row css/gap16)
+                          div
+                            {}
+                              :class-name $ str-spaced css/row style-checkbox
+                              :on-click $ fn (e d!)
+                                d! cursor $ assoc state :think?
+                                  not $ :think? state
+                            input $ {}
+                              :checked $ :think? state
+                              :type "\"checkbox"
+                            <> "\"Thinking" css/font-fancy
+                          div
+                            {}
+                              :class-name $ str-spaced css/row style-checkbox
+                              :on-click $ fn (e d!)
+                                d! cursor $ assoc state :search?
+                                  not $ :search? state
+                            input $ {}
+                              :checked $ :search? state
+                              :type "\"checkbox"
+                            <> "\"Search" css/font-fancy
+                          button $ {}
+                            :class-name $ str-spaced css/button style-submit
+                            :inner-text "\"Submit"
+                            :on-click $ fn (e d!)
+                              ; println $ :content state
+                              on-submit (:content state) (:search? state) (:think? state) d!
         |effect-focus $ %{} :CodeEntry (:doc |)
           :code $ quote
             defeffect effect-focus () (action el at?)
@@ -613,10 +647,14 @@
                 :background-color $ hsl 0 0 98
               "\"&:hover" $ {} (:color "\"#777")
                 :background-color $ hsl 0 0 100
+        |style-checkbox $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-checkbox $ {}
+              "\"&" $ {} (:cursor :pointer) (:user-select :none) (:font-size 13)
         |style-clear $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-clear $ {}
-              "\"&" $ {} (:position :absolute) (:left 12) (:bottom 12) (:opacity 0.4) (:padding "\"4px 8px") (:display :inline-block) (:height "\"24px")
+              "\"&" $ {} (:opacity 0.4) (:padding "\"4px 8px") (:display :inline-block) (:height "\"24px")
         |style-code-content $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-code-content $ {}
@@ -637,8 +675,17 @@
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
-              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 0.9) (:max-width 1200) (:width "\"100%") (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (:transform "\"translate(50%,0)") (:transform-properties "\"height")
-              "\"&:focus-within" $ {} (:opacity 1) (:transform "\"translate(50%,0)")
+              "\"&" $ {} (:width "\"100%") (:max-width 1200) (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (; :transform "\"translate(50%,0)") (:transition-property "\"height")
+              "\"&:focus-within" $ {} (:opacity 1) (; :transform "\"translate(50%,0)")
+        |style-message-box-panel $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-message-box-panel $ {}
+              "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 1) (:width "\"100%")
+                :background-color $ hsl 0 0 100 0.7
+                :border-top $ str "\"1px solid " (hsl 0 0 80 0.6)
+              "\"&.focus-within" $ {}
+                :background-color $ hsl 0 0 100 0.9
+                :box-shadow $ str "\"0 0px 8px " (hsl 0 0 0 0.3)
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-list $ {}
@@ -658,29 +705,29 @@
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
-              "\"&" $ {} (:position :absolute) (:bottom 20) (:right 20)
+              "\"&" $ {}
         |style-textbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox $ {}
-              "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms")
-              "\"&.focus-within" $ {} (:height "\"max(240px,32vh)")
+              "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
+              "\"&.focus-within" $ {} (:height "\"max(240px,32vh)") (:border :none) (:box-shadow :none)
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn submit-message! (cursor state prompt-text model d!) (hint-fn async)
+            defn submit-message! (cursor state prompt-text search? think? model d!) (hint-fn async)
               let
                   *text $ atom "\""
                   model $ :model state
                 try
                   case-default model
-                    js-await $ call-genai-msg! model cursor state prompt-text d! *text
-                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
+                    js-await $ call-genai-msg! model cursor state prompt-text search? think? d! *text
+                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
                     :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state prompt-text d!)
                     :imagen-3 $ js-await (call-imagen-3-msg! model cursor state prompt-text d!)
-                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
-                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
-                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
-                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
-                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text d! *text)
+                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
+                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
+                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
+                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
+                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
                     :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
                     :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-sonnet-4" true d! *text)
@@ -751,7 +798,7 @@
                       cursor $ []
                       state0 $ get-in store ([] :states :data)
                       model $ either (:model store) :gemini
-                    submit-message! cursor state0 content model dispatch!
+                    submit-message! cursor state0 content false false model dispatch!
               js/chrome.runtime.connect $ js-object (:name |mySidepanel)
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
