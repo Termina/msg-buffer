@@ -8,12 +8,16 @@
       :defs $ {}
         |*abort-control $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *abort-control nil)
+          :examples $ []
         |*gen-ai-new $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *gen-ai-new nil)
+          :examples $ []
         |*image-cache $ %{} :CodeEntry (:doc |)
           :code $ quote (defatom *image-cache nil)
+          :examples $ []
         |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter")
           :code $ quote (defatom *openai nil)
+          :examples $ []
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!) (hint-fn async)
@@ -100,6 +104,7 @@
                                               -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                                             recur xss
                         recur
+          :examples $ []
         |call-deepinfra-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-deepinfra-msg! (cursor state prompt-text d! *text) (hint-fn async)
@@ -164,6 +169,7 @@
                                 d! $ :: :states cursor
                                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                             recur
+          :examples $ []
         |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-flash-imagen-msg! (variant cursor state prompt-text d!) (hint-fn async)
@@ -220,6 +226,7 @@
                       -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+          :examples $ []
         |call-genai-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text) (hint-fn async)
@@ -292,6 +299,7 @@
                       {} (:answer @*text) (:loading? false) (:done? false)
                 d! $ :: :states-merge cursor state
                   {} (:answer @*text) (:loading? false) (:done? true)
+          :examples $ []
         |call-imagen-3-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-imagen-3-msg! (variant cursor state prompt-text d!) (hint-fn async)
@@ -335,6 +343,7 @@
                         -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+          :examples $ []
         |call-openrouter! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-openrouter! (cursor state prompt-text variant thinking? d! *text) (hint-fn async)
@@ -384,10 +393,12 @@
                       {} (:answer @*text) (:loading? false) (:done? false)
                 d! $ :: :states-merge cursor state
                   {} (:answer @*text) (:loading? false) (:done? true)
+          :examples $ []
         |clear-image-cache! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn clear-image-cache! () $ if-let (url @*image-cache)
               do (js/URL.revokeObjectURL url) (reset! *image-cache nil)
+          :examples $ []
         |comp-abort $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn comp-abort (t)
@@ -402,6 +413,7 @@
                 <> t
                 =< 8 nil
                 <> "\"✕" style-abort-close
+          :examples $ []
         |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
@@ -468,6 +480,7 @@
                   model-plugin.render
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect "\"Store" store nil
+          :examples $ []
         |comp-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-message-box (states on-submit)
@@ -551,12 +564,14 @@
                             :on-click $ fn (e d!)
                               ; println $ :content state
                               on-submit (:content state) (:search? state) (:think? state) d!
+          :examples $ []
         |effect-focus $ %{} :CodeEntry (:doc |)
           :code $ quote
             defeffect effect-focus () (action el at?)
               when (= action :mount)
                 js/setTimeout $ fn ()
                   .!select $ .!querySelector el "\"textarea"
+          :examples $ []
         |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
           :code $ quote
             defn first-line (tt)
@@ -568,6 +583,7 @@
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
+          :examples $ []
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
@@ -580,6 +596,7 @@
                   js/localStorage.setItem "\"claude-key" v
                   , v
                 , key
+          :examples $ []
         |get-deepinfra-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-deepinfra-key! () $ let
@@ -592,6 +609,7 @@
                   js/localStorage.setItem "\"deepinfra-key" v
                   , v
                 , key
+          :examples $ []
         |get-gemini-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
@@ -604,6 +622,7 @@
                   js/localStorage.setItem "\"gemini-key" v
                   , v
                 , key
+          :examples $ []
         |get-openrouter-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-openrouter-key! () $ let
@@ -616,28 +635,35 @@
                   js/localStorage.setItem "\"openrouter-key" v
                   , v
                 , key
+          :examples $ []
         |json-pattern? $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn json-pattern? (text)
               or (.!startsWith text "\"{") (.!startsWith text "\"[")
+          :examples $ []
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
             def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 2.5") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2") (:: :item :gemini-pro "|Gemini Pro 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4 "\"Openrouter Claude Sonnet 4") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek-chat-v3-0324:free") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :deepinfra "\"Deepinfra") (; :: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking")
+          :examples $ []
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
+          :examples $ []
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
               case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-06-05") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
+          :examples $ []
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
               "\"&" $ {} (:cursor :pointer)
+          :examples $ []
         |style-abort-close $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-abort-close $ {}
               "\"&" $ {} (:vertical-align :top) (:font-size 10)
+          :examples $ []
         |style-app-global $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-app-global $ {}
@@ -647,36 +673,44 @@
                 :background-color $ hsl 0 0 98
               "\"&:hover" $ {} (:color "\"#777")
                 :background-color $ hsl 0 0 100
+          :examples $ []
         |style-checkbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-checkbox $ {}
               "\"&" $ {} (:cursor :pointer) (:user-select :none) (:font-size 13)
+          :examples $ []
         |style-clear $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-clear $ {}
               "\"&" $ {} (:opacity 0.4) (:padding "\"4px 8px") (:display :inline-block) (:height "\"24px")
+          :examples $ []
         |style-code-content $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-code-content $ {}
               "\"&" $ {} (:line-height "\"1.5") (:font-size 13)
+          :examples $ []
         |style-image $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-image $ {}
               "\"&" $ {} (:max-width "\"100%") (:align-self :flex-start) (:border-radius "\"6px")
                 :border $ str "\"1px solid " (hsl 0 0 90)
+          :examples $ []
         |style-md-content $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-md-content $ {}
               "\"& .md-p" $ {} (:margin "\"16px 0") (:line-height "\"1.6")
+          :examples $ []
         |style-message-area $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-area $ {}
               "\"&" $ {} (:flex 2) (:overflow :scroll)
+          :examples $ []
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
               "\"&" $ {} (:width "\"100%") (:max-width 1200) (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (; :transform "\"translate(50%,0)") (:transition-property "\"height")
               "\"&:focus-within" $ {} (:opacity 1) (; :transform "\"translate(50%,0)")
+          :examples $ []
         |style-message-box-panel $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box-panel $ {}
@@ -686,10 +720,12 @@
               "\"&.focus-within" $ {}
                 :background-color $ hsl 0 0 100 0.9
                 :box-shadow $ str "\"0 0px 8px " (hsl 0 0 0 0.3)
+          :examples $ []
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-list $ {}
               "\"&" $ {} (:flex 2) (:padding "\"40px 16px 20vh 16px") (:width "\"100%") (:max-width 1200) (:margin :auto) (:position :relative)
+          :examples $ []
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
@@ -702,15 +738,18 @@
                 :display :inline-flex
               "\"&:hover" $ {}
                 :box-shadow $ str "\"1px 1px 4px " (hsl 0 0 0 0.2)
+          :examples $ []
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
               "\"&" $ {}
+          :examples $ []
         |style-textbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox $ {}
               "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
               "\"&.focus-within" $ {} (:height "\"max(240px,32vh)") (:border :none) (:box-shadow :none)
+          :examples $ []
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!) (hint-fn async)
@@ -742,6 +781,7 @@
                       assoc :answer $ str @*text &newline &newline (str "\"Failed to load: " e)
                       assoc :loading? false
                       assoc :done? true
+          :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
@@ -766,12 +806,15 @@
         |chrome-extension? $ %{} :CodeEntry (:doc |)
           :code $ quote
             def chrome-extension? $ and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.id)
+          :examples $ []
         |dev? $ %{} :CodeEntry (:doc |)
           :code $ quote
             def dev? $ = "\"dev" (get-env "\"mode" "\"release")
+          :examples $ []
         |site $ %{} :CodeEntry (:doc |)
           :code $ quote
             def site $ {} (:storage-key "\"msg-buffer")
+          :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote (ns app.config)
     |app.main $ %{} :FileEntry
@@ -779,6 +822,7 @@
         |*reel $ %{} :CodeEntry (:doc |)
           :code $ quote
             defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
+          :examples $ []
         |dispatch! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn dispatch! (op)
@@ -786,6 +830,7 @@
                 and config/dev? $ not= op :states
                 js/console.log "\"Dispatch:" op
               reset! *reel $ reel-updater updater @*reel op
+          :examples $ []
         |listen-extension! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn listen-extension! ()
@@ -800,6 +845,7 @@
                       model $ either (:model store) :gemini
                     submit-message! cursor state0 content false false model dispatch!
               js/chrome.runtime.connect $ js-object (:name |mySidepanel)
+          :examples $ []
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn main! ()
@@ -818,15 +864,18 @@
                   dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
               if config/chrome-extension? $ listen-extension!
               println "|App started."
+          :examples $ []
         |mount-target $ %{} :CodeEntry (:doc |)
           :code $ quote
             def mount-target $ js/document.querySelector |.app
+          :examples $ []
         |persist-storage! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn persist-storage! ()
               println "\"Saved at" $ .!toISOString (new js/Date)
               js/localStorage.setItem (:storage-key config/site)
                 format-cirru-edn $ :store @*reel
+          :examples $ []
         |reload! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn reload! () $ if (nil? build-errors)
@@ -835,9 +884,11 @@
                 reset! *reel $ refresh-reel @*reel schema/store updater
                 hud! "\"ok~" "\"Ok"
               hud! "\"error" build-errors
+          :examples $ []
         |render-app! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn render-app! () $ render! mount-target (comp-container @*reel) dispatch!
+          :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.main $ :require
@@ -859,6 +910,7 @@
               :states $ {}
                 :cursor $ []
               :model nil
+          :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote (ns app.schema)
     |app.updater $ %{} :FileEntry
@@ -877,6 +929,7 @@
                     assoc store :model :gemini
                     assoc store :model :anthropic
                 _ $ do (eprintln "\"unknown op:" op) store
+          :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
