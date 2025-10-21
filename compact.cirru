@@ -105,71 +105,6 @@
                                             recur xss
                         recur
           :examples $ []
-        |call-deepinfra-msg! $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defn call-deepinfra-msg! (cursor state prompt-text d! *text) (hint-fn async)
-              if-let
-                abort $ deref *abort-control
-                do (js/console.warn "\"Aborting prev") (.!abort abort)
-              d! $ :: :states cursor
-                -> state (assoc :answer nil) (assoc :loading? true)
-              let
-                  selected $ js-await (get-selected)
-                  content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
-                  result $ js-await
-                    .!post axios "\"https://api.deepinfra.com/v1/openai/chat/completions"
-                      js-object (:model "\"nvidia/Llama-3.1-Nemotron-70B-Instruct") (:stream true)
-                        :messages $ js-array
-                          js-object (:role "\"user") (:content content)
-                      js-object
-                        :params $ js-object
-                        :headers $ js-object (:Content-Type "\"application/json")
-                          :Authorization $ str-spaced "\"Bearer" (get-deepinfra-key!)
-                        :responseType "\"stream"
-                        :adapter "\"fetch"
-                        :signal $ let
-                            abort $ new js/AbortController
-                          reset! *abort-control abort
-                          .-signal abort
-                  stream $ .-data result
-                  reader $ ->
-                    .!pipeThrough stream $ new js/TextDecoderStream
-                    .!getReader
-                  ; reading $ js-await (.!read reader)
-                  ; answer $ -> result .-data .-candidates .-0 .-content .-parts .-0 .-text
-                reset! *text $ str "\"Nemotron:" &newline &newline
-                ; d! $ :: :states cursor
-                  -> state
-                    assoc :answer $ w-log answer
-                    assoc :loading? false
-                apply-args () $ fn () (hint-fn async)
-                  let
-                      info $ js-await (.!read reader)
-                      value $ .-value info
-                      done? $ .-done info
-                    if done?
-                      d! $ :: :states cursor
-                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
-                      if (.starts-with? value "\": ping") (recur)
-                        if
-                          or
-                            .ends-with? (trim value) "\"[DONE]"
-                            nil? content
-                          d! $ :: :states cursor
-                            -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
-                          let
-                              lines $ -> (.split-lines value)
-                                filter $ fn (x)
-                                  not $ empty? x
-                            &doseq (line lines)
-                              let
-                                  candidate0 $ -> (.!slice line 6) (first-line) (js/JSON.parse) .-choices .-0
-                                  content $ or (-> candidate0 .-delta .-content) "\""
-                                swap! *text str content
-                                d! $ :: :states cursor
-                                  -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                            recur
-          :examples $ []
         |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-flash-imagen-msg! (variant cursor state prompt-text d!) (hint-fn async)
@@ -194,7 +129,7 @@
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   sdk-result $ js-await
                     .!generateContent (.-models gen-ai)
-                      js-object (:model "\"gemini-2.0-flash-exp-image-generation") (:contents content)
+                      js-object (:model "\"gemini-2.5-flash-image") (:contents content)
                         :config $ js-object
                           :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
                           :signal $ let
@@ -643,7 +578,7 @@
           :examples $ []
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 2.5") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2") (:: :item :gemini-pro "|Gemini Pro 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4 "\"Openrouter Claude Sonnet 4") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-4o "\"Openrouter GPT 4o") (:: :item :openrouter/deepseek/deepseek-chat-v3-0324:free "\"Openrouter deepseek-chat-v3-0324:free") (:: :item :claude-3.7 "\"Claude 3.7") (:: :item :deepinfra "\"Deepinfra") (; :: :item :openrouter/anthropic/claude-3.7-sonnet:thinking "\"Openrouter Claude 3.7 Sonnet Thinking")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 2.5") (:: :item :gemini-pro "|Gemini Pro 2.5") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-3 "\"Imagen 3") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "\"Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "\"Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "\"Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "\"Claude 4.5")
           :examples $ []
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -652,7 +587,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-2.5-flash-preview-05-20" (:gemini-pro "\"gemini-2.5-pro-preview-06-05") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-2.0-flash-lite") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-flash-latest" (:gemini-pro "\"gemini-2.5-pro-preview-06-05") (:gemini-pro-1.5 "\"gemini-1.5-pro") (:gemini-flash-lite "\"gemini-flash-latest") (:gemma "\"gemma-3-27b-it")
           :examples $ []
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -768,14 +703,13 @@
                     :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
                     :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
-                    :deepinfra $ js-await (call-deepinfra-msg! cursor state prompt-text d! *text)
                     :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-sonnet-4" true d! *text)
                     :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-opus-4" true d! *text)
                     :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-3.7-sonnet:thinking" true d! *text)
                     :openrouter/google/gemini-2.5-pro-preview $ js-await (call-openrouter! cursor state prompt-text "\"google/gemini-2.5-pro-preview" true d! *text)
                     :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await (call-openrouter! cursor state prompt-text "\"google/gemini-2.5-flash-preview-05-20" true d! *text)
-                    :openrouter/openai/gpt-4o $ js-await (call-openrouter! cursor state prompt-text "\"openai/gpt-4o" true d! *text)
-                    :openrouter/deepseek/deepseek-chat-v3-0324:free $ js-await (call-openrouter! cursor state prompt-text "\"deepseek/deepseek-chat-v3-0324:free" true d! *text)
+                    :openrouter/openai/gpt-5 $ js-await (call-openrouter! cursor state prompt-text "\"openai/gpt-5" true d! *text)
+                    :openrouter/deepseek/deepseek-chat-v3.1 $ js-await (call-openrouter! cursor state prompt-text "\"deepseek/deepseek-chat-v3.1" true d! *text)
                   fn (e)
                     d! cursor $ -> state
                       assoc :answer $ str @*text &newline &newline (str "\"Failed to load: " e)
