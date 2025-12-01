@@ -400,17 +400,16 @@
                                 div
                                   {} $ :class-name (str-spaced css/row-middle)
                                   comp-copy $ :answer state
-                      div ({})
-                        a $ {}
-                          :inner-text $ or (turn-str model) "\"-"
-                          :class-name $ str-spaced style-a-toggler css/font-fancy
-                          :style $ {}
-                            :opacity $ if (= model :anthropic) 1 0.3
-                          :on-click $ fn (e d!)
-                            ; d! $ :: :change-model
-                            .show model-plugin d!
                       =< nil 200
                   comp-message-box (>> states :message-box)
+                    a $ {}
+                      :inner-text $ or (turn-str model) "\"-"
+                      :class-name $ str-spaced style-a-toggler
+                      :style $ {}
+                        :opacity $ if (= model :anthropic) 1 0.3
+                      :on-click $ fn (e d!)
+                        ; d! $ :: :change-model
+                        .show model-plugin d!
                     fn (text search? think? d!) (submit-message! cursor state text search? think? model d!)
                   model-plugin.render
                   if dev? $ comp-reel (>> states :reel) reel ({})
@@ -418,7 +417,7 @@
           :examples $ []
         |comp-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defcomp comp-message-box (states on-submit)
+            defcomp comp-message-box (states picker-el on-submit)
               let
                   cursor $ :cursor states
                   state $ either (:data states)
@@ -472,33 +471,34 @@
                               -> (js/document.querySelector "\"#message") (.!focus)
                           span $ {} (:class-name style-clear)
                         div
-                          {} $ :class-name (str-spaced css/row css/gap16)
-                          div
-                            {}
-                              :class-name $ str-spaced css/row style-checkbox
+                          {} $ :class-name (str-spaced css/row style-gap12)
+                          , picker-el
+                            div
+                              {}
+                                :class-name $ str-spaced css/row style-checkbox
+                                :on-click $ fn (e d!)
+                                  d! cursor $ assoc state :think?
+                                    not $ :think? state
+                              input $ {}
+                                :checked $ :think? state
+                                :type "\"checkbox"
+                              <> "\"Think" css/font-fancy
+                            div
+                              {}
+                                :class-name $ str-spaced css/row style-checkbox
+                                :on-click $ fn (e d!)
+                                  d! cursor $ assoc state :search?
+                                    not $ :search? state
+                              input $ {}
+                                :checked $ :search? state
+                                :type "\"checkbox"
+                              <> "\"Search" css/font-fancy
+                            button $ {}
+                              :class-name $ str-spaced css/button style-submit
+                              :inner-text "\"Submit"
                               :on-click $ fn (e d!)
-                                d! cursor $ assoc state :think?
-                                  not $ :think? state
-                            input $ {}
-                              :checked $ :think? state
-                              :type "\"checkbox"
-                            <> "\"Thinking" css/font-fancy
-                          div
-                            {}
-                              :class-name $ str-spaced css/row style-checkbox
-                              :on-click $ fn (e d!)
-                                d! cursor $ assoc state :search?
-                                  not $ :search? state
-                            input $ {}
-                              :checked $ :search? state
-                              :type "\"checkbox"
-                            <> "\"Search" css/font-fancy
-                          button $ {}
-                            :class-name $ str-spaced css/button style-submit
-                            :inner-text "\"Submit"
-                            :on-click $ fn (e d!)
-                              ; println $ :content state
-                              on-submit (:content state) (:search? state) (:think? state) d!
+                                ; println $ :content state
+                                on-submit (:content state) (:search? state) (:think? state) d!
           :examples $ []
         |effect-focus $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -592,7 +592,8 @@
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
-              "\"&" $ {} (:cursor :pointer)
+              "\"&" $ {} (:cursor :pointer) (:background-color :white) (:color :black)
+              "\".focus-within &" $ {} (:color :black)
           :examples $ []
         |style-abort-close $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -612,7 +613,7 @@
         |style-checkbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-checkbox $ {}
-              "\"&" $ {} (:cursor :pointer) (:user-select :none) (:font-size 13)
+              "\"&" $ {} (:cursor :pointer) (:user-select :none) (:font-size 12) (:line-height "\"28px") (:vertical-align :middle)
           :examples $ []
         |style-clear $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -623,6 +624,11 @@
           :code $ quote
             defstyle style-code-content $ {}
               "\"&" $ {} (:line-height "\"1.5") (:font-size 13)
+          :examples $ []
+        |style-gap12 $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-gap12 $ {}
+              "\"&" $ {} (:gap 12)
           :examples $ []
         |style-image $ %{} :CodeEntry (:doc |)
           :code $ quote
