@@ -578,7 +578,7 @@
           :examples $ []
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 2.5") (:: :item :gemini-pro "|Gemini Pro 3.0") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-4 "\"Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "\"Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "\"Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "\"Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "\"Claude 4.5")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-pro "|Gemini Pro 3") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-4 "\"Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "\"Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "\"Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "\"Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "\"Claude 4.5")
           :examples $ []
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -587,7 +587,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-flash-latest" (:gemini-pro "\"gemini-3-pro-preview") (:gemini-flash-lite "\"gemini-flash-latest") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-3-flash-preview" (:gemini-pro "\"gemini-3-pro-preview") (:gemini-flash-lite "\"gemini-flash-lite-latest") (:gemma "\"gemma-3-27b-it")
           :examples $ []
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote

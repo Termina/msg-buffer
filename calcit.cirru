@@ -3977,13 +3977,13 @@
                       |T $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |::)
                       |b $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |:item)
                       |h $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |:gemini-flash)
-                      |l $ %{} :Leaf (:at 1747977078425) (:by |rJG4IHzWf) (:text "||Gemini Flash 2.5")
+                      |l $ %{} :Leaf (:at 1766026628961) (:by |rJG4IHzWf) (:text "||Gemini Flash 3")
                   |l $ %{} :Expr (:at 1746250322424) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |::)
                       |b $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |:item)
                       |h $ %{} :Leaf (:at 1746250322424) (:by |rJG4IHzWf) (:text |:gemini-pro)
-                      |l $ %{} :Leaf (:at 1763567069779) (:by |rJG4IHzWf) (:text "||Gemini Pro 3.0")
+                      |l $ %{} :Leaf (:at 1766026639120) (:by |rJG4IHzWf) (:text "||Gemini Pro 3")
                   |n $ %{} :Expr (:at 1760369305589) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1760369305589) (:by |rJG4IHzWf) (:text |::)
@@ -4076,7 +4076,7 @@
                 :data $ {}
                   |T $ %{} :Leaf (:at 1735371289067) (:by |rJG4IHzWf) (:text |case-default)
                   |V $ %{} :Leaf (:at 1735371559392) (:by |rJG4IHzWf) (:text |variant)
-                  |X $ %{} :Leaf (:at 1760369031136) (:by |rJG4IHzWf) (:text "|\"gemini-flash-latest")
+                  |X $ %{} :Leaf (:at 1766026596949) (:by |rJG4IHzWf) (:text "|\"gemini-3-flash-preview")
                   |h $ %{} :Expr (:at 1735371297708) (:by |rJG4IHzWf)
                     :data $ {}
                       |D $ %{} :Leaf (:at 1738811261843) (:by |rJG4IHzWf) (:text |:gemini-pro)
@@ -4084,7 +4084,7 @@
                   |j $ %{} :Expr (:at 1738811293395) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1738811298297) (:by |rJG4IHzWf) (:text |:gemini-flash-lite)
-                      |b $ %{} :Leaf (:at 1760369028057) (:by |rJG4IHzWf) (:text "|\"gemini-flash-latest")
+                      |b $ %{} :Leaf (:at 1766026605929) (:by |rJG4IHzWf) (:text "|\"gemini-flash-lite-latest")
                   |q $ %{} :Expr (:at 1744995919322) (:by |rJG4IHzWf)
                     :data $ {}
                       |T $ %{} :Leaf (:at 1744995921383) (:by |rJG4IHzWf) (:text |:gemma)
