@@ -200,7 +200,7 @@
                                 :thinkingBudget $ get-env "\"think-budget" (if pro? 3200 800)
                                 :includeThoughts think?
                               js-object (:thinkingBudget 0) (:includeThoughts false)
-                            ; :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
+                            :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
                             :tools $ let
                                 t $ ->
                                   js-array
