@@ -200,7 +200,7 @@
                                 :thinkingBudget $ get-env "\"think-budget" (if pro? 3200 800)
                                 :includeThoughts think?
                               js-object (:thinkingBudget 0) (:includeThoughts false)
-                            :httpOptions $ js-object
+                            ; :httpOptions $ js-object
                               :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
                             :tools $ let
                                 t $ ->
@@ -607,6 +607,7 @@
                 {} $ :max-width "\"90vw"
               "\"&" $ {} (:color "\"#999") (:transition-duration "\"300ms")
                 :background-color $ hsl 0 0 98
+                :touch-action :none
               "\"&:hover" $ {} (:color "\"#777")
                 :background-color $ hsl 0 0 100
           :examples $ []
@@ -741,6 +742,7 @@
             "\"@google/genai" :refer $ GoogleGenAI Modality
             "\"../lib/image" :refer $ base64ToBlob
             "\"openai" :default OpenAI
+        :examples $ []
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)
@@ -757,6 +759,7 @@
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote (ns app.config)
+        :examples $ []
     |app.main $ %{} :FileEntry
       :defs $ {}
         |*reel $ %{} :CodeEntry (:doc |)
@@ -778,7 +781,7 @@
                 if
                   = "\"menu-trigger" $ .-action message
                   let
-                      content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n"  &newline &newline (.-content message)
+                      content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline (.-content message)
                       store $ :store @*reel
                       cursor $ []
                       state0 $ get-in store ([] :states :data)
@@ -797,6 +800,11 @@
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
                 if (= "\"hidden" js/document.visibilityState) (persist-storage!)
+              js/window.addEventListener |dblclick $ fn (event) (.!preventDefault event)
+              js/window.addEventListener |wheel
+                fn (event)
+                  if (.-ctrlKey event) (.!preventDefault event)
+                js-object $ :passive false
               ; flipped js/setInterval 60000 persist-storage!
               let
                   raw $ js/localStorage.getItem (:storage-key config/site)
@@ -842,6 +850,7 @@
             app.config :as config
             "\"./calcit.build-errors" :default build-errors
             "\"bottom-tip" :default hud!
+        :examples $ []
     |app.schema $ %{} :FileEntry
       :defs $ {}
         |store $ %{} :CodeEntry (:doc |)
@@ -853,6 +862,7 @@
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote (ns app.schema)
+        :examples $ []
     |app.updater $ %{} :FileEntry
       :defs $ {}
         |updater $ %{} :CodeEntry (:doc |)
@@ -874,3 +884,4 @@
         :code $ quote
           ns app.updater $ :require
             respo.cursor :refer $ update-states update-states-merge
+        :examples $ []
