@@ -131,7 +131,7 @@
                     .!generateContent (.-models gen-ai)
                       js-object (:model "\"gemini-2.5-flash-image") (:contents content)
                         :config $ js-object
-                          :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
                           :signal $ let
                               abort $ new js/AbortController
                             reset! *abort-control abort
@@ -164,7 +164,7 @@
           :examples $ []
         |call-genai-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text) (hint-fn async)
+            defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text) (hint-fn async)
               if (nil? @*gen-ai-new)
                 reset! *gen-ai-new $ new GoogleGenAI
                   js-object $ :apiKey (get-gemini-key!)
@@ -200,8 +200,7 @@
                                 :thinkingBudget $ get-env "\"think-budget" (if pro? 3200 800)
                                 :includeThoughts think?
                               js-object (:thinkingBudget 0) (:includeThoughts false)
-                            :httpOptions $ js-object
-                              :baseUrl $ get-env "\"gemini-host" "\"https://ja.chenyong.life"
+                            :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
                             :tools $ let
                                 t $ ->
                                   js-array
@@ -223,17 +222,19 @@
                 js-await $ js-for-await sdk-result
                   fn (? chunk)
                     if (some? chunk)
-                      do
-                        swap! *text str $ let
-                            t $ either (.-text chunk) js/chunk.candidates?.[0]?.content?.parts?.[0]?.text
-                          if (nil? t) (js/console.warn "\"empty text in:" chunk)
-                          or t (-> chunk .?-promptFeedback .?-blockReason) "\"__BLANK__"
-                        d! $ :: :states-merge cursor state
-                          {} (:answer @*text) (:loading? false) (:done? false)
+                      let
+                          part js/chunk.candidates?.[0]?.content?.parts?.[0]
+                          is-thinking? $ if (some? part) (.-thought part) false
+                          t $ if (some? part) (.-text part) (.-text chunk)
+                        let
+                            text $ or t (-> chunk .?-promptFeedback .?-blockReason) |__BLANK__
+                          if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
+                          d! $ :: :states-merge cursor state
+                            {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
                     d! $ :: :states-merge cursor state
-                      {} (:answer @*text) (:loading? false) (:done? false)
+                      {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
                 d! $ :: :states-merge cursor state
-                  {} (:answer @*text) (:loading? false) (:done? true)
+                  {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
           :examples $ []
         |call-imagen-4-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -259,7 +260,7 @@
                     .!generateImages (.-models gen-ai)
                       js-object (:model "\"imagen-4.0-generate-001") (:prompt prompt-text)
                         :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
-                          :httpOptions $ js-object (:baseUrl "\"https://ja.chenyong.life")
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
                           :signal $ let
                               abort $ new js/AbortController
                             reset! *abort-control abort
@@ -382,15 +383,27 @@
                       if (:loading? state)
                         div ({}) (memof1-call-by :abort-loading comp-abort "\"Loading...")
                         if
-                          not $ blank? (:answer state)
+                          or
+                            not $ blank? (:answer state)
+                            not $ blank? (:thinking state)
                           div ({})
                             if
-                              json-pattern? $ :answer state
-                              pre $ {} (:class-name style-code-content)
-                                :inner-text $ :answer state
-                              memof1-call comp-md-block
-                                -> (:answer state) (either "\"")
-                                {} $ :class-name style-md-content
+                              not $ blank? (:thinking state)
+                              div
+                                {} $ :class-name style-thinking
+                                memof1-call comp-md-block
+                                  -> (:thinking state) (either "\"")
+                                  {} $ :class-name style-md-content
+                            if
+                              not $ blank? (:answer state)
+                              div ({})
+                                if
+                                  json-pattern? $ :answer state
+                                  pre $ {} (:class-name style-code-content)
+                                    :inner-text $ :answer state
+                                  memof1-call comp-md-block
+                                    -> (:answer state) (either "\"")
+                                    {} $ :class-name style-md-content
                             div
                               {} $ :class-name css/row-parted
                               div
@@ -607,6 +620,7 @@
                 {} $ :max-width "\"90vw"
               "\"&" $ {} (:color "\"#999") (:transition-duration "\"300ms")
                 :background-color $ hsl 0 0 98
+                :touch-action :none
               "\"&:hover" $ {} (:color "\"#777")
                 :background-color $ hsl 0 0 100
           :examples $ []
@@ -691,23 +705,37 @@
               "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
               "\"&.focus-within" $ {} (:height "\"max(240px,32vh)") (:border :none) (:box-shadow :none)
           :examples $ []
+        |style-thinking $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-thinking $ {}
+              "\"&" $ {} (:max-height 200) (:overflow :auto) (:padding "\"12px 16px")
+                :background-color $ hsl 0 0 96
+                :font-size 12
+                :line-height "\"1.8"
+                :color $ hsl 0 0 50
+                :border-radius 8
+                :margin-bottom 12
+                :border $ str "\"1px solid " (hsl 0 0 90)
+              "\"& .md-p" $ {} (:margin "\"4px 0")
+          :examples $ []
         |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!) (hint-fn async)
               let
                   *text $ atom "\""
+                  *thinking-text $ atom "\""
                   model $ :model state
                 try
                   case-default model
-                    js-await $ call-genai-msg! model cursor state prompt-text search? think? d! *text
-                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
+                    js-await $ call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text
+                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
                     :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state prompt-text d!)
                     :imagen-4 $ js-await (call-imagen-4-msg! model cursor state prompt-text d!)
-                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
-                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
-                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
-                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
-                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text)
+                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
+                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
+                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
+                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
+                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
                     :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-sonnet-4" true d! *text)
                     :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-opus-4" true d! *text)
@@ -741,6 +769,7 @@
             "\"@google/genai" :refer $ GoogleGenAI Modality
             "\"../lib/image" :refer $ base64ToBlob
             "\"openai" :default OpenAI
+        :examples $ []
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |)
@@ -757,6 +786,7 @@
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote (ns app.config)
+        :examples $ []
     |app.main $ %{} :FileEntry
       :defs $ {}
         |*reel $ %{} :CodeEntry (:doc |)
@@ -778,7 +808,7 @@
                 if
                   = "\"menu-trigger" $ .-action message
                   let
-                      content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n"  &newline &newline (.-content message)
+                      content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline (.-content message)
                       store $ :store @*reel
                       cursor $ []
                       state0 $ get-in store ([] :states :data)
@@ -797,6 +827,11 @@
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
                 if (= "\"hidden" js/document.visibilityState) (persist-storage!)
+              js/window.addEventListener |dblclick $ fn (event) (.!preventDefault event)
+              js/window.addEventListener |wheel
+                fn (event)
+                  if (.-ctrlKey event) (.!preventDefault event)
+                js-object $ :passive false
               ; flipped js/setInterval 60000 persist-storage!
               let
                   raw $ js/localStorage.getItem (:storage-key config/site)
@@ -842,6 +877,7 @@
             app.config :as config
             "\"./calcit.build-errors" :default build-errors
             "\"bottom-tip" :default hud!
+        :examples $ []
     |app.schema $ %{} :FileEntry
       :defs $ {}
         |store $ %{} :CodeEntry (:doc |)
@@ -853,6 +889,7 @@
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote (ns app.schema)
+        :examples $ []
     |app.updater $ %{} :FileEntry
       :defs $ {}
         |updater $ %{} :CodeEntry (:doc |)
@@ -874,3 +911,4 @@
         :code $ quote
           ns app.updater $ :require
             respo.cursor :refer $ update-states update-states-merge
+        :examples $ []
