@@ -1,5 +1,5 @@
 
-{} (:package |app)
+{} (:about "|file is generated - never edit directly; learn cr edit/tree workflows before changing") (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
     :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
   :entries $ {}
@@ -411,8 +411,9 @@
                                 if (:done? state) nil $ div ({}) (memof1-call-by :abort-streaming comp-abort "\"Streaming...")
                               if (:done? state)
                                 div
-                                  {} $ :class-name (str-spaced css/row-middle)
+                                  {} $ :class-name (str-spaced css/row-middle css/gap8)
                                   comp-copy $ :answer state
+                                  comp-fill $ either (:answer state) "\""
                       =< nil 200
                   comp-message-box (>> states :message-box)
                     a $ {}
@@ -428,6 +429,14 @@
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect "\"Store" store nil
           :examples $ []
+        |comp-fill $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defcomp comp-fill (text)
+              div $ {} (:class-name style-fill) (:inner-text "|➚")
+                :on-click $ fn (e d!)
+                  when chrome-extension? $ js/chrome.runtime.sendMessage
+                    js-object (:action |fill-text) (:text text)
+          :examples $ []
         |comp-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-message-box (states picker-el on-submit)
@@ -435,7 +444,7 @@
                   cursor $ :cursor states
                   state $ either (:data states)
                     {} (:content "\"") (:search? false) (:think? false)
-                [] (effect-focus)
+                [] (effect-focus) (on-fill cursor state on-submit)
                   div
                     {} $ :class-name (str-spaced css/center style-message-box-panel)
                     div
@@ -593,6 +602,22 @@
           :code $ quote
             def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-pro "|Gemini Pro 3") (:: :item :gemini-flash-lite "|Gemini Flash Lite 2.5") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-4 "\"Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "\"Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "\"Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "\"Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "\"Claude 4.5")
           :examples $ []
+        |on-fill $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn on-fill (cursor state on-submit)
+              %{} respo.schema/RespoListener (:name :on-fill)
+                :handler $ fn (event dispatch!)
+                  tag-match event $
+                    :fill-text info
+                    let
+                        submit? $ either (:submit? info) true
+                      do
+                        dispatch! $ :: :states cursor
+                          assoc state :content $ :text info
+                        if submit?
+                          on-submit (:text info) (:search? state) (:think? state) dispatch!
+                          , nil
+          :examples $ []
         |pattern-spaced-code $ %{} :CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
@@ -638,6 +663,20 @@
           :code $ quote
             defstyle style-code-content $ {}
               "\"&" $ {} (:line-height "\"1.5") (:font-size 13)
+          :examples $ []
+        |style-fill $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-fill $ {}
+              "\"&" $ {} (:position :relative) (:width 12) (:height 12) (:border-radius "\"2px")
+                :border $ str "\"1.5px solid " (hsl 200 30 80)
+                :cursor :pointer
+                :user-select :none
+                :display :inline-flex
+                :align-items :center
+                :justify-content :center
+                :font-size 9
+                :line-height "\"12px"
+                :color $ hsl 200 70 40
           :examples $ []
         |style-gap12 $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -805,15 +844,35 @@
           :code $ quote
             defn listen-extension! ()
               js/chrome.runtime.onMessage.addListener $ fn (message sender respond!)
-                if
-                  = "\"menu-trigger" $ .-action message
+                when
+                  = "\"menu-summary" $ .-action message
                   let
                       content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline (.-content message)
-                      store $ :store @*reel
-                      cursor $ []
-                      state0 $ get-in store ([] :states :data)
-                      model $ either (:model store) :gemini
-                    submit-message! cursor state0 content false false model dispatch!
+                      event-tuple $ :: :fill-text
+                        {} (:text content) (:submit? true)
+                    (send-to-component! event-tuple)
+                when
+                  = "\"fill-text" $ .-action message
+                  let
+                      content $ .-text message
+                      submit? $ either (.-submit? message) true
+                      event-tuple $ :: :fill-text
+                        {} (:text content) (:submit? submit?)
+                    (send-to-component! event-tuple)
+                when
+                  = "\"menu-translate" $ .-action message
+                  let
+                      content $ str "\"请将以下内容翻译成中文, 保持简洁分段:\n\n" &newline &newline (.-content message)
+                      event-tuple $ :: :fill-text
+                        {} (:text content) (:submit? true)
+                    (send-to-component! event-tuple)
+                when
+                  = "\"menu-custom" $ .-action message
+                  let
+                      content $ .-content message
+                      event-tuple $ :: :fill-text
+                        {} (:text content) (:submit? false)
+                    (send-to-component! event-tuple)
               js/chrome.runtime.connect $ js-object (:name |mySidepanel)
           :examples $ []
         |main! $ %{} :CodeEntry (:doc |)
@@ -877,6 +936,7 @@
             app.config :as config
             "\"./calcit.build-errors" :default build-errors
             "\"bottom-tip" :default hud!
+            respo.controller.client :refer $ send-to-component!
         :examples $ []
     |app.schema $ %{} :FileEntry
       :defs $ {}

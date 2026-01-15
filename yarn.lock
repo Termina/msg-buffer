@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@calcit/procs@^0.10.7":
-  version "0.10.7"
-  resolved "https://registry.npmmirror.com/@calcit/procs/-/procs-0.10.7.tgz#22802873ff98280b062ae313877d9b44816e5a5f"
-  integrity sha512-cARYS++6wIf6du+US+O9lNU6aft1fhjHES9+sNLtPltoAsKCbNS2BSv/6emDHSa/56eftzMMa7+A+BWVbWYFag==
+"@calcit/procs@^0.10.8":
+  version "0.10.8"
+  resolved "https://registry.npmmirror.com/@calcit/procs/-/procs-0.10.8.tgz#bbc04b8a42271b291fde121829f8c891724235a8"
+  integrity sha512-AzZu3l0fl54QPVYKsnKpmHPd0XOFshwcDXMNBr2nN8pGGt9jMx47rviZaW39XHxSi1+8MYzIbqT7w3N8df85/w==
   dependencies:
     "@calcit/ternary-tree" "0.0.25"
     "@cirru/parser.ts" "^0.0.7"
@@ -984,6 +984,7 @@ string-template@~0.2.0:
   integrity sha512-Yptehjogou2xm4UJbxJ4CxgZx12HBfeystp0y3x7s4Dj32ltVVG1Gg8YhKjHZkHicuKpZX/ffilA8505VbUbpw==
 
 "string-width-cjs@npm:string-width@^4.2.0", string-width@^4.1.0:
+  name string-width-cjs
   version "4.2.3"
   resolved "https://registry.npmmirror.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -1002,6 +1003,7 @@ string-width@^5.0.1, string-width@^5.1.2:
     strip-ansi "^7.0.1"
 
 "strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+  name strip-ansi-cjs
   version "6.0.1"
   resolved "https://registry.npmmirror.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
