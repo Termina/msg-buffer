@@ -5,6 +5,7 @@
     "axios": "^1.12.2",
     "cirru-color": "^0.2.4",
     "copy-text-to-clipboard": "^3.2.2",
+    "feather-icons": "^4.29.2",
     "openai": "^6.16.0"
   },
   "devDependencies": {

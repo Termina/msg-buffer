@@ -1,7 +1,7 @@
 
 {} (:about "|file is generated - never edit directly; learn cr edit/tree workflows before changing") (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
-    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
+    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/
   :entries $ {}
   :files $ {}
     |app.comp.container $ %{} :FileEntry
@@ -412,8 +412,10 @@
                               if (:done? state)
                                 div
                                   {} $ :class-name (str-spaced css/row-middle css/gap8)
+                                  if chrome-extension?
+                                    comp-fill $ either (:answer state) "\""
+                                    , nil
                                   comp-copy $ :answer state
-                                  comp-fill $ either (:answer state) "\""
                       =< nil 200
                   comp-message-box (>> states :message-box)
                     a $ {}
@@ -432,10 +434,12 @@
         |comp-fill $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-fill (text)
-              div $ {} (:class-name style-fill) (:inner-text "|➚")
-                :on-click $ fn (e d!)
-                  when chrome-extension? $ js/chrome.runtime.sendMessage
-                    js-object (:action |fill-text) (:text text)
+              div
+                {} (:class-name style-fill)
+                  :on-click $ fn (e d!)
+                    when chrome-extension? $ js/chrome.runtime.sendMessage
+                      js-object (:action |fill-text) (:text text)
+                comp-i :send 12 :currentColor
           :examples $ []
         |comp-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -667,16 +671,12 @@
         |style-fill $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-fill $ {}
-              "\"&" $ {} (:position :relative) (:width 12) (:height 12) (:border-radius "\"2px")
-                :border $ str "\"1.5px solid " (hsl 200 30 80)
-                :cursor :pointer
-                :user-select :none
-                :display :inline-flex
-                :align-items :center
-                :justify-content :center
-                :font-size 9
-                :line-height "\"12px"
-                :color $ hsl 200 70 40
+              "\"&" $ {} (:cursor :pointer) (:user-select :none) (:display :inline-flex) (:align-items :center) (:justify-content :center) (:transition-duration "\"200ms")
+                :color $ hsl 0 0 80
+                :margin "\"0 4px 0 8px"
+              "\"&:hover" $ {}
+                :color $ hsl 0 0 40
+                :transform "\"scale(1.06)"
           :examples $ []
         |style-gap12 $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -808,6 +808,7 @@
             "\"@google/genai" :refer $ GoogleGenAI Modality
             "\"../lib/image" :refer $ base64ToBlob
             "\"openai" :default OpenAI
+            feather.core :refer $ comp-i
         :examples $ []
     |app.config $ %{} :FileEntry
       :defs $ {}

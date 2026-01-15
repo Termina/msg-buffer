@@ -7,3 +7,4 @@
     |Respo/respo.calcit |0.16.24
     |calcit-lang/lilac |main
     |calcit-lang/memof |0.0.17
+    |Respo/respo-feather.calcit |main
