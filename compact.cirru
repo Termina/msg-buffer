@@ -447,10 +447,10 @@
                           {} $ :class-name (str-spaced css/row-middle css/gap8 style-reply-actions)
                           button
                             {}
-                              :class-name $ str-spaced css/button style-more
+                              :class-name $ str-spaced css/button style-reply-button
                               :on-click $ fn (e d!)
                                 .show reply-plugin d! $ fn (text) (submit-message! cursor state text false false model d!)
-                            <> "|回复"
+                            <> |Reply
                         , nil
                       if (:loading? state)
                         div ({}) (memof1-call-by :abort-loading comp-abort "\"Loading...")
@@ -801,7 +801,6 @@
           :code $ quote
             defstyle style-message-assistant $ {}
               "\"&" $ {} (:align-self :flex-start)
-                :background-color $ hsl 0 0 100
           :examples $ []
         |style-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -822,7 +821,7 @@
         |style-message-item $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-item $ {}
-              "\"&" $ {} (:padding "\"12px 16px") (:border-radius 10) (:max-width "\"80%") (:line-height "\"1.6")
+              "\"&" $ {} (:line-height "\"1.6")
           :examples $ []
         |style-message-list $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -846,6 +845,8 @@
             defstyle style-message-user $ {}
               "\"&" $ {} (:align-self :flex-end)
                 :background-color $ hsl 0 0 96
+                :padding "\"12px 16px"
+                :border-radius 10
           :examples $ []
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -856,7 +857,7 @@
                 :padding "\"4px 12px"
                 :margin "\"8px 0"
                 :white-space :nowrap
-                :display :inline-flex
+                :display :inline-block
               "\"&:hover" $ {}
                 :box-shadow $ str "\"1px 1px 4px " (hsl 0 0 0 0.2)
           :examples $ []
@@ -864,6 +865,19 @@
           :code $ quote
             defstyle style-reply-actions $ {}
               "\"&" $ {} (:margin-top 6) (:justify-content :flex-start) (:width "\"100%")
+          :examples $ []
+        |style-reply-button $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-reply-button $ {}
+              "\"&" $ {} (:text-align :center) (:min-width 80)
+                :background-color $ hsl 0 0 100
+                :border-radius 16
+                :padding "\"4px 12px"
+                :margin "\"8px 0"
+                :white-space :nowrap
+                :display :inline-block
+              "\"&:hover" $ {}
+                :box-shadow $ str "\"1px 1px 4px " (hsl 0 0 0 0.2)
           :examples $ []
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -873,8 +887,8 @@
         |style-textbox $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox $ {}
-              "\"&" $ {} (:border-radius 12) (:height "\"max(160px,20vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
-              "\"&.focus-within" $ {} (:height "\"max(240px,32vh)") (:border :none) (:box-shadow :none)
+              "\"&" $ {} (:border-radius 12) (:height "|max(100px,15vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
+              "\"&.focus-within" $ {} (:height "|max(240px,32vh)") (:border :none) (:box-shadow :none)
           :examples $ []
         |style-thinking $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -893,28 +907,31 @@
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!) (hint-fn async)
               let
+                  state1 $ assoc state :messages
+                    append-user-message (:messages state) prompt-text
                   *text $ atom "\""
                   *thinking-text $ atom "\""
                   model $ :model state
+                d! cursor state1
                 try
                   do $ case-default model
-                    js-await $ call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text
-                    :gemini-pro $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
-                    :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state prompt-text d!)
-                    :imagen-4 $ js-await (call-imagen-4-msg! model cursor state prompt-text d!)
-                    :gemini-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
-                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
-                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
-                    :gemini-flash $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
-                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state prompt-text search? think? d! *text *thinking-text)
-                    :claude-3.7 $ js-await (call-anthropic-msg! cursor state prompt-text "\"claude-3-7-sonnet-20250219" false d!)
-                    :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-sonnet-4" true d! *text)
-                    :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-opus-4" true d! *text)
-                    :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state prompt-text "\"anthropic/claude-3.7-sonnet:thinking" true d! *text)
-                    :openrouter/google/gemini-2.5-pro-preview $ js-await (call-openrouter! cursor state prompt-text "\"google/gemini-2.5-pro-preview" true d! *text)
-                    :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await (call-openrouter! cursor state prompt-text "\"google/gemini-2.5-flash-preview-05-20" true d! *text)
-                    :openrouter/openai/gpt-5 $ js-await (call-openrouter! cursor state prompt-text "\"openai/gpt-5" true d! *text)
-                    :openrouter/deepseek/deepseek-chat-v3.1 $ js-await (call-openrouter! cursor state prompt-text "\"deepseek/deepseek-chat-v3.1" true d! *text)
+                    js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
+                    :gemini-pro $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
+                    :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state1 prompt-text d!)
+                    :imagen-4 $ js-await (call-imagen-4-msg! model cursor state1 prompt-text d!)
+                    :gemini-thinking $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
+                    :gemini-flash-thinking $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
+                    :gemini-flash-lite $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
+                    :gemini-flash $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
+                    :gemini-learnlm $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
+                    :claude-3.7 $ js-await (call-anthropic-msg! cursor state1 prompt-text "\"claude-3-7-sonnet-20250219" false d!)
+                    :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state1 prompt-text "\"anthropic/claude-sonnet-4" true d! *text)
+                    :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state1 prompt-text "\"anthropic/claude-opus-4" true d! *text)
+                    :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state1 prompt-text "\"anthropic/claude-3.7-sonnet:thinking" true d! *text)
+                    :openrouter/google/gemini-2.5-pro-preview $ js-await (call-openrouter! cursor state1 prompt-text "\"google/gemini-2.5-pro-preview" true d! *text)
+                    :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await (call-openrouter! cursor state1 prompt-text "\"google/gemini-2.5-flash-preview-05-20" true d! *text)
+                    :openrouter/openai/gpt-5 $ js-await (call-openrouter! cursor state1 prompt-text "\"openai/gpt-5" true d! *text)
+                    :openrouter/deepseek/deepseek-chat-v3.1 $ js-await (call-openrouter! cursor state1 prompt-text "\"deepseek/deepseek-chat-v3.1" true d! *text)
                   fn (e)
                     let
                         err-text $ str "\"Failed to load: " e
