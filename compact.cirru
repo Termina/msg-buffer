@@ -186,7 +186,7 @@
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
                   pro? $ .!includes model "\"pro"
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
-                  messages0 $ append-user-message (:messages state) content
+                  messages0 $ or (:messages state) ([])
                   messages1 $ upsert-assistant-message messages0 "\""
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
@@ -391,9 +391,9 @@
                       :on-result $ fn (result d!)
                         d! cursor $ assoc state :model (nth result 1)
                   reply-plugin $ use-prompt (>> states :reply-prompt)
-                    {} (:text "|追加问题") (:placeholder "|请输入你的追问") (:multiline? true) (:button-text "|发送")
+                    {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                       :validator $ fn (text)
-                        if (blank? text) "|请输入内容" nil
+                        if (blank? text) "|Please enter text" nil
                 div
                   {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
                   div
