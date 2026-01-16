@@ -458,7 +458,10 @@
                         {} $ :class-name css/row-parted
                         div
                           {} $ :class-name (str-spaced css/row-middle css/gap8)
-                          if (:done? state) nil $ div ({}) (memof1-call-by :abort-streaming comp-abort "\"Streaming...")
+                          if (:done? state) nil $ div
+                            {} $ :style
+                              {} (:display :flex) (:justify-content :center) (:align-items :center)
+                            memof1-call-by :abort-streaming comp-abort "\"Streaming..."
                         if (:done? state)
                           div $ {}
                             :class-name $ str-spaced css/row-middle css/gap8
@@ -733,7 +736,7 @@
         |style-abort-close $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-abort-close $ {}
-              "\"&" $ {} (:vertical-align :top) (:font-size 10)
+              "\"&" $ {} (:vertical-align :middle) (:font-size 10)
           :examples $ []
         |style-app-global $ %{} :CodeEntry (:doc |)
           :code $ quote
