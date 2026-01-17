@@ -365,6 +365,8 @@
             defcomp comp-container (reel)
               let
                   store $ :store reel
+                  sessions $ or (:sessions store) ([])
+                  current-session-id $ :current-session-id store
                   states $ :states store
                   cursor $ or (:cursor states) ([])
                   state $ or (:data states)
@@ -372,6 +374,13 @@
                       :messages $ []
                   messages $ or (:messages state) ([])
                   model $ either (:model state) :gemini
+                  is-viewing-history? $ and (some? current-session-id)
+                    let
+                        current-session $ -> sessions
+                          filter $ fn (s)
+                            = (:id s) current-session-id
+                          , first
+                      if (some? current-session) (:is-history? current-session) false
                   last-assistant $ let
                       size $ count messages
                       last-msg $ if (> size 0) (last messages) nil
@@ -394,10 +403,38 @@
                     {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                       :validator $ fn (text)
                         if (blank? text) "|Please enter text" nil
+                  sessions-plugin $ use-drawer (>> states :sessions-modal)
+                    {} (:title "|History Sessions")
+                      :style $ {} (:min-width 400)
+                      :render $ fn (on-close)
+                        comp-sessions-modal sessions
+                          fn (session-id d!)
+                            d! cursor $ -> state
+                              assoc :messages $ :messages
+                                -> sessions
+                                  filter $ fn (s)
+                                    = (:id s) session-id
+                                  first
+                                  either $ {}
+                              assoc :done? true
+                            d! $ :: :session :session-id session-id
+                            on-close d!
+                          , on-close
                 div
                   {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
                   div
                     {} $ :class-name (str-spaced css/expand style-message-area)
+                    div
+                      {}
+                        :class-name $ str-spaced css/row-parted
+                        :style $ {} (:padding |8px)
+                      div $ {}
+                      div
+                        {} $ :class-name css/row-middle
+                        div
+                          {} (:class-name style-history-button) (:title |History)
+                            :on-click $ fn (e d!) (.show sessions-plugin d!)
+                          comp-i |clock
                     div
                       {} $ :class-name (str-spaced css/column style-message-list)
                       if
@@ -443,6 +480,7 @@
                         and
                           > (count messages) 0
                           :done? state
+                          not is-viewing-history?
                         div
                           {} $ :class-name (str-spaced css/row-middle css/gap8 style-reply-actions)
                           button
@@ -476,16 +514,33 @@
                         ; d! $ :: :change-model
                         .show model-plugin d!
                     fn (text search? think? d!)
-                      let
-                          state0 $ -> state
+                      if is-viewing-history?
+                        do
+                          d! $ :: :save-session state
+                          d! cursor $ -> state
                             assoc :messages $ []
                             assoc :answer nil
                             assoc :thinking nil
                             assoc :done? false
-                        d! cursor state0
-                        submit-message! cursor state0 text search? think? model d!
+                          d! $ :: :session :session-id (generate-session-id)
+                          submit-message! cursor
+                            -> state
+                              assoc :messages $ []
+                              assoc :answer nil
+                              assoc :thinking nil
+                              assoc :done? false
+                            , text search? think? model d!
+                        do $ let
+                            state0 $ -> state
+                              assoc :messages $ []
+                              assoc :answer nil
+                              assoc :thinking nil
+                              assoc :done? false
+                          d! cursor state0
+                          submit-message! cursor state0 text search? think? model d!
                   model-plugin.render
                   reply-plugin.render
+                  sessions-plugin.render
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect "\"Store" store nil
           :examples $ []
@@ -584,6 +639,71 @@
                                 ; println $ :content state
                                 on-submit (:content state) (:search? state) (:think? state) d!
           :examples $ []
+        |comp-sessions-modal $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defcomp comp-sessions-modal (sessions on-select on-close)
+              div
+                {} $ :class-name (str-spaced css/column css/gap8 style-sessions-list)
+                if (empty? sessions)
+                  div
+                    {} $ :style
+                      {} (:padding |12px)
+                        :color $ hsl 0 0 60
+                    <> "|No history sessions"
+                  list->
+                    {} $ :class-name css/column
+                    -> sessions (.!reverse)
+                      map $ fn (session)
+                        let
+                            session-id $ :id session
+                            created-at $ :created-at session
+                            preview $ :preview session
+                            date-str $ .!toLocaleString (new js/Date created-at)
+                          [] session-id $ div
+                            {} (:class-name style-session-item)
+                              :on-click $ fn (e d!) (on-select session-id d!) (on-close d!)
+                            div
+                              {} $ :style
+                                {} (:font-size |12px)
+                                  :color $ hsl 0 0 60
+                              <> date-str
+                            div
+                              {} $ :style
+                                {} $ :margin-top |4px
+                              <> preview
+          :examples $ []
+        |create-session $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn create-session (messages model)
+              let
+                  id $ generate-session-id
+                  first-msg $ if
+                    > (count messages) 0
+                    :content $ first messages
+                    , "|New chat"
+                {} (:id id)
+                  :created-at $ js/Date.now
+                  :messages messages
+                  :model model
+                  :preview $ let
+                      len $ count first-msg
+                      end $ if (< len 50) len 50
+                    .!slice first-msg 0 end
+                  :is-history? false
+          :examples $ []
+        |effect-auto-save $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defeffect effect-auto-save (state current-session-id d!) (action el at?)
+              when
+                and (= action :update) (:done? state)
+                  >
+                    count $ :messages state
+                    , 0
+                  nil? current-session-id
+                do (js/console.log "|[Auto-save] Saving session after completion")
+                  d! $ :: :save-session state
+                  d! $ :: :session :session-id (generate-session-id)
+          :examples $ []
         |effect-focus $ %{} :CodeEntry (:doc |)
           :code $ quote
             defeffect effect-focus () (action el at?)
@@ -602,6 +722,10 @@
                   > (.-length lines) 1
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
+          :examples $ []
+        |generate-session-id $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn generate-session-id () $ str (js/Date.now)
           :examples $ []
         |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -727,6 +851,28 @@
             defn pick-model (variant)
               case-default variant "\"gemini-3-flash-preview" (:gemini-pro "\"gemini-3-pro-preview") (:gemini-flash-lite "\"gemini-flash-lite-latest") (:gemma "\"gemma-3-27b-it")
           :examples $ []
+        |save-current-session $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn save-current-session (store state)
+              let
+                  messages $ :messages state
+                  model $ either (:model state) :gemini
+                  session-id $ :current-session-id store
+                if
+                  and (some? session-id)
+                    > (count messages) 0
+                  let
+                      new-session $ create-session messages model
+                      updated-session $ assoc new-session :id session-id :is-history? true
+                      sessions $ :sessions store
+                      existing-idx $ index-of sessions
+                        fn (s)
+                          = (:id s) session-id
+                    if (some? existing-idx)
+                      assoc store :sessions $ assoc sessions existing-idx updated-session
+                      assoc store :sessions $ append sessions updated-session
+                  , store
+          :examples $ []
         |style-a-toggler $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -778,6 +924,14 @@
           :code $ quote
             defstyle style-gap12 $ {}
               "\"&" $ {} (:gap 12)
+          :examples $ []
+        |style-history-button $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-history-button $ {}
+              |& $ {} (:font-size |20px) (:cursor :pointer) (:padding |8px)
+                :color $ hsl 200 80 60
+                |:hover $ {}
+                  :color $ hsl 200 80 50
           :examples $ []
         |style-image $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -882,6 +1036,19 @@
               "\"&:hover" $ {}
                 :box-shadow $ str "\"1px 1px 4px " (hsl 0 0 0 0.2)
           :examples $ []
+        |style-session-item $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-session-item $ {}
+              |& $ {} (:padding |12px) (:cursor :pointer)
+                :border-bottom $ str "|1px solid " (hsl 0 0 90)
+                |:hover $ {}
+                  :background-color $ hsl 0 0 96
+          :examples $ []
+        |style-sessions-list $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-sessions-list $ {}
+              |& $ {} (:max-height |400px) (:overflow-y :auto) (:min-width |300px)
+          :examples $ []
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
@@ -967,13 +1134,13 @@
             "\"axios" :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy comp-close
-            respo-alerts.core :refer $ use-modal-menu use-prompt
             "\"../extension/get-selected" :refer $ get-selected
             memof.once :refer $ memof1-call memof1-call-by
             "\"@google/genai" :refer $ GoogleGenAI Modality
             "\"../lib/image" :refer $ base64ToBlob
             "\"openai" :default OpenAI
             feather.core :refer $ comp-i
+            respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
         :examples $ []
     |app.config $ %{} :FileEntry
       :defs $ {}
@@ -1111,6 +1278,8 @@
             def store $ {}
               :states $ {}
                 :cursor $ []
+              :sessions $ []
+              :current-session-id nil
               :model nil
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
@@ -1124,17 +1293,42 @@
               tag-match op
                   :states cursor s
                   update-states store cursor s
-                (:states-merge cursor s changes) (update-states-merge store cursor s changes)
+                (:states-merge cursor s changes)
+                  let
+                      store1 $ update-states-merge store cursor s changes
+                      state $ or
+                        get-in store1 $ [] :states :data
+                        {}
+                    do (js/console.log "|[Updater] states-merge called" changes)
+                      js/console.log "|[Updater] done?" $ :done? changes
+                      js/console.log "|[Updater] messages count" $ count (:messages state)
+                      js/console.log "|[Updater] current-session-id" $ :current-session-id store1
+                      if
+                        and (:done? changes)
+                          >
+                            count $ :messages state
+                            , 0
+                          nil? $ :current-session-id store1
+                        do (js/console.log "|[Updater] Auto-saving session!")
+                          -> store1 (save-current-session state)
+                            assoc :current-session-id $ generate-session-id
+                        , store1
                 (:hydrate-storage data) data
                 (:change-model)
                   if
                     = (:model store) :anthropic
                     assoc store :model :gemini
                     assoc store :model :anthropic
+                (:save-session state)
+                  let
+                      store1 $ save-current-session store state
+                    assoc store1 :current-session-id nil
+                (:session session-id id) (assoc store :current-session-id id)
                 _ $ do (eprintln "\"unknown op:" op) store
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
             respo.cursor :refer $ update-states update-states-merge
+            app.comp.container :refer $ save-current-session generate-session-id
         :examples $ []
