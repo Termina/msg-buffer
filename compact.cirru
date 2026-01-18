@@ -405,7 +405,7 @@
                         if (blank? text) "|Please enter text" nil
                   sessions-plugin $ use-drawer (>> states :sessions-modal)
                     {} (:title "|History Sessions")
-                      :style $ {} (:min-width 320) (:max-width |80vw)
+                      :style $ {} (:min-width "\"|max(320px,30vw)\"") (:max-width |80vw)
                       :render $ fn (on-close)
                         comp-sessions-modal sessions
                           fn (session-id d!)
@@ -666,7 +666,7 @@
                             {} $ :class-name style-session-item
                             div
                               {}
-                                :style $ {} (:flex |1) (:cursor :pointer)
+                                :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
                                 :on-click $ fn (e d!) (on-select session-id d!) (on-close d!)
                               div
                                 {} $ :style
@@ -675,7 +675,7 @@
                                 <> date-str
                               div
                                 {} $ :style
-                                  {} $ :margin-top |4px
+                                  {} (:margin-top |4px) (:white-space :nowrap) (:overflow :hidden) (:text-overflow :ellipsis) (:max-height |1.2em) (:line-height |1.2)
                                 <> preview
                             div
                               {} (:class-name style-delete-button)
@@ -698,7 +698,7 @@
                   :model model
                   :preview $ let
                       len $ count first-msg
-                      end $ if (< len 50) len 50
+                      end $ if (< len 100) len 100
                     .!slice first-msg 0 end
                   :is-history? false
           :examples $ []
