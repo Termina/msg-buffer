@@ -36,7 +36,7 @@
                   selected $ js-await (get-selected)
                   content $ .replace prompt-text "\"{{selected}}" (or selected "\"<未找到内容>")
                   messages0 $ append-user-message (:messages state) content
-                  messages1 $ upsert-assistant-message messages0 "\""
+                  messages1 $ upsert-assistant-message messages0 "\"" nil
                   result $ js-await
                     .!post axios (str "\"https://sa.chenyong.life/v1/messages")
                       js-object
@@ -90,7 +90,7 @@
                                     if stop?
                                       d! $ :: :states-merge cursor state
                                         {} (:answer @*text) (:loading? false) (:done? true)
-                                          :messages $ upsert-assistant-message messages1 @*text
+                                          :messages $ upsert-assistant-message messages1 @*text nil
                                       let
                                           content $ get-in x0 ([] "\"delta" "\"text")
                                         if (nil? content)
@@ -105,7 +105,7 @@
                                           let () (swap! *text str content)
                                             d! $ :: :states-merge cursor state
                                               {} (:answer @*text) (:loading? false) (:done? false)
-                                                :messages $ upsert-assistant-message messages1 @*text
+                                                :messages $ upsert-assistant-message messages1 @*text nil
                                             recur xss
                         recur
           :examples $ []
@@ -187,7 +187,7 @@
                   pro? $ .!includes model "\"pro"
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   messages0 $ or (:messages state) ([])
-                  messages1 $ upsert-assistant-message messages0 "\""
+                  messages1 $ upsert-assistant-message messages0 "\"" nil
                   sdk-result $ js-await
                     .!generateContentStream (.-models gen-ai)
                       js-object (:model model)
@@ -234,13 +234,13 @@
                             if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
                             d! $ :: :states-merge cursor state
                               {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                                :messages $ upsert-assistant-message messages1 @*text
+                                :messages $ upsert-assistant-message messages1 @*text @*thinking-text
                       d! $ :: :states-merge cursor state
                         {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                          :messages $ upsert-assistant-message messages1 @*text
+                          :messages $ upsert-assistant-message messages1 @*text @*thinking-text
                   d! $ :: :states-merge cursor state
                     {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
-                      :messages $ upsert-assistant-message messages1 @*text
+                      :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
         |call-imagen-4-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -306,7 +306,7 @@
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
                   messages0 $ append-user-message (:messages state) content
-                  messages1 $ upsert-assistant-message messages0 "\""
+                  messages1 $ upsert-assistant-message messages0 "\"" nil
                   sdk-result $ js-await
                     -> openai .-chat .-completions $ .!create
                       js-object (:model variant)
@@ -332,13 +332,13 @@
                           swap! *text str $ -> chunk .-choices .-0 .-delta .-content (or "\"")
                           d! $ :: :states-merge cursor state
                             {} (:answer @*text) (:loading? false) (:done? false)
-                              :messages $ upsert-assistant-message messages1 @*text
+                              :messages $ upsert-assistant-message messages1 @*text nil
                       d! $ :: :states-merge cursor state
                         {} (:answer @*text) (:loading? false) (:done? false)
-                          :messages $ upsert-assistant-message messages1 @*text
+                          :messages $ upsert-assistant-message messages1 @*text nil
                   d! $ :: :states-merge cursor state
                     {} (:answer @*text) (:loading? false) (:done? true)
-                      :messages $ upsert-assistant-message messages1 @*text
+                      :messages $ upsert-assistant-message messages1 @*text nil
           :examples $ []
         |clear-image-cache! $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -403,6 +403,9 @@
                     {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                       :validator $ fn (text)
                         if (blank? text) "|Please enter text" nil
+                  message-box-state $ either
+                    :data $ >> states :message-box
+                    {} (:search? false) (:think? false)
                   sessions-plugin $ use-drawer (>> states :sessions-modal)
                     {} (:title "|History Sessions")
                       :style $ {} (:min-width "\"|max(320px,30vw)\"") (:max-width |80vw)
@@ -414,8 +417,7 @@
                                 -> sessions
                                   filter $ fn (s)
                                     = (:id s) session-id
-                                  first
-                                  either $ {}
+                                  , first $ either ({})
                               assoc :done? true
                             d! $ :: :session :session-id session-id
                             on-close d!
@@ -448,13 +450,6 @@
                         or (= :imagen-4 model) (= :flash-imagen model)
                         img $ {}
                           :class-name $ str-spaced style-image "\"show-image"
-                      if
-                        not $ blank? (:thinking state)
-                        div
-                          {} $ :class-name style-thinking
-                          memof1-call comp-md-block
-                            -> (:thinking state) (either "\"")
-                            {} $ :class-name style-md-content
                       list->
                         {} $ :class-name (str-spaced css/column css/gap8)
                         -> messages $ map-indexed
@@ -462,12 +457,20 @@
                             [] idx $ let
                                 role $ :role msg
                                 content $ :content msg
+                                thinking $ :thinking msg
                               div
                                 {} $ :class-name
                                   str-spaced style-message-item $ if (= role :assistant) style-message-assistant style-message-user
                                 div
                                   {} $ :class-name style-message-role
                                   <> $ if (= role :assistant) |Assistant |You
+                                if
+                                  not $ blank? thinking
+                                  div
+                                    {} $ :class-name style-thinking
+                                    memof1-call comp-md-block
+                                      -> thinking $ either "\""
+                                      {} $ :class-name style-md-content
                                 if (= role :assistant)
                                   if (json-pattern? content)
                                     pre $ {} (:class-name style-code-content) (:inner-text content)
@@ -494,7 +497,8 @@
                             {}
                               :class-name $ str-spaced css/button style-reply-button
                               :on-click $ fn (e d!)
-                                .show reply-plugin d! $ fn (text) (submit-message! cursor state text false false model d!)
+                                .show reply-plugin d! $ fn (text)
+                                  submit-message! cursor state text (:search? message-box-state) (:think? message-box-state) model d!
                             <> |Reply
                         , nil
                       if (:loading? state)
@@ -1128,11 +1132,11 @@
                     let
                         err-text $ str "\"Failed to load: " e
                       d! cursor $ -> state (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
-                        assoc :messages $ upsert-assistant-message (:messages state) err-text
+                        assoc :messages $ upsert-assistant-message (:messages state) err-text nil
           :examples $ []
         |upsert-assistant-message $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn upsert-assistant-message (messages content)
+            defn upsert-assistant-message (messages content thinking)
               let
                   messages0 $ if (some? messages) messages ([])
                   size $ count messages0
@@ -1140,8 +1144,9 @@
                 if
                   and (some? last-msg)
                     = :assistant $ :role last-msg
-                  assoc messages0 (dec size) (assoc last-msg :content content)
-                  conj messages0 $ {} (:role :assistant) (:content content)
+                  assoc messages0 (dec size)
+                    -> last-msg (assoc :content content) (assoc :thinking thinking)
+                  conj messages0 $ {} (:role :assistant) (:content content) (:thinking thinking)
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
