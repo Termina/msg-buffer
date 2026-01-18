@@ -935,7 +935,12 @@
             defstyle style-history-button $ {}
               |& $ {} (:font-size |20px)
                 :color $ hsl 200 80 60
-                |:hover $ {}
+                :height |14px
+                :line-height |14px
+                :display :flex
+                :align-items :center
+                :justify-content :center
+                |&:hover $ {}
                   :color $ hsl 200 80 50
           :examples $ []
         |style-history-count $ %{} :CodeEntry (:doc |)
