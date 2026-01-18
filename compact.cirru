@@ -405,7 +405,7 @@
                         if (blank? text) "|Please enter text" nil
                   sessions-plugin $ use-drawer (>> states :sessions-modal)
                     {} (:title "|History Sessions")
-                      :style $ {} (:min-width 400)
+                      :style $ {} (:min-width 320) (:max-width |80vw)
                       :render $ fn (on-close)
                         comp-sessions-modal sessions
                           fn (session-id d!)
@@ -430,11 +430,18 @@
                         :style $ {} (:padding |8px)
                       div $ {}
                       div
-                        {} $ :class-name css/row-middle
+                        {} (:class-name css/row-middle) (:title |History)
+                          :style $ {} (:cursor :pointer)
+                          :on-click $ fn (e d!) (.show sessions-plugin d!)
                         div
-                          {} (:class-name style-history-button) (:title |History)
-                            :on-click $ fn (e d!) (.show sessions-plugin d!)
+                          {} $ :class-name style-history-button
                           comp-i |clock
+                        =< 4 nil
+                        if
+                          > (count sessions) 0
+                          <>
+                            str $ count sessions
+                            str-spaced css/font-fancy style-history-count
                     div
                       {} $ :class-name (str-spaced css/column style-message-list)
                       if
@@ -514,30 +521,26 @@
                         ; d! $ :: :change-model
                         .show model-plugin d!
                     fn (text search? think? d!)
-                      if is-viewing-history?
-                        do
+                      do
+                        when
+                          and
+                            > (count messages) 0
+                            :done? state
+                            nil? current-session-id
                           d! $ :: :save-session state
-                          d! cursor $ -> state
+                        d! cursor $ -> state
+                          assoc :messages $ []
+                          assoc :answer nil
+                          assoc :thinking nil
+                          assoc :done? false
+                        d! $ :: :session :session-id nil
+                        submit-message! cursor
+                          -> state
                             assoc :messages $ []
                             assoc :answer nil
                             assoc :thinking nil
                             assoc :done? false
-                          d! $ :: :session :session-id (generate-session-id)
-                          submit-message! cursor
-                            -> state
-                              assoc :messages $ []
-                              assoc :answer nil
-                              assoc :thinking nil
-                              assoc :done? false
-                            , text search? think? model d!
-                        do $ let
-                            state0 $ -> state
-                              assoc :messages $ []
-                              assoc :answer nil
-                              assoc :thinking nil
-                              assoc :done? false
-                          d! cursor state0
-                          submit-message! cursor state0 text search? think? model d!
+                          , text search? think? model d!
                   model-plugin.render
                   reply-plugin.render
                   sessions-plugin.render
@@ -660,17 +663,25 @@
                             preview $ :preview session
                             date-str $ .!toLocaleString (new js/Date created-at)
                           [] session-id $ div
-                            {} (:class-name style-session-item)
-                              :on-click $ fn (e d!) (on-select session-id d!) (on-close d!)
+                            {} $ :class-name style-session-item
                             div
-                              {} $ :style
-                                {} (:font-size |12px)
-                                  :color $ hsl 0 0 60
-                              <> date-str
+                              {}
+                                :style $ {} (:flex |1) (:cursor :pointer)
+                                :on-click $ fn (e d!) (on-select session-id d!) (on-close d!)
+                              div
+                                {} $ :style
+                                  {} (:font-size |12px)
+                                    :color $ hsl 0 0 60
+                                <> date-str
+                              div
+                                {} $ :style
+                                  {} $ :margin-top |4px
+                                <> preview
                             div
-                              {} $ :style
-                                {} $ :margin-top |4px
-                              <> preview
+                              {} (:class-name style-delete-button)
+                                :on-click $ fn (e d!) (-> e :event .!stopPropagation)
+                                  d! $ :: :remove-session session-id
+                              <> "|✕"
           :examples $ []
         |create-session $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -690,19 +701,6 @@
                       end $ if (< len 50) len 50
                     .!slice first-msg 0 end
                   :is-history? false
-          :examples $ []
-        |effect-auto-save $ %{} :CodeEntry (:doc |)
-          :code $ quote
-            defeffect effect-auto-save (state current-session-id d!) (action el at?)
-              when
-                and (= action :update) (:done? state)
-                  >
-                    count $ :messages state
-                    , 0
-                  nil? current-session-id
-                do (js/console.log "|[Auto-save] Saving session after completion")
-                  d! $ :: :save-session state
-                  d! $ :: :session :session-id (generate-session-id)
           :examples $ []
         |effect-focus $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -857,20 +855,13 @@
               let
                   messages $ :messages state
                   model $ either (:model state) :gemini
-                  session-id $ :current-session-id store
                 if
-                  and (some? session-id)
-                    > (count messages) 0
+                  > (count messages) 0
                   let
                       new-session $ create-session messages model
-                      updated-session $ assoc new-session :id session-id :is-history? true
-                      sessions $ :sessions store
-                      existing-idx $ index-of sessions
-                        fn (s)
-                          = (:id s) session-id
-                    if (some? existing-idx)
-                      assoc store :sessions $ assoc sessions existing-idx updated-session
-                      assoc store :sessions $ append sessions updated-session
+                      updated-session $ assoc new-session :is-history? true
+                      sessions $ or (:sessions store) ([])
+                    assoc store :sessions $ append sessions updated-session
                   , store
           :examples $ []
         |style-a-toggler $ %{} :CodeEntry (:doc |)
@@ -910,6 +901,20 @@
             defstyle style-code-content $ {}
               "\"&" $ {} (:line-height "\"1.5") (:font-size 13)
           :examples $ []
+        |style-delete-button $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-delete-button $ {}
+              |& $ {} (:padding "|4px 8px") (:font-size |18px) (:font-weight |50)
+                :color $ hsl 0 80 50
+                :opacity 0.5
+                :cursor :pointer
+                :transition "|opacity 0.15s, color 0.15s"
+                :user-select :none
+              |&:hover $ {} (:opacity 1)
+                :color $ hsl 0 90 45
+              |&:active $ {} (:opacity 1)
+                :color $ hsl 0 90 40
+          :examples $ []
         |style-fill $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-fill $ {}
@@ -928,10 +933,18 @@
         |style-history-button $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-history-button $ {}
-              |& $ {} (:font-size |20px) (:cursor :pointer) (:padding |8px)
+              |& $ {} (:font-size |20px)
                 :color $ hsl 200 80 60
                 |:hover $ {}
                   :color $ hsl 200 80 50
+          :examples $ []
+        |style-history-count $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defstyle style-history-count $ {}
+              |& $ {}
+                :color $ hsl 200 80 60
+                :font-size |12px
+                :display :inline-block
           :examples $ []
         |style-image $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -1039,15 +1052,19 @@
         |style-session-item $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-session-item $ {}
-              |& $ {} (:padding |12px) (:cursor :pointer)
+              |& $ {} (:padding |12px)
                 :border-bottom $ str "|1px solid " (hsl 0 0 90)
+                :display :flex
+                :flex-direction :row
+                :align-items :center
+                :gap |12px
                 |:hover $ {}
                   :background-color $ hsl 0 0 96
           :examples $ []
         |style-sessions-list $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-sessions-list $ {}
-              |& $ {} (:max-height |400px) (:overflow-y :auto) (:min-width |300px)
+              |& $ {} (:flex |1) (:overflow-y :auto) (:min-width |300px)
           :examples $ []
         |style-submit $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -1296,23 +1313,7 @@
                 (:states-merge cursor s changes)
                   let
                       store1 $ update-states-merge store cursor s changes
-                      state $ or
-                        get-in store1 $ [] :states :data
-                        {}
-                    do (js/console.log "|[Updater] states-merge called" changes)
-                      js/console.log "|[Updater] done?" $ :done? changes
-                      js/console.log "|[Updater] messages count" $ count (:messages state)
-                      js/console.log "|[Updater] current-session-id" $ :current-session-id store1
-                      if
-                        and (:done? changes)
-                          >
-                            count $ :messages state
-                            , 0
-                          nil? $ :current-session-id store1
-                        do (js/console.log "|[Updater] Auto-saving session!")
-                          -> store1 (save-current-session state)
-                            assoc :current-session-id $ generate-session-id
-                        , store1
+                    , store1
                 (:hydrate-storage data) data
                 (:change-model)
                   if
@@ -1324,6 +1325,11 @@
                       store1 $ save-current-session store state
                     assoc store1 :current-session-id nil
                 (:session session-id id) (assoc store :current-session-id id)
+                (:remove-session id)
+                  assoc store :sessions $ filter
+                    or (:sessions store) ([])
+                    fn (s)
+                      not $ = (:id s) id
                 _ $ do (eprintln "\"unknown op:" op) store
           :examples $ []
       :ns $ %{} :CodeEntry (:doc |)
