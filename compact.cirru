@@ -1013,19 +1013,27 @@
               "\"&" $ {} (:font-size 12)
                 :color $ hsl 0 0 50
                 :margin-bottom 6
+                :padding-right "\"16px"
           :examples $ []
         |style-message-text $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-text $ {}
-              "\"&" $ {} (:white-space :pre-wrap) (:line-height "\"1.6") (:margin 0)
+              "\"&" $ {} (:white-space :pre-wrap) (:line-height "\"1.6") (:margin 0) (:padding-right "\"16px")
           :examples $ []
         |style-message-user $ %{} :CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-user $ {}
               "\"&" $ {} (:align-self :flex-end)
                 :background-color $ hsl 0 0 96
-                :padding "\"12px 16px"
+                :padding "\"12px 0 12px 16px"
                 :border-radius 10
+                :max-height "\"240px"
+                :overflow-y :auto
+              "\"&::-webkit-scrollbar" $ {} (:width "\"4px")
+              "\"&::-webkit-scrollbar-thumb" $ {}
+                :background-color $ hsl 0 0 80
+                :border-radius "\"2px"
+              "\"&::-webkit-scrollbar-track" $ {} (:background-color :transparent)
           :examples $ []
         |style-more $ %{} :CodeEntry (:doc |)
           :code $ quote
