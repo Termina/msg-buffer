@@ -1210,7 +1210,7 @@
                       content $ str "\"你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline (.-content message)
                       event-tuple $ :: :fill-text
                         {} (:text content) (:submit? true)
-                    (send-to-component! event-tuple)
+                    send-to-component! event-tuple
                 when
                   = "\"fill-text" $ .-action message
                   let
@@ -1218,21 +1218,21 @@
                       submit? $ either (.-submit? message) true
                       event-tuple $ :: :fill-text
                         {} (:text content) (:submit? submit?)
-                    (send-to-component! event-tuple)
+                    send-to-component! event-tuple
                 when
                   = "\"menu-translate" $ .-action message
                   let
                       content $ str "\"请将以下内容翻译成中文, 保持简洁分段:\n\n" &newline &newline (.-content message)
                       event-tuple $ :: :fill-text
                         {} (:text content) (:submit? true)
-                    (send-to-component! event-tuple)
+                    send-to-component! event-tuple
                 when
                   = "\"menu-custom" $ .-action message
                   let
                       content $ .-content message
                       event-tuple $ :: :fill-text
                         {} (:text content) (:submit? false)
-                    (send-to-component! event-tuple)
+                    send-to-component! event-tuple
               js/chrome.runtime.connect $ js-object (:name |mySidepanel)
           :examples $ []
         |main! $ %{} :CodeEntry (:doc |)

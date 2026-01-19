@@ -1,4 +1,14 @@
 let sidepanelOpen = false;
+let pendingMessage = null;
+
+let sendToSidepanel = (message, tabId) => {
+  if (sidepanelOpen) {
+    chrome.runtime.sendMessage(message);
+    return;
+  }
+  pendingMessage = message;
+  chrome.sidePanel.open({ tabId });
+};
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
@@ -37,26 +47,12 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.contextMenus.onClicked.addListener((item, tab) => {
   let content = item.selectionText;
   if (item.menuItemId === "msg-gemini-translate") {
-    chrome.runtime.sendMessage({ action: "menu-translate", content });
+    sendToSidepanel({ action: "menu-translate", content }, tab.id);
   } else if (item.menuItemId === "msg-gemini-custom") {
-    chrome.runtime.sendMessage({ action: "menu-custom", content });
+    sendToSidepanel({ action: "menu-custom", content }, tab.id);
   } else {
-    chrome.runtime.sendMessage({ action: "menu-summary", content });
+    sendToSidepanel({ action: "menu-summary", content }, tab.id);
   }
-  chrome.sidePanel.open({ tabId: tab.id }, () => {
-    // also try to open
-    if (!sidepanelOpen) {
-      setTimeout(() => {
-        if (item.menuItemId === "msg-gemini-translate") {
-          chrome.runtime.sendMessage({ action: "menu-translate", content });
-        } else if (item.menuItemId === "msg-gemini-custom") {
-          chrome.runtime.sendMessage({ action: "menu-custom", content });
-        } else {
-          chrome.runtime.sendMessage({ action: "menu-summary", content });
-        }
-      }, 1000);
-    }
-  });
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -77,6 +73,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onConnect.addListener(function (port) {
   if (port.name === "mySidepanel") {
     sidepanelOpen = true;
+    if (pendingMessage) {
+      chrome.runtime.sendMessage(pendingMessage);
+      pendingMessage = null;
+    }
     console.log("Sidepanel opened.");
     port.onDisconnect.addListener(async () => {
       sidepanelOpen = false;
