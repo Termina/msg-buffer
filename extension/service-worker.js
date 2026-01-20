@@ -2,45 +2,47 @@ let sidepanelOpen = false;
 let pendingMessage = null;
 
 let sendToSidepanel = (message, tabId) => {
+  console.log("[Worker] Sending message to sidepanel:", message.action);
+  chrome.runtime.sendMessage(message);
   if (sidepanelOpen) {
-    chrome.runtime.sendMessage(message);
     return;
   }
+  console.log("[Worker] Sidepanel not marked as open, attempting to open and queueing message");
   pendingMessage = message;
   chrome.sidePanel.open({ tabId });
 };
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
-});
 
-chrome.runtime.onInstalled.addListener(async () => {
-  chrome.contextMenus.create({
-    id: "msg-gemini-root",
-    title: "Msg Gemini",
-    type: "normal",
-    contexts: ["selection"],
-  });
-  chrome.contextMenus.create({
-    id: "msg-gemini-summary",
-    title: "Summary",
-    type: "normal",
-    contexts: ["selection"],
-    parentId: "msg-gemini-root",
-  });
-  chrome.contextMenus.create({
-    id: "msg-gemini-translate",
-    title: "Translate",
-    type: "normal",
-    contexts: ["selection"],
-    parentId: "msg-gemini-root",
-  });
-  chrome.contextMenus.create({
-    id: "msg-gemini-custom",
-    title: "Custom...",
-    type: "normal",
-    contexts: ["selection"],
-    parentId: "msg-gemini-root",
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "msg-gemini-root",
+      title: "Msg Gemini",
+      type: "normal",
+      contexts: ["selection"],
+    });
+    chrome.contextMenus.create({
+      id: "msg-gemini-summary",
+      title: "Summary",
+      type: "normal",
+      contexts: ["selection"],
+      parentId: "msg-gemini-root",
+    });
+    chrome.contextMenus.create({
+      id: "msg-gemini-translate",
+      title: "Translate",
+      type: "normal",
+      contexts: ["selection"],
+      parentId: "msg-gemini-root",
+    });
+    chrome.contextMenus.create({
+      id: "msg-gemini-custom",
+      title: "Custom...",
+      type: "normal",
+      contexts: ["selection"],
+      parentId: "msg-gemini-root",
+    });
   });
 });
 
@@ -73,14 +75,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onConnect.addListener(function (port) {
   if (port.name === "mySidepanel") {
     sidepanelOpen = true;
+    console.log("[Worker] Sidepanel connected.");
     if (pendingMessage) {
+      console.log("[Worker] Sending pending message after connection.");
       chrome.runtime.sendMessage(pendingMessage);
       pendingMessage = null;
     }
-    console.log("Sidepanel opened.");
     port.onDisconnect.addListener(async () => {
       sidepanelOpen = false;
-      console.log("Sidepanel closed.");
+      console.log("[Worker] Sidepanel disconnected.");
     });
   }
 });

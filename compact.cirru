@@ -372,6 +372,7 @@
                   state $ or (:data states)
                     {} (:answer nil) (:loading? false) (:done? false)
                       :messages $ []
+                  done? $ :done? state
                   messages $ or (:messages state) ([])
                   model $ either (:model state) :gemini
                   is-viewing-history? $ and (some? current-session-id)
@@ -478,7 +479,10 @@
                                       -> content $ either "\""
                                       {} $ :class-name style-md-content
                                   pre $ {} (:class-name style-message-text) (:inner-text content)
-                                if (= role :assistant)
+                                if
+                                  and (= role :assistant)
+                                    or done? $ not= idx
+                                      dec $ count messages
                                   div
                                     {} $ :class-name (str-spaced css/row-middle css/gap8 style-message-actions)
                                     if chrome-extension?
@@ -1200,6 +1204,19 @@
           :code $ quote
             defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
+        |connect-to-worker! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn connect-to-worker! () $ if
+              and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.connect)
+              do (println "|Connecting to worker...")
+                let
+                    port $ js/chrome.runtime.connect
+                      js-object $ :name |mySidepanel
+                  .!addListener (.-onDisconnect port)
+                    fn (event)
+                      do (println "|Worker disconnected, retrying in 500ms...") (js/setTimeout connect-to-worker! 500)
+              , nil
+          :examples $ []
         |dispatch! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn dispatch! (op)
@@ -1241,7 +1258,7 @@
                       event-tuple $ :: :fill-text
                         {} (:text content) (:submit? false)
                     send-to-component! event-tuple
-              js/chrome.runtime.connect $ js-object (:name |mySidepanel)
+              connect-to-worker!
           :examples $ []
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
