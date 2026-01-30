@@ -7,7 +7,9 @@ let sendToSidepanel = (message, tabId) => {
   if (sidepanelOpen) {
     return;
   }
-  console.log("[Worker] Sidepanel not marked as open, attempting to open and queueing message");
+  console.log(
+    "[Worker] Sidepanel not marked as open, attempting to open and queueing message",
+  );
   pendingMessage = message;
   chrome.sidePanel.open({ tabId });
 };
