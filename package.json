@@ -1,11 +1,12 @@
 {
   "dependencies": {
-    "@calcit/procs": "^0.10.4",
-    "@google/genai": "^1.34.0",
+    "@calcit/procs": "^0.10.9",
+    "@google/genai": "^1.37.0",
     "axios": "^1.12.2",
     "cirru-color": "^0.2.4",
     "copy-text-to-clipboard": "^3.2.2",
-    "openai": "^6.15.0"
+    "feather-icons": "^4.29.2",
+    "openai": "^6.16.0"
   },
   "devDependencies": {
     "bottom-tip": "^0.1.5",
