@@ -11,3 +11,5 @@ dist/
 extension/dist
 
 .tmp/
+
+.yarn
