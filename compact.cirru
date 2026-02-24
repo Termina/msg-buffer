@@ -1,7 +1,7 @@
 
 {} (:about "|file is generated - never edit directly; learn cr edit/tree workflows before changing") (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
-    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/
+    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/ |genai.calcit/
   :entries $ {}
   :files $ {}
     |app.comp.container $ %{} :FileEntry
@@ -113,8 +113,7 @@
           :code $ quote
             defn call-flash-imagen-msg! (variant cursor state prompt-text d!) (hint-fn async)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ new GoogleGenAI
-                  js-object $ :apiKey (get-gemini-key!)
+                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
                 .!setAttribute target "\"src" "\""
@@ -126,23 +125,15 @@
                 -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ js-await (get-selected)
-                  gen-ai $ let
-                      ai @*gen-ai-new
-                    js/console.log ai
-                    , ai
+                  gen-ai @*gen-ai-new
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   sdk-result $ js-await
-                    .!generateContent (.-models gen-ai)
-                      js-object (:model "\"gemini-2.5-flash-image") (:contents content)
-                        :config $ js-object
-                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
-                          :signal $ let
-                              abort $ new js/AbortController
-                            reset! *abort-control abort
-                            .-signal abort
-                          :responseModalities $ js-array (.-TEXT Modality) (.-IMAGE Modality)
+                    sdk/generate-content! gen-ai $ {} (:model "\"gemini-2.5-flash-image") (:contents content)
+                      :abort-signal $ sdk/make-abort-signal *abort-control
+                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
+                      :response-modalities $ js-array "\"TEXT" "\"IMAGE"
                   *text $ atom "\""
-                js-await $ -> sdk-result .-candidates .-0 .-content .-parts
+                js-await $ -> (sdk/extract-content-parts sdk-result)
                   .!forEach $ fn (? chunk _a _b)
                     if (some? chunk)
                       if-let
@@ -170,17 +161,14 @@
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text) (hint-fn async)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ new GoogleGenAI
-                  js-object $ :apiKey (get-gemini-key!)
+                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
               let
                   selected $ if (.includes? prompt-text "\"{{selected}}")
                     js-await $ get-selected
-                  gen-ai $ let
-                      ai @*gen-ai-new
-                    , ai
+                  gen-ai @*gen-ai-new
                   model $ pick-model variant
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
                   json? $ or (.!includes prompt-text "\"{{json}}") (.!includes prompt-text "\"{{JSON}}")
@@ -189,35 +177,17 @@
                   messages0 $ or (:messages state) ([])
                   messages1 $ upsert-assistant-message messages0 "\"" nil
                   sdk-result $ js-await
-                    .!generateContentStream (.-models gen-ai)
-                      js-object (:model model)
-                        :contents $ messages->gemini messages0
-                        :config $ js/Object.assign
-                          js-object
-                            :thinkingConfig $ if think?
-                              js-object
-                                :thinkingBudget $ get-env "\"think-budget" (if pro? 3200 800)
-                                :includeThoughts think?
-                              js-object (:thinkingBudget 0) (:includeThoughts false)
-                            :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
-                            :tools $ let
-                                t $ ->
-                                  js-array
-                                    if search? $ js-object
-                                      :googleSearch $ js-object
-                                    if has-url? $ js-object
-                                      :urlContext $ js-object
-                                  .!filter $ fn (x & _a) x
-                              if
-                                = 0 $ .-length t
-                                , js/undefined t
-                            :abortSignal $ let
-                                abort $ new js/AbortController
-                              reset! *abort-control abort
-                              .-signal abort
-                          if json?
-                            js-object $ "\"responseMimeType" "\"application/json"
-                            , js/undefined
+                    sdk/generate-content-stream! gen-ai $ {} (:model model)
+                      :contents $ sdk/messages->contents messages0
+                      :thinking-config $ if think?
+                        sdk/make-thinking-config
+                          get-env "\"think-budget" $ if pro? 3200 800
+                          , true
+                        sdk/make-thinking-config 0 false
+                      :tools $ sdk/make-search-tools search? has-url?
+                      :abort-signal $ sdk/make-abort-signal *abort-control
+                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
+                      :response-mime-type $ if json? "\"application/json" nil
                 do
                   js/setTimeout $ fn ()
                     d! $ :: :states-merge cursor state
@@ -226,18 +196,16 @@
                     fn (? chunk)
                       if (some? chunk)
                         let
-                            part js/chunk.candidates?.[0]?.content?.parts?.[0]
-                            is-thinking? $ if (some? part) (.-thought part) false
-                            t $ if (some? part) (.-text part) (.-text chunk)
-                          let
-                              text $ or t (-> chunk .?-promptFeedback .?-blockReason) |__BLANK__
-                            if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
-                            d! $ :: :states-merge cursor state
-                              {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                                :messages $ upsert-assistant-message messages1 @*text @*thinking-text
-                      d! $ :: :states-merge cursor state
-                        {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                          :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                            info $ sdk/extract-stream-chunk chunk
+                            is-thinking? $ :thinking? info
+                            text $ or (:text info) |__BLANK__
+                          if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
+                          d! $ :: :states-merge cursor state
+                            {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
+                              :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                        d! $ :: :states-merge cursor state
+                          {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
+                            :messages $ upsert-assistant-message messages1 @*text @*thinking-text
                   d! $ :: :states-merge cursor state
                     {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                       :messages $ upsert-assistant-message messages1 @*text @*thinking-text
@@ -246,8 +214,7 @@
           :code $ quote
             defn call-imagen-4-msg! (variant cursor state prompt-text d!) (hint-fn async)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ new GoogleGenAI
-                  js-object $ :apiKey (get-gemini-key!)
+                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
                 .!removeAttribute target "\"src"
@@ -259,21 +226,14 @@
                 -> state (assoc :answer nil) (assoc :loading? true)
               let
                   selected $ js-await (get-selected)
-                  gen-ai $ let
-                      ai @*gen-ai-new
-                    , ai
+                  gen-ai @*gen-ai-new
                   response $ js-await
-                    .!generateImages (.-models gen-ai)
-                      js-object (:model "\"imagen-4.0-generate-001") (:prompt prompt-text)
-                        :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
-                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
-                          :signal $ let
-                              abort $ new js/AbortController
-                            reset! *abort-control abort
-                            .-signal abort
+                    sdk/generate-images! gen-ai $ {} (:model "\"imagen-4.0-generate-001") (:prompt prompt-text) (:number-of-images 1) (:include-rai-reason true)
+                      :abort-signal $ sdk/make-abort-signal *abort-control
+                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
                   *text $ atom "\""
                 if-let
-                  image-data $ -> response .-generatedImages .-0 .-image .-imageBytes
+                  image-data $ sdk/extract-image-bytes response
                   let
                       image-blob $ base64ToBlob image-data
                       url $ js/URL.createObjectURL image-blob
@@ -1176,11 +1136,11 @@
             respo-ui.comp :refer $ comp-copy comp-close
             "\"../extension/get-selected" :refer $ get-selected
             memof.once :refer $ memof1-call memof1-call-by
-            "\"@google/genai" :refer $ GoogleGenAI Modality
             "\"../lib/image" :refer $ base64ToBlob
             "\"openai" :default OpenAI
             feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
+            genai.sdk :as sdk
         :examples $ []
     |app.config $ %{} :FileEntry
       :defs $ {}

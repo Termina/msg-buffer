@@ -13,3 +13,5 @@ extension/dist
 .tmp/
 
 .yarn
+
+.calcit-snippets/

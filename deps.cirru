@@ -8,3 +8,4 @@
     |Respo/respo.calcit |0.16.28
     |calcit-lang/lilac |main
     |calcit-lang/memof |0.0.22
+    |Memkits/genai.calcit |0.0.2
