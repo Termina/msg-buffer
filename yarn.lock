@@ -5,14 +5,14 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@calcit/procs@npm:^0.11.6":
-  version: 0.11.6
-  resolution: "@calcit/procs@npm:0.11.6"
+"@calcit/procs@npm:^0.11.7":
+  version: 0.11.7
+  resolution: "@calcit/procs@npm:0.11.7"
   dependencies:
     "@calcit/ternary-tree": "npm:0.0.25"
     "@cirru/parser.ts": "npm:^0.0.8"
     "@cirru/writer.ts": "npm:^0.1.7"
-  checksum: 10c0/d114ca2b2e3be115acf81126ec3bb6bc2c619dee01720f132e3a9535e6db2a19ccd3790c54720ca6fd071e9f1e99d62a0ca8654b53c7aabc8db9c2e1fb22910e
+  checksum: 10c0/b8bd5af3dcd4b50fa4a57395c1e3ace18d756d86209b280e05a52929ecb370afcc043f6a68be6c51675a1403891d07cc0b3f30a78921cd891a320467a96b286e
   languageName: node
   linkType: hard
 
@@ -65,11 +65,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google/genai@npm:^1.37.0":
-  version: 1.37.0
-  resolution: "@google/genai@npm:1.37.0"
+"@google/genai@npm:^1.43.0":
+  version: 1.43.0
+  resolution: "@google/genai@npm:1.43.0"
   dependencies:
     google-auth-library: "npm:^10.3.0"
+    p-retry: "npm:^4.6.2"
     protobufjs: "npm:^7.5.4"
     ws: "npm:^8.18.0"
   peerDependencies:
@@ -77,7 +78,7 @@ __metadata:
   peerDependenciesMeta:
     "@modelcontextprotocol/sdk":
       optional: true
-  checksum: 10c0/4f7c18e575ed25c3f1fbc38f3fb72dbb610ca419280253ba08ba6cc3c8190ecc76cc0580b21a2457deb60b5c6ad5be184fd0d8907281490ef6e184a5dd2b38bb
+  checksum: 10c0/b20d989340928447b138baeef8cc11b1011f16e8668688ac80831ccff601f0b2490207b0dca33ebbead97bb44a09f7e909c19df2db2f6410caed838543c4cff4
   languageName: node
   linkType: hard
 
@@ -362,6 +363,13 @@ __metadata:
   dependencies:
     undici-types: "npm:~7.16.0"
   checksum: 10c0/a757efafe303d9c8833eb53c2e9a0981cd5ac725cdc04c5612a71db86468c938778d4fa328be4231b68fffc68258638764df7b9c69e86cf55f0bb67105eb056f
+  languageName: node
+  linkType: hard
+
+"@types/retry@npm:0.12.0":
+  version: 0.12.0
+  resolution: "@types/retry@npm:0.12.0"
+  checksum: 10c0/7c5c9086369826f569b83a4683661557cab1361bac0897a1cefa1a915ff739acd10ca0d62b01071046fe3f5a3f7f2aec80785fe283b75602dc6726781ea3e328
   languageName: node
   linkType: hard
 
@@ -1555,6 +1563,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"p-retry@npm:^4.6.2":
+  version: 4.6.2
+  resolution: "p-retry@npm:4.6.2"
+  dependencies:
+    "@types/retry": "npm:0.12.0"
+    retry: "npm:^0.13.1"
+  checksum: 10c0/d58512f120f1590cfedb4c2e0c42cb3fa66f3cea8a4646632fcb834c56055bb7a6f138aa57b20cc236fb207c9d694e362e0b5c2b14d9b062f67e8925580c73b0
+  languageName: node
+  linkType: hard
+
 "package-json-from-dist@npm:^1.0.0":
   version: 1.0.1
   resolution: "package-json-from-dist@npm:1.0.1"
@@ -1672,6 +1690,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"retry@npm:^0.13.1":
+  version: 0.13.1
+  resolution: "retry@npm:0.13.1"
+  checksum: 10c0/9ae822ee19db2163497e074ea919780b1efa00431d197c7afdb950e42bf109196774b92a49fc9821f0b8b328a98eea6017410bfc5e8a0fc19c85c6d11adb3772
+  languageName: node
+  linkType: hard
+
 "rimraf@npm:^5.0.1":
   version: 5.0.10
   resolution: "rimraf@npm:5.0.10"
@@ -1739,8 +1764,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@calcit/procs": "npm:^0.11.6"
-    "@google/genai": "npm:^1.37.0"
+    "@calcit/procs": "npm:^0.11.7"
+    "@google/genai": "npm:^1.43.0"
     axios: "npm:^1.12.2"
     bottom-tip: "npm:^0.1.5"
     cirru-color: "npm:^0.2.4"
