@@ -509,6 +509,7 @@
                             assoc :thinking nil
                             assoc :done? false
                           , text search? think? model d!
+                    , model
                   model-plugin.render
                   reply-plugin.render
                   sessions-plugin.render
@@ -527,7 +528,7 @@
           :examples $ []
         |comp-message-box $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defcomp comp-message-box (states picker-el on-submit)
+            defcomp comp-message-box (states picker-el on-submit model)
               let
                   cursor $ :cursor states
                   state $ either (:data states)
@@ -583,16 +584,19 @@
                         div
                           {} $ :class-name (str-spaced css/row style-gap12)
                           , picker-el
-                            div
-                              {}
-                                :class-name $ str-spaced css/row style-checkbox
-                                :on-click $ fn (e d!)
-                                  d! cursor $ assoc state :think?
-                                    not $ :think? state
-                              input $ {}
-                                :checked $ :think? state
-                                :type "\"checkbox"
-                              <> "\"Think" css/font-fancy
+                            if
+                              contains? (#{} :gemini-flash :gemini-3.1-flash-lite-preview) model
+                              div
+                                {}
+                                  :class-name $ str-spaced css/row style-checkbox
+                                  :on-click $ fn (e d!)
+                                    d! cursor $ assoc state :think?
+                                      not $ :think? state
+                                input $ {}
+                                  :checked $ :think? state
+                                  :type "\"checkbox"
+                                <> "\"Think" css/font-fancy
+                              , nil
                             div
                               {}
                                 :class-name $ str-spaced css/row style-checkbox
@@ -790,7 +794,7 @@
           :examples $ []
         |models-menu $ %{} :CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-pro "|Gemini Pro 3") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-4 "\"Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "\"Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "\"Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "\"Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "\"Claude 4.5")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-4 "\"Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "\"Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "\"Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "\"Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "\"Claude 4.5")
           :examples $ []
         |on-fill $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -815,7 +819,7 @@
         |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant "\"gemini-3-flash-preview" (:gemini-3.1-flash-lite-preview "\"gemini-3.1-flash-lite-preview") (:gemini-pro "\"gemini-3-pro-preview") (:gemma "\"gemma-3-27b-it")
+              case-default variant "\"gemini-3-flash-preview" (:gemini-3.1-flash-lite-preview "\"gemini-3.1-flash-lite-preview") (:gemini-pro "\"gemini-3.1-pro-preview") (:gemma "\"gemma-3-27b-it")
           :examples $ []
         |save-current-session $ %{} :CodeEntry (:doc |)
           :code $ quote
@@ -1086,7 +1090,7 @@
                   do $ case-default model
                     js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                     :gemini-3.1-flash-lite-preview $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
-                    :gemini-pro $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
+                    :gemini-pro $ js-await (call-genai-msg! model cursor state1 prompt-text search? true d! *text *thinking-text)
                     :flash-imagen $ js-await (call-flash-imagen-msg! model cursor state1 prompt-text d!)
                     :imagen-4 $ js-await (call-imagen-4-msg! model cursor state1 prompt-text d!)
                     :gemini-thinking $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
