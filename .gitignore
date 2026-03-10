@@ -9,3 +9,9 @@ dist/
 .DS_Store
 
 extension/dist
+
+.tmp/
+
+.yarn
+
+.calcit-snippets/
