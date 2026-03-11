@@ -1,5 +1,5 @@
 
-{} (:calcit-version |0.12.2)
+{} (:calcit-version |0.12.3)
   :dependencies $ {} (|Memkits/genai.calcit |0.0.2)
     |Respo/alerts.calcit |0.10.9
     |Respo/reel.calcit |main
