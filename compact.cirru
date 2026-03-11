@@ -116,7 +116,11 @@
             defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
               hint-fn $ {} (:async true)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
+                let
+                    mod $ js-await (js/import |@google/genai)
+                    GoogleGenAI $ .-GoogleGenAI mod
+                  reset! *gen-ai-new $ new GoogleGenAI
+                    js-object $ :apiKey (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
                 .!setAttribute target "\"src" "\""
@@ -130,14 +134,20 @@
                   selected $ js-await (get-selected)
                   gen-ai @*gen-ai-new
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
+                  abort-signal $ let
+                      abort $ new js/AbortController
+                    reset! *abort-control abort
+                    .-signal abort
                   sdk-result $ js-await
-                    sdk/generate-content! gen-ai $ {} (:model "\"gemini-2.5-flash-image") (:contents content)
-                      :abort-signal $ sdk/make-abort-signal *abort-control
-                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
-                      :response-modalities $ js-array "\"TEXT" "\"IMAGE"
+                    .!generateContent (.-models gen-ai)
+                      js-object (:model "\"gemini-2.5-flash-image") (:contents content)
+                        :config $ js-object (:abortSignal abort-signal)
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
+                          :responseModalities $ js-array "\"TEXT" "\"IMAGE"
+                  parts $ -> sdk-result .-candidates .-0 .-content .-parts
                   *text $ atom "\""
-                js-await $ -> (sdk/extract-content-parts sdk-result)
-                  .!forEach $ fn (? chunk _a _b)
+                js-await $ .!forEach parts
+                  fn (? chunk _a _b)
                     if (some? chunk)
                       if-let
                         text $ .-text chunk
@@ -165,7 +175,11 @@
             defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text)
               hint-fn $ {} (:async true)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
+                let
+                    mod $ js-await (js/import |@google/genai)
+                    GoogleGenAI $ .-GoogleGenAI mod
+                  reset! *gen-ai-new $ new GoogleGenAI
+                    js-object $ :apiKey (get-gemini-key!)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -180,18 +194,35 @@
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   messages0 $ or (:messages state) ([])
                   messages1 $ upsert-assistant-message messages0 "\"" nil
+                  abort-signal $ let
+                      abort $ new js/AbortController
+                    reset! *abort-control abort
+                    .-signal abort
+                  tools $ ->
+                    js-array
+                      if search?
+                        js-object $ :googleSearch (js-object)
+                        , js/undefined
+                      if has-url?
+                        js-object $ :urlContext (js-object)
+                        , js/undefined
+                    .!filter $ fn (x _idx _arr) x
                   sdk-result $ js-await
-                    sdk/generate-content-stream! gen-ai $ {} (:model model)
-                      :contents $ sdk/messages->contents messages0
-                      :thinking-config $ if think?
-                        sdk/make-thinking-config
-                          get-env "\"think-budget" $ if pro? 3200 800
-                          , true
-                        sdk/make-thinking-config 0 false
-                      :tools $ sdk/make-search-tools search? has-url?
-                      :abort-signal $ sdk/make-abort-signal *abort-control
-                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
-                      :response-mime-type $ if json? "\"application/json" nil
+                    .!generateContentStream (.-models gen-ai)
+                      js-object (:model model)
+                        :contents $ messages->gemini messages0
+                        :config $ js-object
+                          :thinkingConfig $ if think?
+                            js-object
+                              :thinkingBudget $ get-env "\"think-budget" (if pro? 3200 800)
+                              :includeThoughts true
+                            js-object (:thinkingBudget 0) (:includeThoughts false)
+                          :tools $ if
+                            > (.-length tools) 0
+                            , tools js/undefined
+                          :abortSignal abort-signal
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
+                          :responseMimeType $ if json? "\"application/json" js/undefined
                 do
                   js/setTimeout $ fn ()
                     d! $ :: :states-merge cursor state
@@ -200,9 +231,11 @@
                     fn (? chunk)
                       if (some? chunk)
                         let
-                            info $ sdk/extract-stream-chunk chunk
-                            is-thinking? $ :thinking? info
-                            text $ or (:text info) |__BLANK__
+                            part $ -> chunk .-candidates .-0 .-content .-parts .-0
+                            is-thinking? $ if (some? part) (.-thought part) false
+                            text $ or
+                              if (some? part) (.-text part) (.-text chunk)
+                              -> chunk .-promptFeedback .-blockReason
                           if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
                           d! $ :: :states-merge cursor state
                             {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
@@ -219,7 +252,11 @@
             defn call-imagen-4-msg! (variant cursor state prompt-text d!)
               hint-fn $ {} (:async true)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
+                let
+                    mod $ js-await (js/import |@google/genai)
+                    GoogleGenAI $ .-GoogleGenAI mod
+                  reset! *gen-ai-new $ new GoogleGenAI
+                    js-object $ :apiKey (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
                 .!removeAttribute target "\"src"
@@ -232,13 +269,19 @@
               let
                   selected $ js-await (get-selected)
                   gen-ai @*gen-ai-new
+                  abort-signal $ let
+                      abort $ new js/AbortController
+                    reset! *abort-control abort
+                    .-signal abort
                   response $ js-await
-                    sdk/generate-images! gen-ai $ {} (:model "\"imagen-4.0-generate-001") (:prompt prompt-text) (:number-of-images 1) (:include-rai-reason true)
-                      :abort-signal $ sdk/make-abort-signal *abort-control
-                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
+                    .!generateImages (.-models gen-ai)
+                      js-object (:model "\"imagen-4.0-generate-001") (:prompt prompt-text)
+                        :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
+                          :signal abort-signal
                   *text $ atom "\""
                 if-let
-                  image-data $ sdk/extract-image-bytes response
+                  image-data $ -> response .-generatedImages .-0 .-image .-imageBytes
                   let
                       image-blob $ base64ToBlob image-data
                       url $ js/URL.createObjectURL image-blob
@@ -1152,7 +1195,6 @@
             "\"openai" :default OpenAI
             feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
-            genai.sdk :as sdk
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |) (:schema nil)
