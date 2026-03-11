@@ -14,7 +14,7 @@
     "vite": "^8.0.0-beta.18"
   },
   "scripts": {
-    "build": "cr js && yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
+    "build": "rm -rfv dist && cr js && yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
   },
   "version": "0.0.1",
   "packageManager": "yarn@4.12.0"

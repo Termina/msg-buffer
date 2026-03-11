@@ -299,11 +299,14 @@
             defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
               hint-fn $ {} (:async true)
               if (nil? @*openai)
-                reset! *openai $ new OpenAI
-                  js-object (:baseURL "\"https://openrouter.ai/api/v1")
-                    :apiKey $ get-openrouter-key!
-                    :defaultHeaders $ js-object
-                    :dangerouslyAllowBrowser true
+                let
+                    mod $ js-await $ js/import |openai
+                    OpenAI $ .-default mod
+                  reset! *openai $ new OpenAI
+                    js-object (:baseURL "\"https://openrouter.ai/api/v1")
+                      :apiKey $ get-openrouter-key!
+                      :defaultHeaders $ js-object
+                      :dangerouslyAllowBrowser true
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -335,7 +338,7 @@
                     d! $ :: :states-merge cursor state
                       {} (:answer nil) (:thinking nil) (:loading? true) (:done? false) (:messages messages1)
                   js-await $ js-for-await sdk-result
-                    fn (? chunk) (; js/console.log "\"[CHUNK]" chunk)
+                    fn (? chunk)
                       if (some? chunk)
                         do
                           swap! *text str $ -> chunk .-choices .-0 .-delta .-content (or "\"")
@@ -1192,7 +1195,6 @@
             "\"../extension/get-selected" :refer $ get-selected
             memof.once :refer $ memof1-call memof1-call-by
             "\"../lib/image" :refer $ base64ToBlob
-            "\"openai" :default OpenAI
             feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
     |app.config $ %{} :FileEntry
@@ -1237,6 +1239,19 @@
                 and config/dev? $ not= op :states
                 js/console.log "\"Dispatch:" op
               reset! *reel $ reel-updater updater @*reel op
+          :examples $ []
+        |hydrate-storage-later! $ %{} :CodeEntry (:doc |) (:schema nil)
+          :code $ quote
+            defn hydrate-storage-later! () $ js/setTimeout
+              fn () $ let
+                  raw $ js/localStorage.getItem (:storage-key config/site)
+                when (some? raw)
+                  let
+                      t_start $ .!now js/Date
+                    dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
+                    println "\"Hydrated in"
+                      - (.!now js/Date) t_start
+                      , "\"ms"
           :examples $ []
         |listen-extension! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
@@ -1291,15 +1306,7 @@
                 fn (event)
                   if (.-ctrlKey event) (.!preventDefault event)
                 js-object $ :passive false
-              let
-                  raw $ js/localStorage.getItem (:storage-key config/site)
-                when (some? raw)
-                  let
-                      t_start $ .!now js/Date
-                    dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
-                    println "\"Hydrated in"
-                      - (.!now js/Date) t_start
-                      , "\"ms"
+              hydrate-storage-later!
               if config/chrome-extension? $ listen-extension!
               let
                   t1 $ .!now js/Date
