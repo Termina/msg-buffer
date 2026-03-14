@@ -6,28 +6,29 @@
   :files $ {}
     |app.comp.container $ %{} :FileEntry
       :defs $ {}
-        |*abort-control $ %{} :CodeEntry (:doc |)
+        |*abort-control $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote (defatom *abort-control nil)
           :examples $ []
-        |*gen-ai-new $ %{} :CodeEntry (:doc |)
+        |*gen-ai-new $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote (defatom *gen-ai-new nil)
           :examples $ []
-        |*image-cache $ %{} :CodeEntry (:doc |)
+        |*image-cache $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote (defatom *image-cache nil)
           :examples $ []
-        |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter")
+        |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter") (:schema nil)
           :code $ quote (defatom *openai nil)
           :examples $ []
-        |append-user-message $ %{} :CodeEntry (:doc |)
+        |append-user-message $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn append-user-message (messages content)
               let
                   messages0 $ if (some? messages) messages ([])
                 conj messages0 $ {} (:role :user) (:content content)
           :examples $ []
-        |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
+        |call-anthropic-msg! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn call-anthropic-msg! (cursor state prompt-text model thinking? d!) (hint-fn async)
+            defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
+              hint-fn $ {} (:async true)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -67,7 +68,8 @@
                 js/setTimeout $ fn ()
                   d! $ :: :states-merge cursor state
                     {} (:answer nil) (:thinking nil) (:loading? true) (:done? false) (:messages messages1)
-                apply-args () $ fn () (hint-fn async)
+                apply-args () $ fn ()
+                  hint-fn $ {} (:async true)
                   let
                       info $ js-await (.!read reader)
                       value $ wo-js-log (.-value info)
@@ -109,11 +111,16 @@
                                             recur xss
                         recur
           :examples $ []
-        |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |)
+        |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn call-flash-imagen-msg! (variant cursor state prompt-text d!) (hint-fn async)
+            defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
+              hint-fn $ {} (:async true)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
+                let
+                    mod $ js-await (js/import |@google/genai)
+                    GoogleGenAI $ .-GoogleGenAI mod
+                  reset! *gen-ai-new $ new GoogleGenAI
+                    js-object $ :apiKey (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
                 .!setAttribute target "\"src" "\""
@@ -127,14 +134,20 @@
                   selected $ js-await (get-selected)
                   gen-ai @*gen-ai-new
                   content $ .!replace prompt-text "\"{{selected}}" (or selected "\"<未找到选中内容>")
+                  abort-signal $ let
+                      abort $ new js/AbortController
+                    reset! *abort-control abort
+                    .-signal abort
                   sdk-result $ js-await
-                    sdk/generate-content! gen-ai $ {} (:model "\"gemini-2.5-flash-image") (:contents content)
-                      :abort-signal $ sdk/make-abort-signal *abort-control
-                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
-                      :response-modalities $ js-array "\"TEXT" "\"IMAGE"
+                    .!generateContent (.-models gen-ai)
+                      js-object (:model "\"gemini-2.5-flash-image") (:contents content)
+                        :config $ js-object (:abortSignal abort-signal)
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
+                          :responseModalities $ js-array "\"TEXT" "\"IMAGE"
+                  parts $ -> sdk-result .-candidates .-0 .-content .-parts
                   *text $ atom "\""
-                js-await $ -> (sdk/extract-content-parts sdk-result)
-                  .!forEach $ fn (? chunk _a _b)
+                js-await $ .!forEach parts
+                  fn (? chunk _a _b)
                     if (some? chunk)
                       if-let
                         text $ .-text chunk
@@ -157,11 +170,16 @@
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-        |call-genai-msg! $ %{} :CodeEntry (:doc |)
+        |call-genai-msg! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text) (hint-fn async)
+            defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text)
+              hint-fn $ {} (:async true)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
+                let
+                    mod $ js-await (js/import |@google/genai)
+                    GoogleGenAI $ .-GoogleGenAI mod
+                  reset! *gen-ai-new $ new GoogleGenAI
+                    js-object $ :apiKey (get-gemini-key!)
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -176,18 +194,35 @@
                   has-url? $ or (.!includes prompt-text "\"http://") (.!includes prompt-text "\"https://")
                   messages0 $ or (:messages state) ([])
                   messages1 $ upsert-assistant-message messages0 "\"" nil
+                  abort-signal $ let
+                      abort $ new js/AbortController
+                    reset! *abort-control abort
+                    .-signal abort
+                  tools $ ->
+                    js-array
+                      if search?
+                        js-object $ :googleSearch (js-object)
+                        , js/undefined
+                      if has-url?
+                        js-object $ :urlContext (js-object)
+                        , js/undefined
+                    .!filter $ fn (x _idx _arr) x
                   sdk-result $ js-await
-                    sdk/generate-content-stream! gen-ai $ {} (:model model)
-                      :contents $ sdk/messages->contents messages0
-                      :thinking-config $ if think?
-                        sdk/make-thinking-config
-                          get-env "\"think-budget" $ if pro? 3200 800
-                          , true
-                        sdk/make-thinking-config 0 false
-                      :tools $ sdk/make-search-tools search? has-url?
-                      :abort-signal $ sdk/make-abort-signal *abort-control
-                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
-                      :response-mime-type $ if json? "\"application/json" nil
+                    .!generateContentStream (.-models gen-ai)
+                      js-object (:model model)
+                        :contents $ messages->gemini messages0
+                        :config $ js-object
+                          :thinkingConfig $ if think?
+                            js-object
+                              :thinkingBudget $ get-env "\"think-budget" (if pro? 3200 800)
+                              :includeThoughts true
+                            js-object (:thinkingBudget 0) (:includeThoughts false)
+                          :tools $ if
+                            > (.-length tools) 0
+                            , tools js/undefined
+                          :abortSignal abort-signal
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
+                          :responseMimeType $ if json? "\"application/json" js/undefined
                 do
                   js/setTimeout $ fn ()
                     d! $ :: :states-merge cursor state
@@ -196,9 +231,11 @@
                     fn (? chunk)
                       if (some? chunk)
                         let
-                            info $ sdk/extract-stream-chunk chunk
-                            is-thinking? $ :thinking? info
-                            text $ or (:text info) |__BLANK__
+                            part $ -> chunk .-candidates .-0 .-content .-parts .-0
+                            is-thinking? $ if (some? part) (.-thought part) false
+                            text $ or
+                              if (some? part) (.-text part) (.-text chunk)
+                              -> chunk .-promptFeedback .-blockReason
                           if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
                           d! $ :: :states-merge cursor state
                             {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
@@ -210,11 +247,16 @@
                     {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                       :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-        |call-imagen-4-msg! $ %{} :CodeEntry (:doc |)
+        |call-imagen-4-msg! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn call-imagen-4-msg! (variant cursor state prompt-text d!) (hint-fn async)
+            defn call-imagen-4-msg! (variant cursor state prompt-text d!)
+              hint-fn $ {} (:async true)
               if (nil? @*gen-ai-new)
-                reset! *gen-ai-new $ sdk/new-client (get-gemini-key!)
+                let
+                    mod $ js-await (js/import |@google/genai)
+                    GoogleGenAI $ .-GoogleGenAI mod
+                  reset! *gen-ai-new $ new GoogleGenAI
+                    js-object $ :apiKey (get-gemini-key!)
               if-let
                 target $ js/document.querySelector "\".show-image"
                 .!removeAttribute target "\"src"
@@ -227,13 +269,19 @@
               let
                   selected $ js-await (get-selected)
                   gen-ai @*gen-ai-new
+                  abort-signal $ let
+                      abort $ new js/AbortController
+                    reset! *abort-control abort
+                    .-signal abort
                   response $ js-await
-                    sdk/generate-images! gen-ai $ {} (:model "\"imagen-4.0-generate-001") (:prompt prompt-text) (:number-of-images 1) (:include-rai-reason true)
-                      :abort-signal $ sdk/make-abort-signal *abort-control
-                      :http-options $ sdk/make-http-options |https://ja.chenyong.life
+                    .!generateImages (.-models gen-ai)
+                      js-object (:model "\"imagen-4.0-generate-001") (:prompt prompt-text)
+                        :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
+                          :httpOptions $ js-object (:baseUrl |https://ja.chenyong.life)
+                          :signal abort-signal
                   *text $ atom "\""
                 if-let
-                  image-data $ sdk/extract-image-bytes response
+                  image-data $ -> response .-generatedImages .-0 .-image .-imageBytes
                   let
                       image-blob $ base64ToBlob image-data
                       url $ js/URL.createObjectURL image-blob
@@ -246,15 +294,19 @@
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-        |call-openrouter! $ %{} :CodeEntry (:doc |)
+        |call-openrouter! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn call-openrouter! (cursor state prompt-text variant thinking? d! *text) (hint-fn async)
+            defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
+              hint-fn $ {} (:async true)
               if (nil? @*openai)
-                reset! *openai $ new OpenAI
-                  js-object (:baseURL "\"https://openrouter.ai/api/v1")
-                    :apiKey $ get-openrouter-key!
-                    :defaultHeaders $ js-object
-                    :dangerouslyAllowBrowser true
+                let
+                    mod $ js-await $ js/import |openai
+                    OpenAI $ .-default mod
+                  reset! *openai $ new OpenAI
+                    js-object (:baseURL "\"https://openrouter.ai/api/v1")
+                      :apiKey $ get-openrouter-key!
+                      :defaultHeaders $ js-object
+                      :dangerouslyAllowBrowser true
               if-let
                 abort $ deref *abort-control
                 do (js/console.warn "\"Aborting prev") (.!abort abort)
@@ -286,7 +338,7 @@
                     d! $ :: :states-merge cursor state
                       {} (:answer nil) (:thinking nil) (:loading? true) (:done? false) (:messages messages1)
                   js-await $ js-for-await sdk-result
-                    fn (? chunk) (; js/console.log "\"[CHUNK]" chunk)
+                    fn (? chunk)
                       if (some? chunk)
                         do
                           swap! *text str $ -> chunk .-choices .-0 .-delta .-content (or "\"")
@@ -300,12 +352,12 @@
                     {} (:answer @*text) (:loading? false) (:done? true)
                       :messages $ upsert-assistant-message messages1 @*text nil
           :examples $ []
-        |clear-image-cache! $ %{} :CodeEntry (:doc |)
+        |clear-image-cache! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn clear-image-cache! () $ if-let (url @*image-cache)
               do (js/URL.revokeObjectURL url) (reset! *image-cache nil)
           :examples $ []
-        |comp-abort $ %{} :CodeEntry (:doc |)
+        |comp-abort $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn comp-abort (t)
               span
@@ -320,7 +372,7 @@
                 =< 8 nil
                 <> "\"✕" style-abort-close
           :examples $ []
-        |comp-container $ %{} :CodeEntry (:doc |)
+        |comp-container $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defcomp comp-container (reel)
               let
@@ -516,7 +568,7 @@
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect "\"Store" store nil
           :examples $ []
-        |comp-fill $ %{} :CodeEntry (:doc |)
+        |comp-fill $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defcomp comp-fill (text)
               div
@@ -526,7 +578,7 @@
                       js-object (:action |fill-text) (:text text)
                 comp-i :send 12 :currentColor
           :examples $ []
-        |comp-message-box $ %{} :CodeEntry (:doc |)
+        |comp-message-box $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defcomp comp-message-box (states picker-el on-submit model)
               let
@@ -614,7 +666,7 @@
                                 ; println $ :content state
                                 on-submit (:content state) (:search? state) (:think? state) d!
           :examples $ []
-        |comp-sessions-modal $ %{} :CodeEntry (:doc |)
+        |comp-sessions-modal $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defcomp comp-sessions-modal (sessions on-select on-close)
               div
@@ -655,7 +707,7 @@
                                   d! $ :: :remove-session session-id
                               <> "|✕"
           :examples $ []
-        |create-session $ %{} :CodeEntry (:doc |)
+        |create-session $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn create-session (messages model)
               let
@@ -674,14 +726,14 @@
                     .!slice first-msg 0 end
                   :is-history? false
           :examples $ []
-        |effect-focus $ %{} :CodeEntry (:doc |)
+        |effect-focus $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defeffect effect-focus () (action el at?)
               when (= action :mount)
                 js/setTimeout $ fn ()
                   .!select $ .!querySelector el "\"textarea"
           :examples $ []
-        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
+        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.") (:schema nil)
           :code $ quote
             defn first-line (tt)
               let
@@ -693,11 +745,11 @@
                   js/console.warn "\"Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
           :examples $ []
-        |generate-session-id $ %{} :CodeEntry (:doc |)
+        |generate-session-id $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn generate-session-id () $ str (js/Date.now)
           :examples $ []
-        |get-anthropic-key! $ %{} :CodeEntry (:doc |)
+        |get-anthropic-key! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn get-anthropic-key! () $ let
                 key $ js/localStorage.getItem "\"claude-key"
@@ -710,7 +762,7 @@
                   , v
                 , key
           :examples $ []
-        |get-deepinfra-key! $ %{} :CodeEntry (:doc |)
+        |get-deepinfra-key! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn get-deepinfra-key! () $ let
                 key $ js/localStorage.getItem "\"deepinfra-key"
@@ -723,7 +775,7 @@
                   , v
                 , key
           :examples $ []
-        |get-gemini-key! $ %{} :CodeEntry (:doc |)
+        |get-gemini-key! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn get-gemini-key! () $ let
                 key $ js/localStorage.getItem "\"gemini-key"
@@ -736,7 +788,7 @@
                   , v
                 , key
           :examples $ []
-        |get-openrouter-key! $ %{} :CodeEntry (:doc |)
+        |get-openrouter-key! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn get-openrouter-key! () $ let
                 key $ js/localStorage.getItem "\"openrouter-key"
@@ -749,12 +801,12 @@
                   , v
                 , key
           :examples $ []
-        |json-pattern? $ %{} :CodeEntry (:doc |)
+        |json-pattern? $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn json-pattern? (text)
               or (.!startsWith text "\"{") (.!startsWith text "\"[")
           :examples $ []
-        |messages->anthropic $ %{} :CodeEntry (:doc |)
+        |messages->anthropic $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn messages->anthropic (messages)
               to-js-data $ map (or messages [])
@@ -765,7 +817,7 @@
                       , |assistant |user
                     :content $ :content m
           :examples $ []
-        |messages->gemini $ %{} :CodeEntry (:doc |)
+        |messages->gemini $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn messages->gemini (messages)
               let
@@ -779,7 +831,7 @@
                       :parts $ []
                         {} $ :text (:content m)
           :examples $ []
-        |messages->openai $ %{} :CodeEntry (:doc |)
+        |messages->openai $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn messages->openai (messages)
               let
@@ -792,11 +844,11 @@
                         , |assistant |user
                       :content $ :content m
           :examples $ []
-        |models-menu $ %{} :CodeEntry (:doc |)
+        |models-menu $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "\"Flash Imagen") (:: :item :imagen-4 "\"Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "\"Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "\"Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "\"Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "\"Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "\"Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "\"Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "\"Claude 4.5")
           :examples $ []
-        |on-fill $ %{} :CodeEntry (:doc |)
+        |on-fill $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn on-fill (cursor state on-submit)
               %{} respo.schema/RespoListener (:name :on-fill)
@@ -812,16 +864,16 @@
                           on-submit (:text info) (:search? state) (:think? state) dispatch!
                           , nil
           :examples $ []
-        |pattern-spaced-code $ %{} :CodeEntry (:doc |)
+        |pattern-spaced-code $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             def pattern-spaced-code $ noted "\"temp fix of nested code block" (&raw-code "\"/\\n\\s+```/g")
           :examples $ []
-        |pick-model $ %{} :CodeEntry (:doc |)
+        |pick-model $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn pick-model (variant)
               case-default variant "\"gemini-3-flash-preview" (:gemini-3.1-flash-lite-preview "\"gemini-3.1-flash-lite-preview") (:gemini-pro "\"gemini-3.1-pro-preview") (:gemma "\"gemma-3-27b-it")
           :examples $ []
-        |save-current-session $ %{} :CodeEntry (:doc |)
+        |save-current-session $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn save-current-session (store state)
               let
@@ -836,18 +888,18 @@
                     assoc store :sessions $ append sessions updated-session
                   , store
           :examples $ []
-        |style-a-toggler $ %{} :CodeEntry (:doc |)
+        |style-a-toggler $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-a-toggler $ {}
               "\"&" $ {} (:cursor :pointer) (:background-color :white) (:color :black)
               "\".focus-within &" $ {} (:color :black)
           :examples $ []
-        |style-abort-close $ %{} :CodeEntry (:doc |)
+        |style-abort-close $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-abort-close $ {}
               "\"&" $ {} (:vertical-align :middle) (:font-size 10)
           :examples $ []
-        |style-app-global $ %{} :CodeEntry (:doc |)
+        |style-app-global $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-app-global $ {}
                 str "\"& ." style-code-block
@@ -858,22 +910,22 @@
               "\"&:hover" $ {} (:color "\"#777")
                 :background-color $ hsl 0 0 100
           :examples $ []
-        |style-checkbox $ %{} :CodeEntry (:doc |)
+        |style-checkbox $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-checkbox $ {}
               "\"&" $ {} (:cursor :pointer) (:user-select :none) (:font-size 12) (:line-height "\"28px") (:vertical-align :middle)
           :examples $ []
-        |style-clear $ %{} :CodeEntry (:doc |)
+        |style-clear $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-clear $ {}
               "\"&" $ {} (:opacity 0.4) (:padding "\"4px 8px") (:display :inline-block) (:height "\"24px")
           :examples $ []
-        |style-code-content $ %{} :CodeEntry (:doc |)
+        |style-code-content $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-code-content $ {}
               "\"&" $ {} (:line-height "\"1.5") (:font-size 13)
           :examples $ []
-        |style-delete-button $ %{} :CodeEntry (:doc |)
+        |style-delete-button $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-delete-button $ {}
               |& $ {} (:padding "|4px 8px") (:font-size |18px) (:font-weight |50)
@@ -887,7 +939,7 @@
               |&:active $ {} (:opacity 1)
                 :color $ hsl 0 90 40
           :examples $ []
-        |style-fill $ %{} :CodeEntry (:doc |)
+        |style-fill $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-fill $ {}
               "\"&" $ {} (:cursor :pointer) (:user-select :none) (:display :inline-flex) (:align-items :center) (:justify-content :center) (:transition-duration "\"200ms")
@@ -897,12 +949,12 @@
                 :color $ hsl 0 0 40
                 :transform "\"scale(1.06)"
           :examples $ []
-        |style-gap12 $ %{} :CodeEntry (:doc |)
+        |style-gap12 $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-gap12 $ {}
               "\"&" $ {} (:gap 12)
           :examples $ []
-        |style-history-button $ %{} :CodeEntry (:doc |)
+        |style-history-button $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-history-button $ {}
               |& $ {} (:font-size |20px)
@@ -915,7 +967,7 @@
                 |&:hover $ {}
                   :color $ hsl 200 80 50
           :examples $ []
-        |style-history-count $ %{} :CodeEntry (:doc |)
+        |style-history-count $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-history-count $ {}
               |& $ {}
@@ -923,39 +975,39 @@
                 :font-size |12px
                 :display :inline-block
           :examples $ []
-        |style-image $ %{} :CodeEntry (:doc |)
+        |style-image $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-image $ {}
               "\"&" $ {} (:max-width "\"100%") (:align-self :flex-start) (:border-radius "\"6px")
                 :border $ str "\"1px solid " (hsl 0 0 90)
           :examples $ []
-        |style-md-content $ %{} :CodeEntry (:doc |)
+        |style-md-content $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-md-content $ {}
               "\"& .md-p" $ {} (:margin "\"16px 0") (:line-height "\"1.6")
           :examples $ []
-        |style-message-actions $ %{} :CodeEntry (:doc |)
+        |style-message-actions $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-actions $ {}
               "\"&" $ {} (:margin-top 6) (:justify-content :flex-end) (:width "\"100%")
           :examples $ []
-        |style-message-area $ %{} :CodeEntry (:doc |)
+        |style-message-area $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-area $ {}
               "\"&" $ {} (:flex 2) (:overflow :scroll)
           :examples $ []
-        |style-message-assistant $ %{} :CodeEntry (:doc |)
+        |style-message-assistant $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-assistant $ {}
               "\"&" $ {} (:align-self :flex-start)
           :examples $ []
-        |style-message-box $ %{} :CodeEntry (:doc |)
+        |style-message-box $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-box $ {}
               "\"&" $ {} (:width "\"100%") (:max-width 1200) (:right "\"50%") (:padding "\"8px") (:margin :auto) (:transition-duration "\"300ms") (; :transform "\"translate(50%,0)") (:transition-property "\"height")
               "\"&:focus-within" $ {} (:opacity 1) (; :transform "\"translate(50%,0)")
           :examples $ []
-        |style-message-box-panel $ %{} :CodeEntry (:doc |)
+        |style-message-box-panel $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-box-panel $ {}
               "\"&" $ {} (:position :absolute) (:bottom 0) (:opacity 1) (:width "\"100%")
@@ -965,17 +1017,17 @@
                 :background-color $ hsl 0 0 100 0.9
                 :box-shadow $ str "\"0 0px 8px " (hsl 0 0 0 0.3)
           :examples $ []
-        |style-message-item $ %{} :CodeEntry (:doc |)
+        |style-message-item $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-item $ {}
               "\"&" $ {} (:line-height "\"1.6")
           :examples $ []
-        |style-message-list $ %{} :CodeEntry (:doc |)
+        |style-message-list $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-list $ {}
               "\"&" $ {} (:flex 2) (:padding "\"40px 16px 20vh 16px") (:width "\"100%") (:max-width 1200) (:margin :auto) (:position :relative)
           :examples $ []
-        |style-message-role $ %{} :CodeEntry (:doc |)
+        |style-message-role $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-role $ {}
               "\"&" $ {} (:font-size 12)
@@ -983,12 +1035,12 @@
                 :margin-bottom 6
                 :padding-right "\"16px"
           :examples $ []
-        |style-message-text $ %{} :CodeEntry (:doc |)
+        |style-message-text $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-text $ {}
               "\"&" $ {} (:white-space :pre-wrap) (:line-height "\"1.6") (:margin 0) (:padding-right "\"16px")
           :examples $ []
-        |style-message-user $ %{} :CodeEntry (:doc |)
+        |style-message-user $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-message-user $ {}
               "\"&" $ {} (:align-self :flex-end)
@@ -1004,7 +1056,7 @@
                 :border-radius "\"2px"
               "\"&::-webkit-scrollbar-track" $ {} (:background-color :transparent)
           :examples $ []
-        |style-more $ %{} :CodeEntry (:doc |)
+        |style-more $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-more $ {}
               "\"&" $ {} (:text-align :center) (:min-width 80)
@@ -1017,12 +1069,12 @@
               "\"&:hover" $ {}
                 :box-shadow $ str "\"1px 1px 4px " (hsl 0 0 0 0.2)
           :examples $ []
-        |style-reply-actions $ %{} :CodeEntry (:doc |)
+        |style-reply-actions $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-reply-actions $ {}
               "\"&" $ {} (:margin-top 6) (:justify-content :flex-start) (:width "\"100%")
           :examples $ []
-        |style-reply-button $ %{} :CodeEntry (:doc |)
+        |style-reply-button $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-reply-button $ {}
               "\"&" $ {} (:text-align :center) (:min-width 80)
@@ -1035,7 +1087,7 @@
               "\"&:hover" $ {}
                 :box-shadow $ str "\"1px 1px 4px " (hsl 0 0 0 0.2)
           :examples $ []
-        |style-session-item $ %{} :CodeEntry (:doc |)
+        |style-session-item $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-session-item $ {}
               |& $ {} (:padding |12px)
@@ -1047,23 +1099,23 @@
                 |:hover $ {}
                   :background-color $ hsl 0 0 96
           :examples $ []
-        |style-sessions-list $ %{} :CodeEntry (:doc |)
+        |style-sessions-list $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-sessions-list $ {}
               |& $ {} (:flex |1) (:overflow-y :auto) (:min-width |300px)
           :examples $ []
-        |style-submit $ %{} :CodeEntry (:doc |)
+        |style-submit $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-submit $ {}
               "\"&" $ {}
           :examples $ []
-        |style-textbox $ %{} :CodeEntry (:doc |)
+        |style-textbox $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-textbox $ {}
               "\"&" $ {} (:border-radius 12) (:height "|max(100px,15vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
               "\"&.focus-within" $ {} (:height "|max(240px,32vh)") (:border :none) (:box-shadow :none)
           :examples $ []
-        |style-thinking $ %{} :CodeEntry (:doc |)
+        |style-thinking $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-thinking $ {}
               "\"&" $ {} (:max-height 200) (:overflow :auto) (:padding "\"12px 16px")
@@ -1076,9 +1128,10 @@
                 :border $ str "\"1px solid " (hsl 0 0 90)
               "\"& .md-p" $ {} (:margin "\"4px 0")
           :examples $ []
-        |submit-message! $ %{} :CodeEntry (:doc |)
+        |submit-message! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn submit-message! (cursor state prompt-text search? think? model d!) (hint-fn async)
+            defn submit-message! (cursor state prompt-text search? think? model d!)
+              hint-fn $ {} (:async true)
               let
                   state1 $ assoc state :messages
                     append-user-message (:messages state) prompt-text
@@ -1112,7 +1165,7 @@
                       d! cursor $ -> state (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
                         assoc :messages $ upsert-assistant-message (:messages state) err-text nil
           :examples $ []
-        |upsert-assistant-message $ %{} :CodeEntry (:doc |)
+        |upsert-assistant-message $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn upsert-assistant-message (messages content thinking)
               let
@@ -1126,7 +1179,7 @@
                     -> last-msg (assoc :content content) (assoc :thinking thinking)
                   conj messages0 $ {} (:role :assistant) (:content content) (:thinking thinking)
           :examples $ []
-      :ns $ %{} :CodeEntry (:doc |)
+      :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
@@ -1142,35 +1195,31 @@
             "\"../extension/get-selected" :refer $ get-selected
             memof.once :refer $ memof1-call memof1-call-by
             "\"../lib/image" :refer $ base64ToBlob
-            "\"openai" :default OpenAI
             feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
-            genai.sdk :as sdk
-        :examples $ []
     |app.config $ %{} :FileEntry
       :defs $ {}
-        |chrome-extension? $ %{} :CodeEntry (:doc |)
+        |chrome-extension? $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             def chrome-extension? $ and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.id)
           :examples $ []
-        |dev? $ %{} :CodeEntry (:doc |)
+        |dev? $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             def dev? $ = "\"dev" (get-env "\"mode" "\"release")
           :examples $ []
-        |site $ %{} :CodeEntry (:doc |)
+        |site $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             def site $ {} (:storage-key "\"msg-buffer")
           :examples $ []
-      :ns $ %{} :CodeEntry (:doc |)
+      :ns $ %{} :NsEntry (:doc |)
         :code $ quote (ns app.config)
-        :examples $ []
     |app.main $ %{} :FileEntry
       :defs $ {}
-        |*reel $ %{} :CodeEntry (:doc |)
+        |*reel $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
-        |connect-to-worker! $ %{} :CodeEntry (:doc |)
+        |connect-to-worker! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn connect-to-worker! () $ if
               and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.connect)
@@ -1183,7 +1232,7 @@
                       do (println "|Worker disconnected, retrying in 500ms...") (js/setTimeout connect-to-worker! 500)
               , nil
           :examples $ []
-        |dispatch! $ %{} :CodeEntry (:doc |)
+        |dispatch! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn dispatch! (op)
               when
@@ -1191,7 +1240,20 @@
                 js/console.log "\"Dispatch:" op
               reset! *reel $ reel-updater updater @*reel op
           :examples $ []
-        |listen-extension! $ %{} :CodeEntry (:doc |)
+        |hydrate-storage-later! $ %{} :CodeEntry (:doc |) (:schema nil)
+          :code $ quote
+            defn hydrate-storage-later! () $ js/setTimeout
+              fn () $ let
+                  raw $ js/localStorage.getItem (:storage-key config/site)
+                when (some? raw)
+                  let
+                      t_start $ .!now js/Date
+                    dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
+                    println "\"Hydrated in"
+                      - (.!now js/Date) t_start
+                      , "\"ms"
+          :examples $ []
+        |listen-extension! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn listen-extension! ()
               js/chrome.runtime.onMessage.addListener $ fn (message sender respond!)
@@ -1226,9 +1288,11 @@
                     send-to-component! event-tuple
               connect-to-worker!
           :examples $ []
-        |main! $ %{} :CodeEntry (:doc |)
+        |main! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn main! ()
+            defn main! () $ let
+                t0 $ .!now js/Date
+              println "\"Starting main! at" t0
               println "\"Running mode:" $ if config/dev? "\"dev" "\"release"
               if config/dev? $ load-console-formatter!
               render-app!
@@ -1242,26 +1306,24 @@
                 fn (event)
                   if (.-ctrlKey event) (.!preventDefault event)
                 js-object $ :passive false
-              ; flipped js/setInterval 60000 persist-storage!
-              let
-                  raw $ js/localStorage.getItem (:storage-key config/site)
-                when (some? raw)
-                  dispatch! $ :: :hydrate-storage (parse-cirru-edn raw)
+              hydrate-storage-later!
               if config/chrome-extension? $ listen-extension!
-              println "|App started."
+              let
+                  t1 $ .!now js/Date
+                println "|App started at" t1 |cost (- t1 t0) "\"ms"
           :examples $ []
-        |mount-target $ %{} :CodeEntry (:doc |)
+        |mount-target $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             def mount-target $ js/document.querySelector |.app
           :examples $ []
-        |persist-storage! $ %{} :CodeEntry (:doc |)
+        |persist-storage! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn persist-storage! ()
               println "\"Saved at" $ .!toISOString (new js/Date)
               js/localStorage.setItem (:storage-key config/site)
                 format-cirru-edn $ :store @*reel
           :examples $ []
-        |reload! $ %{} :CodeEntry (:doc |)
+        |reload! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn reload! () $ if (nil? build-errors)
               do (remove-watch *reel :changes) (clear-cache!)
@@ -1270,11 +1332,19 @@
                 hud! "\"ok~" "\"Ok"
               hud! "\"error" build-errors
           :examples $ []
-        |render-app! $ %{} :CodeEntry (:doc |)
+        |render-app! $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
-            defn render-app! () $ render! mount-target (comp-container @*reel) dispatch!
+            defn render-app! ()
+              let
+                  t_start $ .!now js/Date
+                println "\"Rendering app..."
+                render! mount-target (comp-container @*reel) dispatch!
+                println "\"Rendered in"
+                  - (.!now js/Date) t_start
+                  , "\"ms"
+              render! mount-target (comp-container @*reel) dispatch!
           :examples $ []
-      :ns $ %{} :CodeEntry (:doc |)
+      :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.main $ :require
             respo.core :refer $ render! clear-cache!
@@ -1288,10 +1358,9 @@
             "\"./calcit.build-errors" :default build-errors
             "\"bottom-tip" :default hud!
             respo.controller.client :refer $ send-to-component!
-        :examples $ []
     |app.schema $ %{} :FileEntry
       :defs $ {}
-        |store $ %{} :CodeEntry (:doc |)
+        |store $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             def store $ {}
               :states $ {}
@@ -1300,12 +1369,11 @@
               :current-session-id nil
               :model nil
           :examples $ []
-      :ns $ %{} :CodeEntry (:doc |)
+      :ns $ %{} :NsEntry (:doc |)
         :code $ quote (ns app.schema)
-        :examples $ []
     |app.updater $ %{} :FileEntry
       :defs $ {}
-        |updater $ %{} :CodeEntry (:doc |)
+        |updater $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defn updater (store op op-id op-time)
               tag-match op
@@ -1333,9 +1401,8 @@
                       not $ = (:id s) id
                 _ $ do (eprintln "\"unknown op:" op) store
           :examples $ []
-      :ns $ %{} :CodeEntry (:doc |)
+      :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
             respo.cursor :refer $ update-states update-states-merge
             app.comp.container :refer $ save-current-session generate-session-id
-        :examples $ []
