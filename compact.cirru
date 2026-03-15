@@ -300,7 +300,7 @@
               hint-fn $ {} (:async true)
               if (nil? @*openai)
                 let
-                    mod $ js-await $ js/import |openai
+                    mod $ js-await (js/import |openai)
                     OpenAI $ .-default mod
                   reset! *openai $ new OpenAI
                     js-object (:baseURL "\"https://openrouter.ai/api/v1")
@@ -516,6 +516,16 @@
                                 .show reply-plugin d! $ fn (text)
                                   submit-message! cursor state text (:search? message-box-state) (:think? message-box-state) model d!
                             <> |Reply
+                          if (:focus-mode? message-box-state) nil
+                            a $ {} (:class-name style-focus-link) (:inner-text |Focus)
+                              :on-click $ fn (e d!)
+                                let
+                                    focused $ .-activeElement js/document
+                                  do
+                                    if (some? focused) (.!blur focused)
+                                    d!
+                                      :cursor $ >> states :message-box
+                                      assoc message-box-state :focus-mode? true
                         , nil
                       if (:loading? state)
                         div ({}) (memof1-call-by :abort-loading comp-abort "\"Loading...")
@@ -584,87 +594,102 @@
               let
                   cursor $ :cursor states
                   state $ either (:data states)
-                    {} (:content "\"") (:search? false) (:think? false)
+                    {} (:content "\"") (:search? false) (:think? false) (:focus-mode? false)
                 [] (effect-focus) (on-fill cursor state on-submit)
                   div
                     {} $ :class-name (str-spaced css/center style-message-box-panel)
                     div
                       {} $ :class-name (str-spaced css/column style-message-box)
-                      textarea $ {}
-                        :value $ :content state
-                        :placeholder "\"Prompt to try LLM..."
-                        :id "\"message"
-                        :class-name $ str-spaced css/textarea css/font-code! style-textbox
-                        :on-input $ fn (e d!)
-                          d! cursor $ assoc state :content (:value e)
-                        :on-keydown $ fn (e d!)
-                          if
-                            and
-                              = 13 $ :keycode e
-                              or (:meta? e) (:ctrl? e)
-                            on-submit (:content state) (:search? state) (:think? state) d!
-                        :on-focus $ fn (e d!)
-                          let
-                              target $ .-target (:event e)
-                              box $ .-parentElement (.-parentElement target)
-                              class-list $ .-classList target
-                              box-class $ .-classList box
-                            if
-                              not $ .!contains class-list "\"focus-within"
-                              .!add class-list "\"focus-within"
-                            if
-                              not $ .!contains box-class "\"focus-within"
-                              .!add box-class "\"focus-within"
-                        :on-blur $ fn (e d!)
-                          let
-                              target $ .-target (:event e)
-                              box $ .-parentElement (.-parentElement target)
-                              class-list $ .-classList target
-                              box-class $ .-classList box
-                            if (.!contains class-list "\"focus-within") (.!remove class-list "\"focus-within")
-                            if (.!contains box-class "\"focus-within") (.!remove box-class "\"focus-within")
-                      =< nil 4
-                      div
-                        {} $ :class-name css/row-parted
-                        if
-                          not $ blank? (:content state)
-                          comp-close $ {} (:class-name style-clear)
-                            :on-click $ fn (e d!)
-                              d! cursor $ assoc state :content "\""
-                              -> (js/document.querySelector "\"#message") (.!focus)
-                          span $ {} (:class-name style-clear)
+                      if (:focus-mode? state)
                         div
-                          {} $ :class-name (str-spaced css/row style-gap12)
-                          , picker-el
+                          {}
+                            :class-name $ str-spaced css/font-code! style-focus-box style-textbox-compact
+                            :on-click $ fn (e d!)
+                              do
+                                d! cursor $ assoc state :focus-mode? false
+                                js/setTimeout
+                                  fn () $ -> (js/document.querySelector "\"#message") (.!focus)
+                                  , 0
+                          <> $ if
+                            blank? $ :content state
+                            , "\"Click to expand and type..." (:content state)
+                        textarea $ {}
+                          :value $ :content state
+                          :placeholder "\"Prompt to try LLM..."
+                          :id "\"message"
+                          :class-name $ str-spaced css/textarea css/font-code! style-textbox
+                          :on-input $ fn (e d!)
+                            d! cursor $ assoc state :content (:value e)
+                          :on-keydown $ fn (e d!)
                             if
-                              contains? (#{} :gemini-flash :gemini-3.1-flash-lite-preview) model
-                              div
-                                {}
-                                  :class-name $ str-spaced css/row style-checkbox
-                                  :on-click $ fn (e d!)
-                                    d! cursor $ assoc state :think?
-                                      not $ :think? state
-                                input $ {}
-                                  :checked $ :think? state
-                                  :type "\"checkbox"
-                                <> "\"Think" css/font-fancy
-                              , nil
-                            div
-                              {}
-                                :class-name $ str-spaced css/row style-checkbox
+                              and
+                                = 13 $ :keycode e
+                                or (:meta? e) (:ctrl? e)
+                              on-submit (:content state) (:search? state) (:think? state) d!
+                          :on-focus $ fn (e d!)
+                            let
+                                target $ .-target (:event e)
+                                box $ .-parentElement (.-parentElement target)
+                                class-list $ .-classList target
+                                box-class $ .-classList box
+                              if
+                                not $ .!contains class-list "\"focus-within"
+                                .!add class-list "\"focus-within"
+                              if
+                                not $ .!contains box-class "\"focus-within"
+                                .!add box-class "\"focus-within"
+                          :on-blur $ fn (e d!)
+                            let
+                                target $ .-target (:event e)
+                                box $ .-parentElement (.-parentElement target)
+                                class-list $ .-classList target
+                                box-class $ .-classList box
+                              if (.!contains class-list "\"focus-within") (.!remove class-list "\"focus-within")
+                              if (.!contains box-class "\"focus-within") (.!remove box-class "\"focus-within")
+                      if
+                        not $ :focus-mode? state
+                        do (=< nil 4)
+                          div
+                            {} $ :class-name css/row-parted
+                            if
+                              not $ blank? (:content state)
+                              comp-close $ {} (:class-name style-clear)
                                 :on-click $ fn (e d!)
-                                  d! cursor $ assoc state :search?
-                                    not $ :search? state
-                              input $ {}
-                                :checked $ :search? state
-                                :type "\"checkbox"
-                              <> "\"Search" css/font-fancy
-                            button $ {}
-                              :class-name $ str-spaced css/button style-submit
-                              :inner-text "\"Submit"
-                              :on-click $ fn (e d!)
-                                ; println $ :content state
-                                on-submit (:content state) (:search? state) (:think? state) d!
+                                  d! cursor $ assoc state :content "\""
+                                  -> (js/document.querySelector "\"#message") (.!focus)
+                              span $ {} (:class-name style-clear)
+                            div
+                              {} $ :class-name (str-spaced css/row style-gap12)
+                              , picker-el
+                                if
+                                  contains? (#{} :gemini-flash :gemini-3.1-flash-lite-preview) model
+                                  div
+                                    {}
+                                      :class-name $ str-spaced css/row style-checkbox
+                                      :on-click $ fn (e d!)
+                                        d! cursor $ assoc state :think?
+                                          not $ :think? state
+                                    input $ {}
+                                      :checked $ :think? state
+                                      :type "\"checkbox"
+                                    <> "\"Think" css/font-fancy
+                                  , nil
+                                div
+                                  {}
+                                    :class-name $ str-spaced css/row style-checkbox
+                                    :on-click $ fn (e d!)
+                                      d! cursor $ assoc state :search?
+                                        not $ :search? state
+                                  input $ {}
+                                    :checked $ :search? state
+                                    :type "\"checkbox"
+                                  <> "\"Search" css/font-fancy
+                                button $ {}
+                                  :class-name $ str-spaced css/button style-submit
+                                  :inner-text "\"Submit"
+                                  :on-click $ fn (e d!)
+                                    on-submit (:content state) (:search? state) (:think? state) d!
+                        , nil
           :examples $ []
         |comp-sessions-modal $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
@@ -949,6 +974,20 @@
                 :color $ hsl 0 0 40
                 :transform "\"scale(1.06)"
           :examples $ []
+        |style-focus-box $ %{} :CodeEntry (:doc |) (:schema nil)
+          :code $ quote
+            defstyle style-focus-box $ {}
+              "\"&" $ {} (:width |100%) (:border-radius 12) (:min-height 40) (:max-height 40) (:padding "\"9px 12px") (:cursor :text) (:overflow :hidden) (:white-space :pre) (:text-overflow :ellipsis) (:background-color :transparent)
+          :examples $ []
+        |style-focus-link $ %{} :CodeEntry (:doc |) (:schema nil)
+          :code $ quote
+            defstyle style-focus-link $ {}
+              "\"&" $ {} (:cursor :pointer) (:font-size 13)
+                :color $ hsl 200 80 40
+                :text-decoration :none
+                :padding "\"4px 0"
+              "\"&:hover" $ {} (:text-decoration :underline)
+          :examples $ []
         |style-gap12 $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defstyle style-gap12 $ {}
@@ -1114,6 +1153,12 @@
             defstyle style-textbox $ {}
               "\"&" $ {} (:border-radius 12) (:height "|max(100px,15vh)") (:width "\"100%") (:transition-duration "\"320ms") (:border :none) (:background-color :transparent)
               "\"&.focus-within" $ {} (:height "|max(240px,32vh)") (:border :none) (:box-shadow :none)
+          :examples $ []
+        |style-textbox-compact $ %{} :CodeEntry (:doc |) (:schema nil)
+          :code $ quote
+            defstyle style-textbox-compact $ {}
+              "\"&" $ {} (:height 40) (:min-height 40) (:max-height 40) (:overflow :hidden)
+              "\"&.focus-within" $ {} (:height "|max(240px,32vh)") (:min-height "\"unset") (:max-height "\"unset")
           :examples $ []
         |style-thinking $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
