@@ -1,7 +1,7 @@
 
 {} (:about "|file is generated - never edit directly; learn cr edit/tree workflows before changing") (:package |app)
   :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.1)
-    :modules $ [] |respo.calcit/ |lilac/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/ |genai.calcit/
+    :modules $ [] |respo.calcit/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/ |genai.calcit/
   :entries $ {}
   :files $ {}
     |app.comp.container $ %{} :FileEntry
@@ -516,8 +516,8 @@
                                 .show reply-plugin d! $ fn (text)
                                   submit-message! cursor state text (:search? message-box-state) (:think? message-box-state) model d!
                             <> |Reply
-                          if (:focus-mode? message-box-state) nil
-                            a $ {} (:class-name style-focus-link) (:inner-text |Focus)
+                          if (:focus-mode? message-box-state) nil $ a
+                            {} (:class-name style-focus-link) (:inner-text |Focus)
                               :on-click $ fn (e d!)
                                 let
                                     focused $ .-activeElement js/document
