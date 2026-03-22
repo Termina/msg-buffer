@@ -694,43 +694,71 @@
         |comp-sessions-modal $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
             defcomp comp-sessions-modal (sessions on-select on-close)
-              div
-                {} $ :class-name (str-spaced css/column css/gap8 style-sessions-list)
-                if (empty? sessions)
-                  div
-                    {} $ :style
-                      {} (:padding |12px)
-                        :color $ hsl 0 0 60
-                    <> "|No history sessions"
-                  list->
-                    {} $ :class-name css/column
-                    -> sessions (.!reverse)
-                      map $ fn (session)
-                        let
-                            session-id $ :id session
-                            created-at $ :created-at session
-                            preview $ :preview session
-                            date-str $ .!toLocaleString (new js/Date created-at)
-                          [] session-id $ div
-                            {} $ :class-name style-session-item
-                            div
-                              {}
-                                :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
-                                :on-click $ fn (e d!) (on-select session-id d!) (on-close d!)
+              let
+                  history-items $ foldl sessions 0
+                    fn (acc session)
+                      + acc $ count
+                        or (:messages session) ([])
+                div
+                  {} $ :class-name (str-spaced css/column css/gap8 style-sessions-list)
+                  if (empty? sessions)
+                    div
+                      {} $ :style
+                        {} (:padding |12px)
+                          :color $ hsl 0 0 60
+                      <> "|No history sessions"
+                    list->
+                      {} $ :class-name css/column
+                      -> sessions (.!reverse)
+                        map $ fn (session)
+                          let
+                              session-id $ :id session
+                              created-at $ :created-at session
+                              preview $ :preview session
+                              date-str $ .!toLocaleString (new js/Date created-at)
+                            [] session-id $ div
+                              {} $ :class-name style-session-item
                               div
-                                {} $ :style
-                                  {} (:font-size |12px)
-                                    :color $ hsl 0 0 60
-                                <> date-str
+                                {}
+                                  :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
+                                  :on-click $ fn (e d!) (on-select session-id d!) (on-close d!)
+                                div
+                                  {} $ :style
+                                    {} (:font-size |12px)
+                                      :color $ hsl 0 0 60
+                                  <> date-str
+                                div
+                                  {} $ :style
+                                    {} (:margin-top |4px) (:white-space :nowrap) (:overflow :hidden) (:text-overflow :ellipsis) (:max-height |1.2em) (:line-height |1.2)
+                                  <> preview
                               div
-                                {} $ :style
-                                  {} (:margin-top |4px) (:white-space :nowrap) (:overflow :hidden) (:text-overflow :ellipsis) (:max-height |1.2em) (:line-height |1.2)
-                                <> preview
-                            div
-                              {} (:class-name style-delete-button)
-                                :on-click $ fn (e d!) (-> e :event .!stopPropagation)
-                                  d! $ :: :remove-session session-id
-                              <> "|✕"
+                                {} (:class-name style-delete-button)
+                                  :on-click $ fn (e d!) (-> e :event .!stopPropagation)
+                                    d! $ :: :remove-session session-id
+                                <> "|✕"
+                  if
+                    > (count sessions) 0
+                    div
+                      {}
+                        :class-name $ str-spaced css/column css/gap8
+                        :style $ {} (:padding "|0 12px 12px 12px")
+                      div
+                        {} $ :class-name (str-spaced css/row-parted)
+                        a $ {} (:class-name style-clear) (:inner-text |Export)
+                          :on-click $ fn (e d!) (tab-echo! sessions :edn)
+                        if
+                          > (count sessions) 0
+                          a $ {} (:class-name style-clear) (:inner-text "|Clear all")
+                            :on-click $ fn (e d!)
+                              let
+                                  proceed? $ if (> history-items 10)
+                                    js/confirm $ str-spaced |Clear history-items "|messages from history?"
+                                    , true
+                                when proceed? $ d! (:: :clear-sessions)
+                          span $ {}
+                      div $ {}
+                        :style $ {} (:height 200)
+                    , nil
           :examples $ []
         |create-session $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
@@ -1242,6 +1270,7 @@
             "\"../lib/image" :refer $ base64ToBlob
             feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
+            respo-ui.util :refer $ tab-echo!
     |app.config $ %{} :FileEntry
       :defs $ {}
         |chrome-extension? $ %{} :CodeEntry (:doc |) (:schema nil)
@@ -1444,6 +1473,10 @@
                     or (:sessions store) ([])
                     fn (s)
                       not $ = (:id s) id
+                (:clear-sessions)
+                  -> store
+                    assoc :sessions $ []
+                    assoc :current-session-id nil
                 _ $ do (eprintln "\"unknown op:" op) store
           :examples $ []
       :ns $ %{} :NsEntry (:doc |)
