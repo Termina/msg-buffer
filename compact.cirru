@@ -744,8 +744,12 @@
                         :style $ {} (:padding "|0 12px 12px 12px")
                       div
                         {} $ :class-name (str-spaced css/row-parted)
-                        a $ {} (:class-name style-clear) (:inner-text |Export)
-                          :on-click $ fn (e d!) (tab-echo! sessions :edn)
+                        div
+                          {} $ :class-name (str-spaced css/row css/gap8)
+                          a $ {} (:class-name style-clear) (:inner-text |Data)
+                            :on-click $ fn (e d!) (tab-echo! sessions :edn)
+                          a $ {} (:class-name style-clear) (:inner-text |Download)
+                            :on-click $ fn (e d!) (download-sessions! sessions)
                         if
                           > (count sessions) 0
                           a $ {} (:class-name style-clear) (:inner-text "|Clear all")
@@ -778,6 +782,21 @@
                       end $ if (< len 100) len 100
                     .!slice first-msg 0 end
                   :is-history? false
+          :examples $ []
+        |download-sessions! $ %{} :CodeEntry (:doc |) (:schema nil)
+          :code $ quote
+            defn download-sessions! (sessions)
+              let
+                  content $ format-cirru-edn sessions
+                  blob $ new js/Blob (js-array content)
+                    js-object $ :type |application/edn;charset=utf-8
+                  url $ js/URL.createObjectURL blob
+                  link $ js/document.createElement |a
+                  filename $ str |sessions- (js/Date.now) |.cirru
+                do (.!setAttribute link |href url) (.!setAttribute link |download filename) (.!appendChild js/document.body link) (.!click link) (.!remove link)
+                  js/setTimeout
+                    fn () $ js/URL.revokeObjectURL url
+                    , 0
           :examples $ []
         |effect-focus $ %{} :CodeEntry (:doc |) (:schema nil)
           :code $ quote
