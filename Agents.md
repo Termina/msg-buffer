@@ -1,4 +1,4 @@
-Developer runs `cr js` to watch build JavaScript, and `yarn vite` to start a local server. LLMs edits program by running `cr` commands, and then triggers re-compiling.
+Developer runs `cr js` to build JavaScript, and `yarn vite` to start a local server. LLMs edits program by running `cr` commands, and then triggers re-compiling.
 
 **必须**查看 Calcit 命令行工具的用法:
 
