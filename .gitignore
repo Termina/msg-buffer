@@ -15,3 +15,5 @@ extension/dist
 .yarn
 
 .calcit-snippets/
+
+.copilot-tmp/
