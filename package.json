@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@calcit/procs": "^0.12.14",
+    "@calcit/procs": "^0.12.35",
     "@google/genai": "^1.49.0",
     "@tiye/main-fonts": "0.0.1",
     "axios": "^1.15.0",
@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "bottom-tip": "^0.1.5",
-    "vite": "^8.0.8"
+    "vite": "^8.0.14"
   },
   "scripts": {
     "build": "rm -rfv dist && cr js && yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
