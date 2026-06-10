@@ -619,7 +619,7 @@
                           :id "\"message"
                           :class-name $ str-spaced css/textarea css/font-code! style-textbox
                           :on-input $ fn (e d!)
-                            d! cursor $ assoc state :content (:value e)
+                            d! cursor $ assoc state :content (str (:value e))
                           :on-keydown $ fn (e d!)
                             if
                               and
