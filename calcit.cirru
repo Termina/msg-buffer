@@ -361,7 +361,8 @@
           :code $ quote
             defn comp-abort (t)
               span
-                {}
+                {} (:role |button)
+                  :aria-label $ str |abort- t
                   :class-name $ str-spaced css/font-fancy css/row-middle style-more
                   :style $ {} (:cursor :pointer)
                   :on-click $ fn (e d!)
@@ -445,7 +446,7 @@
                         :style $ {} (:padding |8px)
                       div $ {}
                       div
-                        {} (:class-name css/row-middle) (:title |History)
+                        {} (:class-name css/row-middle) (:title |History) (:role |button) (:aria-label |history-open)
                           :style $ {} (:cursor :pointer)
                           :on-click $ fn (e d!) (.show sessions-plugin d!)
                         div
@@ -458,7 +459,8 @@
                             str $ count sessions
                             str-spaced css/font-fancy style-history-count
                     div
-                      {} $ :class-name (str-spaced css/column style-message-list)
+                      {} (:role |region) (:aria-label |message-list)
+                        :class-name $ str-spaced css/column style-message-list
                       if
                         or (= :imagen-4 model) (= :flash-imagen model)
                         img $ {}
@@ -510,14 +512,14 @@
                         div
                           {} $ :class-name (str-spaced css/row-middle css/gap8 style-reply-actions)
                           button
-                            {}
+                            {} (:role |button) (:aria-label |reply-message)
                               :class-name $ str-spaced css/button style-reply-button
                               :on-click $ fn (e d!)
                                 .show reply-plugin d! $ fn (text)
                                   submit-message! cursor state text (:search? message-box-state) (:think? message-box-state) model d!
                             <> |Reply
                           if (:focus-mode? message-box-state) nil $ a
-                            {} (:class-name style-focus-link) (:inner-text |Focus)
+                            {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
                               :on-click $ fn (e d!)
                                 let
                                     focused $ .-activeElement js/document
@@ -544,6 +546,8 @@
                   comp-message-box (>> states :message-box)
                     a $ {}
                       :inner-text $ or (turn-str model) |-
+                      :role |button
+                      :aria-label $ str |model-picker: (turn-string model)
                       :class-name $ str-spaced style-a-toggler
                       :style $ {}
                         :opacity $ if (= model :anthropic) 1 0.3
@@ -582,7 +586,7 @@
           :code $ quote
             defcomp comp-fill (text)
               div
-                {} (:class-name style-fill)
+                {} (:class-name style-fill) (:role |button) (:aria-label |fill-extension)
                   :on-click $ fn (e d!)
                     when chrome-extension? $ js/chrome.runtime.sendMessage
                       js-object (:action |fill-text) (:text text)
@@ -602,7 +606,7 @@
                       {} $ :class-name (str-spaced css/column style-message-box)
                       if (:focus-mode? state)
                         div
-                          {}
+                          {} (:role |button) (:aria-label |expand-prompt)
                             :class-name $ str-spaced css/font-code! style-focus-box style-textbox-compact
                             :on-click $ fn (e d!)
                               do
@@ -617,6 +621,8 @@
                           :value $ :content state
                           :placeholder "|Prompt to try LLM..."
                           :id |message
+                          :role |textbox
+                          :aria-label |prompt-input
                           :class-name $ str-spaced css/textarea css/font-code! style-textbox
                           :on-input $ fn (e d!)
                             d! cursor $ assoc state :content
@@ -654,7 +660,10 @@
                             {} $ :class-name css/row-parted
                             if
                               not $ blank? (:content state)
-                              comp-close $ {} (:class-name style-clear)
+                              span $ {} (:inner-text "|✕")
+                                :class-name $ str-spaced style-close style-clear
+                                :role |button
+                                :aria-label |clear-prompt
                                 :on-click $ fn (e d!)
                                   d! cursor $ assoc state :content |
                                   -> (js/document.querySelector |#message) (.!focus)
@@ -665,7 +674,7 @@
                                 if
                                   contains? (#{} :gemini-flash :gemini-3.1-flash-lite-preview) model
                                   div
-                                    {}
+                                    {} (:role |group) (:aria-label |think-toggle)
                                       :class-name $ str-spaced css/row style-checkbox
                                       :on-click $ fn (e d!)
                                         d! cursor $ assoc state :think?
@@ -673,10 +682,12 @@
                                     input $ {}
                                       :checked $ :think? state
                                       :type |checkbox
+                                      :role |checkbox
+                                      :aria-label |think-toggle
                                     <> |Think css/font-fancy
                                   , nil
                                 div
-                                  {}
+                                  {} (:role |group) (:aria-label |search-toggle)
                                     :class-name $ str-spaced css/row style-checkbox
                                     :on-click $ fn (e d!)
                                       d! cursor $ assoc state :search?
@@ -684,8 +695,10 @@
                                   input $ {}
                                     :checked $ :search? state
                                     :type |checkbox
+                                    :role |checkbox
+                                    :aria-label |search-toggle
                                   <> |Search css/font-fancy
-                                button $ {}
+                                button $ {} (:role |button) (:aria-label |submit-message)
                                   :class-name $ str-spaced css/button style-submit
                                   :inner-text |Submit
                                   :on-click $ fn (e d!)
@@ -720,7 +733,8 @@
                             [] session-id $ div
                               {} $ :class-name style-session-item
                               div
-                                {}
+                                {} (:role |button)
+                                  :aria-label $ str |session-select: preview
                                   :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
                                   :on-click $ fn (e d!) (on-select session-id d!) (on-close d!)
                                 div
@@ -733,7 +747,8 @@
                                     {} (:margin-top |4px) (:white-space :nowrap) (:overflow :hidden) (:text-overflow :ellipsis) (:max-height |1.2em) (:line-height |1.2)
                                   <> preview
                               div
-                                {} (:class-name style-delete-button)
+                                {} (:class-name style-delete-button) (:role |button)
+                                  :aria-label $ str |session-delete: session-id
                                   :on-click $ fn (e d!) (-> e :event .!stopPropagation)
                                     d! $ :: :remove-session session-id
                                 <> "|✕"
@@ -747,13 +762,13 @@
                         {} $ :class-name (str-spaced css/row-parted)
                         div
                           {} $ :class-name (str-spaced css/row css/gap8)
-                          a $ {} (:class-name style-clear) (:inner-text |Data)
+                          a $ {} (:class-name style-clear) (:inner-text |Data) (:role |button) (:aria-label |sessions-export-data)
                             :on-click $ fn (e d!) (tab-echo! sessions :edn)
-                          a $ {} (:class-name style-clear) (:inner-text |Download)
+                          a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button) (:aria-label |sessions-download)
                             :on-click $ fn (e d!) (download-sessions! sessions)
                         if
                           > (count sessions) 0
-                          a $ {} (:class-name style-clear) (:inner-text "|Clear all")
+                          a $ {} (:class-name style-clear) (:inner-text "|Clear all") (:role |button) (:aria-label |sessions-clear-all)
                             :on-click $ fn (e d!)
                               let
                                   proceed? $ if (> history-items 10)
@@ -1284,7 +1299,7 @@
             app.config :refer $ dev? chrome-extension?
             |axios :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
-            respo-ui.comp :refer $ comp-copy comp-close
+            respo-ui.comp :refer $ comp-copy style-close
             |../extension/get-selected :refer $ get-selected
             memof.once :refer $ memof1-call memof1-call-by
             |../lib/image :refer $ base64ToBlob

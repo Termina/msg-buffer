@@ -6,5 +6,5 @@
     |Respo/respo-feather.calcit |main
     |Respo/respo-markdown.calcit |0.4.13
     |Respo/respo-ui.calcit |0.6.4
-    |Respo/respo.calcit |0.16.46
+    |Respo/respo.calcit |0.16.47
     |calcit-lang/memof |0.0.24
