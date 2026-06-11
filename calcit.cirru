@@ -6,31 +6,33 @@
   :files $ {}
     |app.comp.container $ %{} :FileEntry
       :defs $ {}
-        |*abort-control $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*abort-control $ %{} :CodeEntry (:doc |) (:schema :ref)
           :code $ quote (defatom *abort-control nil)
           :examples $ []
-        |*archived-sessions $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*archived-sessions $ %{} :CodeEntry (:doc |) (:schema :ref)
           :code $ quote (defatom *archived-sessions nil)
           :examples $ []
-        |*gen-ai-new $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*gen-ai-new $ %{} :CodeEntry (:doc |) (:schema :ref)
           :code $ quote (defatom *gen-ai-new nil)
           :examples $ []
-        |*image-cache $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*image-cache $ %{} :CodeEntry (:doc |) (:schema :ref)
           :code $ quote (defatom *image-cache nil)
           :examples $ []
-        |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter") (:schema :dynamic)
+        |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter") (:schema :ref)
           :code $ quote (defatom *openai nil)
           :examples $ []
-        |*viewing-archive-session $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*viewing-archive-session $ %{} :CodeEntry (:doc |) (:schema :ref)
           :code $ quote (defatom *viewing-archive-session nil)
           :examples $ []
-        |append-user-message $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |append-user-message $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn append-user-message (messages content)
               let
                   messages0 $ if (some? messages) messages ([])
                 conj messages0 $ {} (:role :user) (:content content)
           :examples $ []
+          :schema $ :: :fn $ {} (:return (:: :list (:: :map :tag :dynamic)))
+            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic))) :string
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
@@ -921,7 +923,7 @@
                         :style $ {} (:height 200)
                     , nil
           :examples $ []
-        |create-session $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |create-session $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn create-session (messages model)
               let
@@ -940,6 +942,7 @@
                     .!slice first-msg 0 end
                   :is-history? false
           :examples $ []
+          :schema $ :: :fn $ {} (:return (:: :map :tag :dynamic)) (:args $ [] (:: :list (:: :map :tag :dynamic)) :tag)
         |download-sessions! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn download-sessions! (sessions)
@@ -962,7 +965,7 @@
                 js/setTimeout $ fn ()
                   .!select $ .!querySelector el |textarea
           :examples $ []
-        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.") (:schema :dynamic)
+        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
           :code $ quote
             defn first-line (tt)
               let
@@ -974,10 +977,16 @@
                   js/console.warn "|Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
           :examples $ []
-        |generate-session-id $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn $ {} (:return :string) (:args $ [] :string)
+                  > (.-length lines) 1
+                  js/console.warn "|Droping some unexpected lines:" $ .!slice lines 1
+                .-0 lines
+          :examples $ []
+        |generate-session-id $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn generate-session-id () $ str (js/Date.now)
           :examples $ []
+          :schema $ :: :fn $ {} (:return :string) (:args $ [])
         |get-anthropic-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn get-anthropic-key! () $ let
@@ -1030,12 +1039,13 @@
                   , v
                 , key
           :examples $ []
-        |json-pattern? $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |json-pattern? $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn json-pattern? (text)
               or (.!startsWith text |{) (.!startsWith text |[)
           :examples $ []
-        |messages->anthropic $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn $ {} (:return :bool) (:args $ [] :string)
+        |messages->anthropic $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->anthropic (messages)
               to-js-data $ map (or messages [])
@@ -1046,7 +1056,9 @@
                       , |assistant |user
                     :content $ :content m
           :examples $ []
-        |messages->gemini $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn $ {} (:return :dynamic)
+            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic)))
+        |messages->gemini $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->gemini (messages)
               let
@@ -1060,7 +1072,9 @@
                       :parts $ []
                         {} $ :text (:content m)
           :examples $ []
-        |messages->openai $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn $ {} (:return :dynamic)
+            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic)))
+        |messages->openai $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->openai (messages)
               let
@@ -1073,7 +1087,9 @@
                         , |assistant |user
                       :content $ :content m
           :examples $ []
-        |models-menu $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn $ {} (:return :dynamic)
+            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic)))
+        |models-menu $ %{} :CodeEntry (:doc |) (:schema :list)
           :code $ quote
             def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "|Claude 4.5")
           :examples $ []
@@ -1097,12 +1113,13 @@
           :code $ quote
             def pattern-spaced-code $ noted "|temp fix of nested code block" (&raw-code "|/\\n\\s+```/g")
           :examples $ []
-        |pick-model $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |pick-model $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
               case-default variant |gemini-3-flash-preview (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite-preview) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
           :examples $ []
-        |save-current-session $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn $ {} (:return :string) (:args $ [] :tag)
+        |save-current-session $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn save-current-session (store state)
               let
@@ -1117,6 +1134,7 @@
                     assoc store :sessions $ append sessions updated-session
                   , store
           :examples $ []
+          :schema $ :: :fn $ {} (:return (:: :map :tag :dynamic)) (:args $ [] (:: :map :tag :dynamic) (:: :map :tag :dynamic))
         |style-a-toggler $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -1443,7 +1461,7 @@
                       d! cursor $ -> state (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
                         assoc :messages $ upsert-assistant-message (:messages state) err-text nil
           :examples $ []
-        |upsert-assistant-message $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |upsert-assistant-message $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn upsert-assistant-message (messages content thinking)
               let
@@ -1457,6 +1475,8 @@
                     -> last-msg (assoc :content content) (assoc :thinking thinking)
                   conj messages0 $ {} (:role :assistant) (:content content) (:thinking thinking)
           :examples $ []
+          :schema $ :: :fn $ {} (:return (:: :list (:: :map :tag :dynamic)))
+            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic))) (:: :optional :string) (:: :optional :string)
       :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
@@ -1478,15 +1498,15 @@
             respo-ui.util :refer $ tab-echo!
     |app.config $ %{} :FileEntry
       :defs $ {}
-        |chrome-extension? $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |chrome-extension? $ %{} :CodeEntry (:doc |) (:schema :bool)
           :code $ quote
             def chrome-extension? $ and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.id)
           :examples $ []
-        |dev? $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |dev? $ %{} :CodeEntry (:doc |) (:schema :bool)
           :code $ quote
             def dev? $ = |dev (get-env |mode |release)
           :examples $ []
-        |site $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |site $ %{} :CodeEntry (:doc |) (:schema :map)
           :code $ quote
             def site $ {} (:storage-key |msg-buffer) (:archive-key |msg-buffer-archive)
           :examples $ []
@@ -1494,7 +1514,7 @@
         :code $ quote (ns app.config)
     |app.main $ %{} :FileEntry
       :defs $ {}
-        |*reel $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |*reel $ %{} :CodeEntry (:doc |) (:schema :ref)
           :code $ quote
             defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
@@ -1643,7 +1663,7 @@
             respo.controller.client :refer $ send-to-component!
     |app.schema $ %{} :FileEntry
       :defs $ {}
-        |store $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |store $ %{} :CodeEntry (:doc |) (:schema :map)
           :code $ quote
             def store $ {}
               :states $ {}
@@ -1657,7 +1677,7 @@
         :code $ quote (ns app.schema)
     |app.updater $ %{} :FileEntry
       :defs $ {}
-        |updater $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |updater $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn updater (store op op-id op-time)
               tag-match op
@@ -1695,6 +1715,7 @@
                     assoc :current-session-id nil
                 _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
+          :schema $ :: :fn $ {} (:return :map) (:args $ [] :map :list :string :number)
       :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
