@@ -9,6 +9,9 @@
         |*abort-control $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote (defatom *abort-control nil)
           :examples $ []
+        |*archived-sessions $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :code $ quote (defatom *archived-sessions nil)
+          :examples $ []
         |*gen-ai-new $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote (defatom *gen-ai-new nil)
           :examples $ []
@@ -17,6 +20,9 @@
           :examples $ []
         |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter") (:schema :dynamic)
           :code $ quote (defatom *openai nil)
+          :examples $ []
+        |*viewing-archive-session $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :code $ quote (defatom *viewing-archive-session nil)
           :examples $ []
         |append-user-message $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
@@ -379,6 +385,7 @@
               let
                   store $ :store reel
                   sessions $ or (:sessions store) ([])
+                  archived-count $ or (:archived-count store) 0
                   current-session-id $ :current-session-id store
                   states $ :states store
                   cursor $ or (:cursor states) ([])
@@ -424,7 +431,7 @@
                     {} (:title "|History Sessions")
                       :style $ {} (:min-width "||max(320px,30vw)\"") (:max-width |80vw)
                       :render $ fn (on-close)
-                        comp-sessions-modal sessions
+                        comp-sessions-modal sessions archived-count
                           fn (session-id d!)
                             d! cursor $ -> state
                               assoc :messages $ :messages
@@ -435,147 +442,264 @@
                               assoc :done? true
                             d! $ :: :session :session-id session-id
                             on-close d!
-                          , on-close
+                          , on-close $ fn (d!)
+                            let
+                                archive-key $ :archive-key site
+                                raw $ js/localStorage.getItem archive-key
+                              if (blank? raw) (js/alert "|No archives found!")
+                                let
+                                    parsed $ parse-cirru-edn raw
+                                  reset! *archived-sessions parsed
                 div
                   {} $ :class-name (str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global)
-                  div
-                    {} $ :class-name (str-spaced css/expand style-message-area)
-                    div
-                      {}
-                        :class-name $ str-spaced css/row-parted
-                        :style $ {} (:padding |8px)
-                      div $ {}
+                  if (some? @*archived-sessions)
+                    if (some? @*viewing-archive-session) (; Render specific read-only archived session)
                       div
-                        {} (:class-name css/row-middle) (:title |History) (:role |button) (:aria-label |history-open)
-                          :style $ {} (:cursor :pointer)
-                          :on-click $ fn (e d!) (.show sessions-plugin d!)
+                        {} $ :class-name (str-spaced css/expand style-message-area)
                         div
-                          {} $ :class-name style-history-button
-                          comp-i |clock
-                        =< 4 nil
-                        if
-                          > (count sessions) 0
-                          <>
-                            str $ count sessions
-                            str-spaced css/font-fancy style-history-count
-                    div
-                      {} (:role |region) (:aria-label |message-list)
-                        :class-name $ str-spaced css/column style-message-list
-                      if
-                        or (= :imagen-4 model) (= :flash-imagen model)
-                        img $ {}
-                          :class-name $ str-spaced style-image |show-image
-                      list->
-                        {} $ :class-name (str-spaced css/column css/gap8)
-                        -> messages $ map-indexed
-                          fn (idx msg)
-                            [] idx $ let
-                                role $ :role msg
-                                content $ :content msg
-                                thinking $ :thinking msg
-                              div
-                                {} $ :class-name
-                                  str-spaced style-message-item $ if (= role :assistant) style-message-assistant style-message-user
-                                div
-                                  {} $ :class-name style-message-role
-                                  <> $ if (= role :assistant) |Assistant |You
-                                if
-                                  not $ blank? thinking
-                                  div
-                                    {} $ :class-name style-thinking
-                                    memof1-call comp-md-block
-                                      -> thinking $ either |
-                                      {} $ :class-name style-md-content
-                                if (= role :assistant)
-                                  if (json-pattern? content)
-                                    pre $ {} (:class-name style-code-content) (:inner-text content)
-                                    memof1-call comp-md-block
-                                      -> content $ either |
-                                      {} $ :class-name style-md-content
-                                  pre $ {} (:class-name style-message-text) (:inner-text content)
-                                if
-                                  and (= role :assistant)
-                                    or done? $ not= idx
-                                      dec $ count messages
-                                  div
-                                    {} $ :class-name (str-spaced css/row-middle css/gap8 style-message-actions)
-                                    if chrome-extension?
-                                      comp-fill $ either content |
-                                      , nil
-                                    comp-copy $ either content |
-                                  , nil
-                      if
-                        and
-                          > (count messages) 0
-                          :done? state
-                          not is-viewing-history?
-                        div
-                          {} $ :class-name (str-spaced css/row-middle css/gap8 style-reply-actions)
-                          button
-                            {} (:role |button) (:aria-label |reply-message)
-                              :class-name $ str-spaced css/button style-reply-button
-                              :on-click $ fn (e d!)
-                                .show reply-plugin d! $ fn (text)
-                                  submit-message! cursor state text (:search? message-box-state) (:think? message-box-state) model d!
-                            <> |Reply
-                          if (:focus-mode? message-box-state) nil $ a
-                            {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
-                              :on-click $ fn (e d!)
-                                let
-                                    focused $ .-activeElement js/document
-                                  do
-                                    if (some? focused) (.!blur focused)
-                                    d!
-                                      :cursor $ >> states :message-box
-                                      assoc message-box-state :focus-mode? true
-                        , nil
-                      if (:loading? state)
-                        div ({}) (memof1-call-by :abort-loading comp-abort |Loading...)
-                      div
-                        {} $ :class-name css/row-parted
-                        div
-                          {} $ :class-name (str-spaced css/row-middle css/gap8)
-                          if (:done? state) nil $ div
-                            {} $ :style
-                              {} (:display :flex) (:justify-content :center) (:align-items :center)
-                            memof1-call-by :abort-streaming comp-abort |Streaming...
-                        if (:done? state)
+                          {} $ :class-name style-archive-header
                           div $ {}
-                            :class-name $ str-spaced css/row-middle css/gap8
-                    =< nil 200
-                  comp-message-box (>> states :message-box)
-                    a $ {}
-                      :inner-text $ or (turn-str model) |-
-                      :role |button
-                      :aria-label $ str |model-picker: (turn-string model)
-                      :class-name $ str-spaced style-a-toggler
-                      :style $ {}
-                        :opacity $ if (= model :anthropic) 1 0.3
-                      :on-click $ fn (e d!)
-                        ; d! $ :: :change-model
-                        .show model-plugin d!
-                    fn (text search? think? d!)
-                      do
-                        when
-                          and
-                            > (count messages) 0
-                            :done? state
-                            nil? current-session-id
-                          d! $ :: :save-session state
-                        d! cursor $ -> state
-                          assoc :messages $ []
-                          assoc :answer nil
-                          assoc :thinking nil
-                          assoc :done? false
-                        d! $ :: :session :session-id nil
-                        submit-message! cursor
-                          -> state
-                            assoc :messages $ []
-                            assoc :answer nil
-                            assoc :thinking nil
-                            assoc :done? false
-                          , text search? think? model d!
-                    , model
+                            :style $ {} (:font-weight :bold)
+                            :inner-text $ str "|Archived: " (:preview @*viewing-archive-session)
+                          div
+                            {} (:class-name style-archive-close)
+                              :on-click $ fn (e d!) (reset! *viewing-archive-session nil)
+                            <> "|✕"
+                        ; Messages list $ read only
+                        div
+                          {} (:role |region) (:aria-label |message-list)
+                            :class-name $ str-spaced css/column style-message-list
+                          list->
+                            {} $ :class-name (str-spaced css/column css/gap8)
+                            -> (:messages @*viewing-archive-session)
+                              map-indexed $ fn (idx msg)
+                                [] idx $ let
+                                    role $ :role msg
+                                    content $ :content msg
+                                    thinking $ :thinking msg
+                                  div
+                                    {} $ :class-name
+                                      str-spaced style-message-item $ if (= role :assistant) style-message-assistant style-message-user
+                                    div
+                                      {} $ :class-name style-message-role
+                                      <> $ if (= role :assistant) |Assistant |You
+                                    if
+                                      not $ blank? thinking
+                                      div
+                                        {} $ :class-name style-thinking
+                                        memof1-call comp-md-block
+                                          -> thinking $ either |
+                                          {} $ :class-name style-md-content
+                                    if (= role :assistant)
+                                      if (json-pattern? content)
+                                        pre $ {} (:class-name style-code-content) (:inner-text content)
+                                        memof1-call comp-md-block
+                                          -> content $ either |
+                                          {} $ :class-name style-md-content
+                                      pre $ {} (:class-name style-message-text) (:inner-text content)
+                      ; Render archived sessions list
+                      div
+                        {} $ :class-name (str-spaced css/expand style-message-area)
+                        div
+                          {} $ :class-name style-archive-header
+                          div $ {}
+                            :style $ {} (:font-weight :bold)
+                            :inner-text "|All Archived Sessions"
+                          div
+                            {} (:class-name style-archive-close)
+                              :on-click $ fn (e d!) (reset! *archived-sessions nil) (reset! *viewing-archive-session nil)
+                            <> "|✕"
+                        ; List
+                        div
+                          {} $ :class-name (str-spaced css/column css/gap8 style-message-list)
+                          list->
+                            {} $ :class-name css/column
+                            let
+                                current-archives $ or @*archived-sessions ([])
+                              if (empty? current-archives)
+                                [] :empty $ div
+                                  {} $ :style
+                                    {} (:padding |12px)
+                                      :color $ hsl 0 0 60
+                                  <> "|No archived sessions left."
+                                -> current-archives .reverse $ map
+                                  fn (session)
+                                    let
+                                        session-id $ :id session
+                                        created-at $ :created-at session
+                                        preview $ :preview session
+                                        date-str $ .!toLocaleString (new js/Date created-at)
+                                      [] session-id $ div
+                                        {} $ :class-name style-session-item
+                                        div
+                                          {} (:role |button)
+                                            :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
+                                            :on-click $ fn (e d!) (reset! *viewing-archive-session session)
+                                          div
+                                            {} $ :style
+                                              {} (:font-size |12px)
+                                                :color $ hsl 0 0 60
+                                            <> date-str
+                                          div
+                                            {} $ :style
+                                              {} (:margin-top |4px) (:white-space :nowrap) (:overflow :hidden) (:text-overflow :ellipsis) (:max-height |1.2em) (:line-height |1.2)
+                                            <> preview
+                                        div
+                                          {} (:class-name style-delete-button) (:role |button)
+                                            :on-click $ fn (e d!)
+                                              let
+                                                  proceed? $ js/confirm "|Delete this archived session?"
+                                                when proceed? $ let
+                                                    new-archives $ filter @*archived-sessions
+                                                      fn (s)
+                                                        not= (:id s) session-id
+                                                  reset! *archived-sessions new-archives
+                                                  let
+                                                      archive-key $ :archive-key site
+                                                    js/localStorage.setItem archive-key $ format-cirru-edn new-archives
+                                                    d! $ :: :update-archived-count (count new-archives)
+                                          <> "|✕"
+                    ; Else render normal chat view
+                    div
+                      {} $ :class-name (str-spaced css/expand css/column)
+                      div
+                        {} $ :class-name (str-spaced css/expand style-message-area)
+                        div
+                          {}
+                            :class-name $ str-spaced css/row-parted
+                            :style $ {} (:padding |8px)
+                          div $ {}
+                          div
+                            {} (:class-name css/row-middle) (:title |History) (:role |button) (:aria-label |history-open)
+                              :style $ {} (:cursor :pointer)
+                              :on-click $ fn (e d!) (.show sessions-plugin d!)
+                            div
+                              {} $ :class-name style-history-button
+                              comp-i |clock
+                            =< 4 nil
+                            if
+                              > (count sessions) 0
+                              <>
+                                str $ count sessions
+                                str-spaced css/font-fancy style-history-count
+                        div
+                          {} (:role |region) (:aria-label |message-list)
+                            :class-name $ str-spaced css/column style-message-list
+                          if
+                            or (= :imagen-4 model) (= :flash-imagen model)
+                            img $ {}
+                              :class-name $ str-spaced style-image |show-image
+                          list->
+                            {} $ :class-name (str-spaced css/column css/gap8)
+                            -> messages $ map-indexed
+                              fn (idx msg)
+                                [] idx $ let
+                                    role $ :role msg
+                                    content $ :content msg
+                                    thinking $ :thinking msg
+                                  div
+                                    {} $ :class-name
+                                      str-spaced style-message-item $ if (= role :assistant) style-message-assistant style-message-user
+                                    div
+                                      {} $ :class-name style-message-role
+                                      <> $ if (= role :assistant) |Assistant |You
+                                    if
+                                      not $ blank? thinking
+                                      div
+                                        {} $ :class-name style-thinking
+                                        memof1-call comp-md-block
+                                          -> thinking $ either |
+                                          {} $ :class-name style-md-content
+                                    if (= role :assistant)
+                                      if (json-pattern? content)
+                                        pre $ {} (:class-name style-code-content) (:inner-text content)
+                                        memof1-call comp-md-block
+                                          -> content $ either |
+                                          {} $ :class-name style-md-content
+                                      pre $ {} (:class-name style-message-text) (:inner-text content)
+                                    if
+                                      and (= role :assistant)
+                                        or done? $ not= idx
+                                          dec $ count messages
+                                      div
+                                        {} $ :class-name (str-spaced css/row-middle css/gap8 style-message-actions)
+                                        if chrome-extension?
+                                          comp-fill $ either content |
+                                          , nil
+                                        comp-copy $ either content |
+                                      , nil
+                          if
+                            and
+                              > (count messages) 0
+                              :done? state
+                              not is-viewing-history?
+                            div
+                              {} $ :class-name (str-spaced css/row-middle css/gap8 style-reply-actions)
+                              button
+                                {} (:role |button) (:aria-label |reply-message)
+                                  :class-name $ str-spaced css/button style-reply-button
+                                  :on-click $ fn (e d!)
+                                    .show reply-plugin d! $ fn (text)
+                                      submit-message! cursor state text (:search? message-box-state) (:think? message-box-state) model d!
+                                <> |Reply
+                              if (:focus-mode? message-box-state) nil $ a
+                                {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
+                                  :on-click $ fn (e d!)
+                                    let
+                                        focused $ .-activeElement js/document
+                                      do
+                                        if (some? focused) (.!blur focused)
+                                        d!
+                                          :cursor $ >> states :message-box
+                                          assoc message-box-state :focus-mode? true
+                            , nil
+                          if (:loading? state)
+                            div ({}) (memof1-call-by :abort-loading comp-abort |Loading...)
+                          div
+                            {} $ :class-name css/row-parted
+                            div
+                              {} $ :class-name (str-spaced css/row-middle css/gap8)
+                              if (:done? state) nil $ div
+                                {} $ :style
+                                  {} (:display :flex) (:justify-content :center) (:align-items :center)
+                                memof1-call-by :abort-streaming comp-abort |Streaming...
+                            if (:done? state)
+                              div $ {}
+                                :class-name $ str-spaced css/row-middle css/gap8
+                        =< nil 200
+                      comp-message-box (>> states :message-box)
+                        a $ {}
+                          :inner-text $ or (turn-str model) |-
+                          :role |button
+                          :aria-label $ str |model-picker: (turn-string model)
+                          :class-name $ str-spaced style-a-toggler
+                          :style $ {}
+                            :opacity $ if (= model :anthropic) 1 0.3
+                          :on-click $ fn (e d!)
+                            ; d! $ :: :change-model
+                            .show model-plugin d!
+                        fn (text search? think? d!)
+                          do
+                            when
+                              and
+                                > (count messages) 0
+                                :done? state
+                                nil? current-session-id
+                              d! $ :: :save-session state
+                            d! cursor $ -> state
+                              assoc :messages $ []
+                              assoc :answer nil
+                              assoc :thinking nil
+                              assoc :done? false
+                            d! $ :: :session :session-id nil
+                            submit-message! cursor
+                              -> state
+                                assoc :messages $ []
+                                assoc :answer nil
+                                assoc :thinking nil
+                                assoc :done? false
+                              , text search? think? model d!
+                        , model
                   model-plugin.render
                   reply-plugin.render
                   sessions-plugin.render
@@ -707,7 +831,7 @@
           :examples $ []
         |comp-sessions-modal $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
-            defcomp comp-sessions-modal (sessions on-select on-close)
+            defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
               let
                   history-items $ foldl sessions 0
                     fn (acc session)
@@ -715,6 +839,18 @@
                         or (:messages session) ([])
                 div
                   {} $ :class-name (str-spaced css/column css/gap8 style-sessions-list)
+                  if (> archived-count 0)
+                    div
+                      {} $ :class-name style-archive-row
+                      span $ {}
+                        :style $ {}
+                          :color $ hsl 0 0 50
+                        :inner-text $ str "|Archived: " archived-count "| sessions"
+                      button
+                        {} (:class-name css/button)
+                          :style $ {} (:cursor :pointer)
+                          :on-click $ fn (e d!) (on-close d!) (on-view-archive d!)
+                        <> "|View Archive"
                   if (empty? sessions)
                     div
                       {} $ :style
@@ -768,13 +904,18 @@
                             :on-click $ fn (e d!) (download-sessions! sessions)
                         if
                           > (count sessions) 0
-                          a $ {} (:class-name style-clear) (:inner-text "|Clear all") (:role |button) (:aria-label |sessions-clear-all)
+                          a $ {} (:class-name style-clear) (:inner-text "|Archive all") (:role |button) (:aria-label |sessions-archive-all)
                             :on-click $ fn (e d!)
                               let
-                                  proceed? $ if (> history-items 10)
-                                    js/confirm $ str-spaced |Clear history-items "|messages from history?"
-                                    , true
-                                when proceed? $ d! (:: :clear-sessions)
+                                  proceed? $ js/confirm
+                                    str "|Archive " (count sessions) "| sessions and clear active view?"
+                                when proceed? $ let
+                                    archive-key $ :archive-key site
+                                    raw $ js/localStorage.getItem archive-key
+                                    old-archives $ if (blank? raw) ([]) (parse-cirru-edn raw)
+                                    new-archives $ concat old-archives sessions
+                                  js/localStorage.setItem archive-key $ format-cirru-edn new-archives
+                                  d! $ :: :archive-sessions (count new-archives)
                           span $ {}
                       div $ {}
                         :style $ {} (:height 200)
@@ -997,6 +1138,35 @@
                 :touch-action :none
               |&:hover $ {} (:color |#777)
                 :background-color $ hsl 0 0 100
+          :examples $ []
+        |style-archive-close $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :code $ quote
+            defstyle style-archive-close $ {}
+              |& $ {} (:cursor :pointer) (:font-size 18)
+                :color $ hsl 0 0 50
+                :transition-duration |200ms
+              |&:hover $ {}
+                :color $ hsl 0 0 20
+          :examples $ []
+        |style-archive-header $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :code $ quote
+            defstyle style-archive-header $ {}
+              |& $ {} (:padding "|12px 16px")
+                :border-bottom $ str "|1px solid " (hsl 0 0 90)
+                :background-color $ hsl 0 0 96
+                :display :flex
+                :flex-direction :row
+                :align-items :center
+                :justify-content :space-between
+          :examples $ []
+        |style-archive-row $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :code $ quote
+            defstyle style-archive-row $ {}
+              |& $ {} (:padding |12px)
+                :border-bottom $ str "|1px solid " (hsl 0 0 90)
+                :display :flex
+                :justify-content :space-between
+                :align-items :center
           :examples $ []
         |style-checkbox $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
@@ -1296,7 +1466,7 @@
             respo.comp.space :refer $ =<
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
-            app.config :refer $ dev? chrome-extension?
+            app.config :refer $ dev? chrome-extension? site
             |axios :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy style-close
@@ -1318,7 +1488,7 @@
           :examples $ []
         |site $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
-            def site $ {} (:storage-key |msg-buffer)
+            def site $ {} (:storage-key |msg-buffer) (:archive-key |msg-buffer-archive)
           :examples $ []
       :ns $ %{} :NsEntry (:doc |)
         :code $ quote (ns app.config)
@@ -1406,6 +1576,8 @@
               if config/dev? $ load-console-formatter!
               render-app!
               add-watch *reel :changes $ fn (reel prev) (render-app!)
+              add-watch *archived-sessions :changes $ fn (s prev) (render-app!)
+              add-watch *viewing-archive-session :changes $ fn (s prev) (render-app!)
               listen-devtools! |k dispatch!
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
@@ -1435,8 +1607,10 @@
         |reload! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn reload! () $ if (nil? build-errors)
-              do (remove-watch *reel :changes) (clear-cache!)
+              do (remove-watch *reel :changes) (remove-watch *archived-sessions :changes) (remove-watch *viewing-archive-session :changes) (clear-cache!)
                 add-watch *reel :changes $ fn (reel prev) (render-app!)
+                add-watch *archived-sessions :changes $ fn (s prev) (render-app!)
+                add-watch *viewing-archive-session :changes $ fn (s prev) (render-app!)
                 reset! *reel $ refresh-reel @*reel schema/store updater
                 hud! |ok~ |Ok
               hud! |error build-errors
@@ -1457,7 +1631,7 @@
         :code $ quote
           ns app.main $ :require
             respo.core :refer $ render! clear-cache!
-            app.comp.container :refer $ comp-container submit-message!
+            app.comp.container :refer $ comp-container submit-message! *archived-sessions *viewing-archive-session
             app.updater :refer $ updater
             app.schema :as schema
             reel.util :refer $ listen-devtools!
@@ -1477,6 +1651,7 @@
               :sessions $ []
               :current-session-id nil
               :model nil
+              :archived-count 0
           :examples $ []
       :ns $ %{} :NsEntry (:doc |)
         :code $ quote (ns app.schema)
@@ -1507,6 +1682,13 @@
                     or (:sessions store) ([])
                     fn (s)
                       not $ = (:id s) id
+                (:archive-sessions new-count)
+                  -> store
+                    assoc :sessions $ []
+                    assoc :archived-count new-count
+                    assoc :current-session-id nil
+                (:update-archived-count new-count)
+                  -> store $ assoc :archived-count new-count
                 (:clear-sessions)
                   -> store
                     assoc :sessions $ []
