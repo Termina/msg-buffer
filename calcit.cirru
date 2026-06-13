@@ -445,9 +445,10 @@
                             d! $ :: :session :session-id session-id
                             on-close d!
                           , on-close $ fn (d!)
+                            hint-fn $ {} (:async true)
                             let
                                 archive-key $ :archive-key site
-                                raw $ js/localStorage.getItem archive-key
+                                raw $ js-await (db-get archive-key)
                               if (blank? raw) (js/alert "|No archives found!")
                                 let
                                     parsed $ parse-cirru-edn raw
@@ -549,6 +550,7 @@
                                         div
                                           {} (:class-name style-delete-button) (:role |button)
                                             :on-click $ fn (e d!)
+                                              hint-fn $ {} (:async true)
                                               let
                                                   proceed? $ js/confirm "|Delete this archived session?"
                                                 when proceed? $ let
@@ -558,7 +560,7 @@
                                                   reset! *archived-sessions new-archives
                                                   let
                                                       archive-key $ :archive-key site
-                                                    js/localStorage.setItem archive-key $ format-cirru-edn new-archives
+                                                    js-await $ db-set archive-key $ format-cirru-edn new-archives
                                                     d! $ :: :update-archived-count (count new-archives)
                                           <> "|✕"
                     ; Else render normal chat view
@@ -908,15 +910,16 @@
                           > (count sessions) 0
                           a $ {} (:class-name style-clear) (:inner-text "|Archive all") (:role |button) (:aria-label |sessions-archive-all)
                             :on-click $ fn (e d!)
+                              hint-fn $ {} (:async true)
                               let
                                   proceed? $ js/confirm
                                     str "|Archive " (count sessions) "| sessions and clear active view?"
                                 when proceed? $ let
                                     archive-key $ :archive-key site
-                                    raw $ js/localStorage.getItem archive-key
+                                    raw $ js-await (db-get archive-key)
                                     old-archives $ if (blank? raw) ([]) (parse-cirru-edn raw)
                                     new-archives $ concat old-archives sessions
-                                  js/localStorage.setItem archive-key $ format-cirru-edn new-archives
+                                  js-await $ db-set archive-key $ format-cirru-edn new-archives
                                   d! $ :: :archive-sessions (count new-archives)
                           span $ {}
                       div $ {}
@@ -1491,6 +1494,7 @@
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy style-close
             |../extension/get-selected :refer $ get-selected
+            |../lib/db :refer $ db-get db-set
             memof.once :refer $ memof1-call memof1-call-by
             |../lib/image :refer $ base64ToBlob
             feather.core :refer $ comp-i
