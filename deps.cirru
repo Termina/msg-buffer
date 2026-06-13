@@ -1,7 +1,7 @@
 
-{} (:calcit-version |0.12.44)
+{} (:calcit-version |0.12.45)
   :dependencies $ {} (|Memkits/genai.calcit |0.0.3)
-    |Respo/alerts.calcit |0.10.11
+    |Respo/alerts.calcit |0.10.12
     |Respo/reel.calcit |0.6.4
     |Respo/respo-feather.calcit |main
     |Respo/respo-markdown.calcit |0.4.13
