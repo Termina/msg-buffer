@@ -31,8 +31,12 @@
                   messages0 $ if (some? messages) messages ([])
                 conj messages0 $ {} (:role :user) (:content content)
           :examples $ []
-          :schema $ :: :fn $ {} (:return (:: :list (:: :map :tag :dynamic)))
-            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic))) :string
+          :schema $ :: :fn
+            {}
+              :args $ []
+                :: :optional $ :: :list (:: :map :tag :dynamic)
+                , :string
+              :return $ :: :list (:: :map :tag :dynamic)
         |call-anthropic-msg! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
@@ -310,9 +314,12 @@
                 let
                     mod $ js-await (js/import |openai)
                     OpenAI $ .-default mod
+                    deepseek? $ .!includes variant |deepseek
+                    base-url $ if deepseek? |https://api.deepseek.com |https://openrouter.ai/api/v1
+                    key-fn $ if deepseek? get-deepseek-key! get-openrouter-key!
                   reset! *openai $ new OpenAI
-                    js-object (:baseURL |https://openrouter.ai/api/v1)
-                      :apiKey $ get-openrouter-key!
+                    js-object (:baseURL base-url)
+                      :apiKey $ key-fn
                       :defaultHeaders $ js-object
                       :dangerouslyAllowBrowser true
               if-let
@@ -325,7 +332,7 @@
                     , ai
                   content $ .!replace prompt-text |{{selected}} (or selected "|<未找到选中内容>")
                   json? $ or (.!includes prompt-text |{{json}}) (.!includes prompt-text |{{JSON}})
-                  messages0 $ append-user-message (:messages state) content
+                  messages0 $ or (:messages state) ([])
                   messages1 $ upsert-assistant-message messages0 | nil
                   sdk-result $ js-await
                     -> openai .-chat .-completions $ .!create
@@ -345,20 +352,30 @@
                   js/setTimeout $ fn ()
                     d! $ :: :states-merge cursor state
                       {} (:answer nil) (:thinking nil) (:loading? true) (:done? false) (:messages messages1)
-                  js-await $ js-for-await sdk-result
-                    fn (? chunk)
-                      if (some? chunk)
-                        do
-                          swap! *text str $ -> chunk .-choices .-0 .-delta .-content (or |)
-                          d! $ :: :states-merge cursor state
-                            {} (:answer @*text) (:loading? false) (:done? false)
-                              :messages $ upsert-assistant-message messages1 @*text nil
-                      d! $ :: :states-merge cursor state
-                        {} (:answer @*text) (:loading? false) (:done? false)
-                          :messages $ upsert-assistant-message messages1 @*text nil
-                  d! $ :: :states-merge cursor state
-                    {} (:answer @*text) (:loading? false) (:done? true)
-                      :messages $ upsert-assistant-message messages1 @*text nil
+                  let
+                      *thinking-text $ atom |
+                    js-await $ js-for-await sdk-result
+                      fn (? chunk)
+                        if (some? chunk)
+                          let
+                              choice $ -> chunk .-choices .-0 .-delta
+                              reason $ -> choice .-reasoning_content (or |)
+                              text $ -> choice .-content (or |)
+                            if
+                              not $ blank? reason
+                              swap! *thinking-text str reason
+                            if
+                              not $ blank? text
+                              swap! *text str text
+                            d! $ :: :states-merge cursor state
+                              {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
+                                :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                        d! $ :: :states-merge cursor state
+                          {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
+                            :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                    d! $ :: :states-merge cursor state
+                      {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
+                        :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
         |clear-image-cache! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
@@ -560,7 +577,7 @@
                                                   reset! *archived-sessions new-archives
                                                   let
                                                       archive-key $ :archive-key site
-                                                    js-await $ db-set archive-key $ format-cirru-edn new-archives
+                                                    js-await $ db-set archive-key (format-cirru-edn new-archives)
                                                     d! $ :: :update-archived-count (count new-archives)
                                           <> "|✕"
                     ; Else render normal chat view
@@ -919,7 +936,7 @@
                                     raw $ js-await (db-get archive-key)
                                     old-archives $ if (blank? raw) ([]) (parse-cirru-edn raw)
                                     new-archives $ concat old-archives sessions
-                                  js-await $ db-set archive-key $ format-cirru-edn new-archives
+                                  js-await $ db-set archive-key (format-cirru-edn new-archives)
                                   d! $ :: :archive-sessions (count new-archives)
                           span $ {}
                       div $ {}
@@ -945,7 +962,12 @@
                     .!slice first-msg 0 end
                   :is-history? false
           :examples $ []
-          :schema $ :: :fn $ {} (:return (:: :map :tag :dynamic)) (:args $ [] (:: :list (:: :map :tag :dynamic)) :tag)
+          :schema $ :: :fn
+            {}
+              :args $ []
+                :: :list $ :: :map :tag :dynamic
+                , :tag
+              :return $ :: :map :tag :dynamic
         |download-sessions! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn download-sessions! (sessions)
@@ -980,16 +1002,16 @@
                   js/console.warn "|Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
           :examples $ []
-          :schema $ :: :fn $ {} (:return :string) (:args $ [] :string)
-                  > (.-length lines) 1
-                  js/console.warn "|Droping some unexpected lines:" $ .!slice lines 1
-                .-0 lines
-          :examples $ []
+          :schema $ :: :fn
+            {} (:return :string)
+              :args $ [] :string
         |generate-session-id $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn generate-session-id () $ str (js/Date.now)
           :examples $ []
-          :schema $ :: :fn $ {} (:return :string) (:args $ [])
+          :schema $ :: :fn
+            {} (:return :string)
+              :args $ []
         |get-anthropic-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn get-anthropic-key! () $ let
@@ -1014,6 +1036,18 @@
                     raise $ new js/Error "|key is empty"
                   js/localStorage.setItem |deepinfra-key v
                   , v
+                , key
+          :examples $ []
+        |get-deepseek-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :code $ quote
+            defn get-deepseek-key! () $ let
+                key $ js/localStorage.getItem |deepseek-key
+              if (blank? key)
+                let
+                    v $ js/prompt "|Required deepseek-key in localStorage"
+                  if (blank? v)
+                    raise $ new js/Error "|key is empty"
+                    do (js/localStorage.setItem |deepseek-key v) v
                 , key
           :examples $ []
         |get-gemini-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
@@ -1047,7 +1081,9 @@
             defn json-pattern? (text)
               or (.!startsWith text |{) (.!startsWith text |[)
           :examples $ []
-          :schema $ :: :fn $ {} (:return :bool) (:args $ [] :string)
+          :schema $ :: :fn
+            {} (:return :bool)
+              :args $ [] :string
         |messages->anthropic $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->anthropic (messages)
@@ -1059,8 +1095,10 @@
                       , |assistant |user
                     :content $ :content m
           :examples $ []
-          :schema $ :: :fn $ {} (:return :dynamic)
-            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic)))
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+                :: :optional $ :: :list (:: :map :tag :dynamic)
         |messages->gemini $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->gemini (messages)
@@ -1075,8 +1113,10 @@
                       :parts $ []
                         {} $ :text (:content m)
           :examples $ []
-          :schema $ :: :fn $ {} (:return :dynamic)
-            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic)))
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+                :: :optional $ :: :list (:: :map :tag :dynamic)
         |messages->openai $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->openai (messages)
@@ -1090,11 +1130,13 @@
                         , |assistant |user
                       :content $ :content m
           :examples $ []
-          :schema $ :: :fn $ {} (:return :dynamic)
-            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic)))
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+                :: :optional $ :: :list (:: :map :tag :dynamic)
         |models-menu $ %{} :CodeEntry (:doc |) (:schema :list)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1") (; :: :item :claude-4.5 "|Claude 4.5")
+            def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1") (:: :item :deepseek-v4-pro "|DeepSeek V4 Pro") (:: :item :deepseek-v4-flash "|DeepSeek V4 Flash") (; :: :item :claude-4.5 "|Claude 4.5")
           :examples $ []
         |on-fill $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
@@ -1121,7 +1163,9 @@
             defn pick-model (variant)
               case-default variant |gemini-3-flash-preview (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite-preview) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
           :examples $ []
-          :schema $ :: :fn $ {} (:return :string) (:args $ [] :tag)
+          :schema $ :: :fn
+            {} (:return :string)
+              :args $ [] :tag
         |save-current-session $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn save-current-session (store state)
@@ -1137,7 +1181,10 @@
                     assoc store :sessions $ append sessions updated-session
                   , store
           :examples $ []
-          :schema $ :: :fn $ {} (:return (:: :map :tag :dynamic)) (:args $ [] (:: :map :tag :dynamic) (:: :map :tag :dynamic))
+          :schema $ :: :fn
+            {}
+              :args $ [] (:: :map :tag :dynamic) (:: :map :tag :dynamic)
+              :return $ :: :map :tag :dynamic
         |style-a-toggler $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defstyle style-a-toggler $ {}
@@ -1458,6 +1505,8 @@
                     :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await (call-openrouter! cursor state1 prompt-text |google/gemini-2.5-flash-preview-05-20 true d! *text)
                     :openrouter/openai/gpt-5 $ js-await (call-openrouter! cursor state1 prompt-text |openai/gpt-5 true d! *text)
                     :openrouter/deepseek/deepseek-chat-v3.1 $ js-await (call-openrouter! cursor state1 prompt-text |deepseek/deepseek-chat-v3.1 true d! *text)
+                    :deepseek-v4-pro $ js-await (call-openrouter! cursor state1 prompt-text |deepseek-v4-pro true d! *text)
+                    :deepseek-v4-flash $ js-await (call-openrouter! cursor state1 prompt-text |deepseek-v4-flash true d! *text)
                   fn (e)
                     let
                         err-text $ str "|Failed to load: " e
@@ -1478,8 +1527,13 @@
                     -> last-msg (assoc :content content) (assoc :thinking thinking)
                   conj messages0 $ {} (:role :assistant) (:content content) (:thinking thinking)
           :examples $ []
-          :schema $ :: :fn $ {} (:return (:: :list (:: :map :tag :dynamic)))
-            :args $ [] (:: :optional (:: :list (:: :map :tag :dynamic))) (:: :optional :string) (:: :optional :string)
+          :schema $ :: :fn
+            {}
+              :args $ []
+                :: :optional $ :: :list (:: :map :tag :dynamic)
+                :: :optional :string
+                :: :optional :string
+              :return $ :: :list (:: :map :tag :dynamic)
       :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
@@ -1719,7 +1773,9 @@
                     assoc :current-session-id nil
                 _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
-          :schema $ :: :fn $ {} (:return :map) (:args $ [] :map :list :string :number)
+          :schema $ :: :fn
+            {} (:return :map)
+              :args $ [] :map :list :string :number
       :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
