@@ -452,14 +452,11 @@
                       :render $ fn (on-close)
                         comp-sessions-modal sessions archived-count
                           fn (session-id d!)
-                            d! cursor $ -> state
-                              assoc :messages $ :messages
-                                -> sessions
-                                  filter $ fn (s)
-                                    = (:id s) session-id
-                                  , first $ either ({})
-                              assoc :done? true
-                            d! $ :: :session :session-id session-id
+                            d! $ :: :load-session cursor state
+                              -> sessions
+                                filter $ fn (s)
+                                  = (:id s) session-id
+                                , first $ either ({})
                             on-close d!
                           , on-close $ fn (d!)
                             hint-fn $ {} (:async true)
@@ -1755,6 +1752,13 @@
                       store1 $ save-current-session store state
                     assoc store1 :current-session-id nil
                 (:session session-id id) (assoc store :current-session-id id)
+                (:load-session cursor state session)
+                  let
+                      store1 $ update-states store cursor
+                        -> state
+                          assoc :messages $ :messages session
+                          assoc :done? true
+                    assoc store1 :current-session-id $ :id session
                 (:remove-session id)
                   assoc store :sessions $ filter
                     or (:sessions store) ([])
