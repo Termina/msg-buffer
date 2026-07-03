@@ -452,6 +452,12 @@
                       :render $ fn (on-close)
                         comp-sessions-modal sessions archived-count
                           fn (session-id d!)
+                            when
+                              and
+                                > (count messages) 0
+                                :done? state
+                                nil? current-session-id
+                              d! $ :: :save-session state
                             d! $ :: :load-session cursor state
                               -> sessions
                                 filter $ fn (s)
