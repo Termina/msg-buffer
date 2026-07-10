@@ -354,9 +354,6 @@
                     -> openai .-chat .-completions $ .!create
                       js-object (:model variant)
                         :messages $ messages->openai messages0
-                        ; :generationConfig $ if json?
-                          js-object $ |responseMimeType |application/json
-                          , js/undefined
                         :stream true
                         :headers $ js-object (:HTTP-Referer js/location.host)
                       js-object $ :signal
@@ -370,6 +367,7 @@
                       {} (:answer nil) (:thinking nil) (:loading? true) (:done? false) (:messages messages1)
                   let
                       *thinking-text $ atom |
+                      *char-buf $ atom 0
                     js-await $ js-for-await sdk-result
                       fn (? chunk)
                         if (some? chunk)
@@ -383,9 +381,13 @@
                             if
                               not $ blank? text
                               swap! *text str text
-                            d! $ :: :states-merge cursor state
-                              {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                                :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                            swap! *char-buf + $ count text
+                            when
+                              or (> @*char-buf 80) (.!includes text &newline)
+                              do (reset! *char-buf 0)
+                                d! $ :: :states-merge cursor state
+                                  {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
+                                    :messages $ upsert-assistant-message messages1 @*text @*thinking-text
                         d! $ :: :states-merge cursor state
                           {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
                             :messages $ upsert-assistant-message messages1 @*text @*thinking-text
