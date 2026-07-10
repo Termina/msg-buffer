@@ -1089,7 +1089,9 @@
                     v $ js/prompt "|Required deepseek-key in localStorage"
                   if (blank? v)
                     raise $ new js/Error "|key is empty"
-                    do (js/localStorage.setItem |deepseek-key v) v
+                  js/localStorage.setItem |deepseek-key v
+                  js/chrome.storage.local.set $ js-object (:deepseekKey v)
+                  , v
                 , key
           :examples $ []
           :schema $ :: :fn
@@ -1106,6 +1108,7 @@
                   if (blank? v)
                     raise $ new js/Error "|key is empty"
                   js/localStorage.setItem |gemini-key v
+                  js/chrome.storage.local.set $ js-object (:geminiKey v)
                   , v
                 , key
           :examples $ []
@@ -1729,9 +1732,10 @@
                 js-object $ :passive false
               hydrate-storage-later!
               if config/chrome-extension? $ listen-extension!
-              let
-                  t1 $ .!now js/Date
-                println "|App started at" t1 |cost (- t1 t0) |ms
+              , sync-gemini-key!
+                let
+                    t1 $ .!now js/Date
+                  println "|App started at" t1 |cost (- t1 t0) |ms
           :examples $ []
           :schema $ :: :fn
             {} (:return :dynamic)
@@ -1775,6 +1779,25 @@
                   , |ms
               render! mount-target (comp-container @*reel) dispatch!
           :examples $ []
+        |sync-gemini-key! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn sync-gemini-key! () $ when
+              and (some? js/window.chrome) (some? js/window.chrome.runtime)
+              let
+                  gemini-key $ js/localStorage.getItem |gemini-key
+                when (some? gemini-key)
+                  js/chrome.runtime.sendMessage $ js-object (:action |sync-gemini-key) (:key gemini-key)
+                  js/chrome.storage.local.set $ js-object (:geminiKey gemini-key)
+              let
+                  deepseek-key $ js/localStorage.getItem |deepseek-key
+                when (some? deepseek-key)
+                  js/chrome.runtime.sendMessage $ js-object (:action |sync-deepseek-key) (:key deepseek-key)
+                  js/chrome.storage.local.set $ js-object (:deepseekKey deepseek-key)
+          :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+              :features $ #{} :js-ffi
       :ns $ %{} :NsEntry (:doc |)
         :code $ quote
           ns app.main $ :require
