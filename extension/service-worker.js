@@ -88,6 +88,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Receive DeepSeek API key from sidepanel
   if (message && message.action === "sync-deepseek-key") {
     deepseekApiKey = message.key || null;
+    if (message.key) {
+      chrome.storage.local.set({ deepseekKey: message.key });
+    }
     console.log("[Worker] DeepSeek API key synced:", deepseekApiKey ? "present" : "cleared");
   }
 });
@@ -97,23 +100,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // =========================================================================
 
 async function injectTranslateScript(tab) {
-  // Step 1: Try cached key (synced from sidepanel)
-  if (!deepseekApiKey) {
-    console.log("[Worker] No cached key, reading from chrome.storage.local...");
-    try {
-      const stored = await chrome.storage.local.get("deepseekKey");
-      if (stored && stored.deepseekKey) {
-        deepseekApiKey = stored.deepseekKey;
-        console.log("[Worker] DeepSeek API key loaded from chrome.storage.local");
-      }
-    } catch (e) {
-      console.error("[Worker] Failed to read from storage:", e);
+  // Always read from chrome.storage.local as primary source
+  try {
+    const stored = await chrome.storage.local.get("deepseekKey");
+    if (stored && stored.deepseekKey) {
+      deepseekApiKey = stored.deepseekKey;
+      console.log("[Worker] DeepSeek API key loaded from storage");
     }
+  } catch (e) {
+    console.error("[Worker] Failed to read from storage:", e);
   }
 
-  // Step 2: If still no key, prompt the user on the page
+  // If still no key, prompt once and persist
   if (!deepseekApiKey) {
-    console.log("[Worker] No key in storage, asking user via prompt...");
+    console.log("[Worker] No key found, asking user once...");
     try {
       const results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -125,18 +125,16 @@ async function injectTranslateScript(tab) {
       });
       if (results && results[0] && results[0].result) {
         deepseekApiKey = results[0].result;
-        // Save for future use
         await chrome.storage.local.set({ deepseekKey: deepseekApiKey });
-        console.log("[Worker] DeepSeek API key saved from prompt");
+        console.log("[Worker] DeepSeek API key saved to storage");
       }
     } catch (e) {
       console.error("[Worker] Prompt failed:", e);
     }
   }
 
-  // Step 3: Final check
   if (!deepseekApiKey) {
-    console.error("[Worker] Still no DeepSeek API key, cannot translate");
+    console.error("[Worker] No DeepSeek API key, cannot translate");
     return;
   }
 

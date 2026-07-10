@@ -180,6 +180,34 @@ Output (JSON array):`;
   // Main Execution
   // =========================================================================
 
+  let _notifyEl = null;
+  let _notifyTimeout = null;
+
+  function showNotification(msg, temporary) {
+    if (!_notifyEl) {
+      _notifyEl = document.createElement("div");
+      _notifyEl.style.cssText = `
+        position:fixed;top:16px;right:16px;z-index:2147483647;
+        background:#333;color:#fff;padding:8px 16px;
+        border-radius:8px;font-size:14px;font-family:sans-serif;
+        box-shadow:0 2px 8px rgba(0,0,0,0.3);pointer-events:none;
+        animation:tpFadeIn 0.3s ease;
+      `;
+      const style = document.createElement("style");
+      style.textContent = "@keyframes tpFadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}";
+      document.head.appendChild(style);
+      document.body.appendChild(_notifyEl);
+    }
+    _notifyEl.textContent = "\u{1F310} " + msg;
+    clearTimeout(_notifyTimeout);
+    if (!temporary) {
+      _notifyTimeout = setTimeout(() => {
+        _notifyEl.remove();
+        _notifyEl = null;
+      }, 3000);
+    }
+  }
+
   try {
     console.log("[TranslatePage] Finding main content...");
     const mainContent = findMainContent();
@@ -250,33 +278,5 @@ Output (JSON array):`;
   } catch (err) {
     console.error("[TranslatePage] Error:", err);
     showNotification("Translation failed: " + err.message);
-  }
-
-  let _notifyEl = null;
-  let _notifyTimeout = null;
-
-  function showNotification(msg, temporary) {
-    if (!_notifyEl) {
-      _notifyEl = document.createElement("div");
-      _notifyEl.style.cssText = `
-        position:fixed;top:16px;right:16px;z-index:2147483647;
-        background:#333;color:#fff;padding:8px 16px;
-        border-radius:8px;font-size:14px;font-family:sans-serif;
-        box-shadow:0 2px 8px rgba(0,0,0,0.3);pointer-events:none;
-        animation:tpFadeIn 0.3s ease;
-      `;
-      const style = document.createElement("style");
-      style.textContent = "@keyframes tpFadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}";
-      document.head.appendChild(style);
-      document.body.appendChild(_notifyEl);
-    }
-    _notifyEl.textContent = "\u{1F310} " + msg;
-    clearTimeout(_notifyTimeout);
-    if (!temporary) {
-      _notifyTimeout = setTimeout(() => {
-        _notifyEl.remove();
-        _notifyEl = null;
-      }, 3000);
-    }
   }
 })();

@@ -29,5 +29,5 @@
       }
     }
   },
-  "permissions": ["sidePanel", "scripting", "activeTab", "tabs", "contextMenus"]
+  "permissions": ["sidePanel", "scripting", "activeTab", "tabs", "contextMenus", "storage"]
 }
