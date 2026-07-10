@@ -37,7 +37,7 @@
                 :: :optional $ :: :list (:: :map :tag :dynamic)
                 , :string
               :return $ :: :list (:: :map :tag :dynamic)
-        |call-anthropic-msg! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
               hint-fn $ {} (:async true)
@@ -123,7 +123,11 @@
                                             recur xss
                         recur
           :examples $ []
-        |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ [] :list (:: :map :tag :dynamic) :string :string :bool :dynamic
+              :features $ #{} :js-ffi
+        |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
               hint-fn $ {} (:async true)
@@ -182,7 +186,11 @@
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-        |call-genai-msg! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ [] :tag :list (:: :map :tag :dynamic) :string :dynamic
+              :features $ #{} :js-ffi
+        |call-genai-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text)
               hint-fn $ {} (:async true)
@@ -259,7 +267,11 @@
                     {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                       :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-        |call-imagen-4-msg! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ [] :tag :list (:: :map :tag :dynamic) :string :bool :bool :dynamic :ref :ref
+              :features $ #{} :js-ffi
+        |call-imagen-4-msg! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-imagen-4-msg! (variant cursor state prompt-text d!)
               hint-fn $ {} (:async true)
@@ -306,7 +318,11 @@
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-        |call-openrouter! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ [] :tag :list (:: :map :tag :dynamic) :string :dynamic
+              :features $ #{} :js-ffi
+        |call-openrouter! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
               hint-fn $ {} (:async true)
@@ -377,6 +393,10 @@
                       {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                         :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ [] :list (:: :map :tag :dynamic) :string :string :bool :dynamic :ref
+              :features $ #{} :js-ffi
         |clear-image-cache! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn clear-image-cache! () $ if-let (url @*image-cache)
@@ -398,7 +418,7 @@
                 =< 8 nil
                 <> "|✕" style-abort-close
           :examples $ []
-        |comp-container $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-container $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
               let
@@ -730,6 +750,10 @@
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect |Store store nil
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ [] (:: :map :tag :dynamic)
+              :features $ #{} :js-ffi
         |comp-fill $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defcomp comp-fill (text)
@@ -853,7 +877,7 @@
                                     on-submit (:content state) (:search? state) (:think? state) d!
                         , nil
           :examples $ []
-        |comp-sessions-modal $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-sessions-modal $ %{} :CodeEntry (:doc |)
           :code $ quote
             defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
               let
@@ -946,6 +970,12 @@
                         :style $ {} (:height 200)
                     , nil
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+                :: :list $ :: :map :tag :dynamic
+                , :number :dynamic :dynamic :dynamic
+              :features $ #{} :js-ffi
         |create-session $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn create-session (messages model)
@@ -971,7 +1001,7 @@
                 :: :list $ :: :map :tag :dynamic
                 , :tag
               :return $ :: :map :tag :dynamic
-        |download-sessions! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |download-sessions! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn download-sessions! (sessions)
               let
@@ -986,6 +1016,11 @@
                     fn () $ js/URL.revokeObjectURL url
                     , 0
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+                :: :list $ :: :map :tag :dynamic
+              :features $ #{} :js-ffi
         |effect-focus $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defeffect effect-focus () (action el at?)
@@ -1015,7 +1050,7 @@
           :schema $ :: :fn
             {} (:return :string)
               :args $ []
-        |get-anthropic-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |get-anthropic-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
                 key $ js/localStorage.getItem |claude-key
@@ -1028,6 +1063,10 @@
                   , v
                 , key
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+              :features $ #{} :js-ffi
         |get-deepinfra-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn get-deepinfra-key! () $ let
@@ -1041,7 +1080,7 @@
                   , v
                 , key
           :examples $ []
-        |get-deepseek-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |get-deepseek-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-deepseek-key! () $ let
                 key $ js/localStorage.getItem |deepseek-key
@@ -1053,7 +1092,11 @@
                     do (js/localStorage.setItem |deepseek-key v) v
                 , key
           :examples $ []
-        |get-gemini-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+              :features $ #{} :js-ffi
+        |get-gemini-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
                 key $ js/localStorage.getItem |gemini-key
@@ -1066,7 +1109,11 @@
                   , v
                 , key
           :examples $ []
-        |get-openrouter-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+              :features $ #{} :js-ffi
+        |get-openrouter-key! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn get-openrouter-key! () $ let
                 key $ js/localStorage.getItem |openrouter-key
@@ -1079,6 +1126,10 @@
                   , v
                 , key
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+              :features $ #{} :js-ffi
         |json-pattern? $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn json-pattern? (text)
@@ -1102,6 +1153,7 @@
             {} (:return :dynamic)
               :args $ []
                 :: :optional $ :: :list (:: :map :tag :dynamic)
+              :features $ #{} :js-ffi
         |messages->gemini $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->gemini (messages)
@@ -1117,9 +1169,11 @@
                         {} $ :text (:content m)
           :examples $ []
           :schema $ :: :fn
-            {} (:return :dynamic)
+            {}
               :args $ []
-                :: :optional $ :: :list (:: :map :tag :dynamic)
+                :: :list $ :: :map :tag :dynamic
+              :features $ #{} :js-ffi
+              :return $ :: :map :tag :dynamic
         |messages->openai $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn messages->openai (messages)
@@ -1137,6 +1191,7 @@
             {} (:return :dynamic)
               :args $ []
                 :: :optional $ :: :list (:: :map :tag :dynamic)
+              :features $ #{} :js-ffi
         |models-menu $ %{} :CodeEntry (:doc |) (:schema :list)
           :code $ quote
             def models-menu $ [] (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1") (:: :item :deepseek-v4-pro "|DeepSeek V4 Pro") (:: :item :deepseek-v4-flash "|DeepSeek V4 Flash") (; :: :item :claude-4.5 "|Claude 4.5")
@@ -1477,7 +1532,7 @@
                 :border $ str "|1px solid " (hsl 0 0 90)
               "|& .md-p" $ {} (:margin "|4px 0")
           :examples $ []
-        |submit-message! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |submit-message! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!)
               hint-fn $ {} (:async true)
@@ -1516,6 +1571,10 @@
                       d! cursor $ -> state (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
                         assoc :messages $ upsert-assistant-message (:messages state) err-text nil
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ [] :list (:: :map :tag :dynamic) :dynamic :bool :bool :tag :dynamic
+              :features $ #{} :js-ffi
         |upsert-assistant-message $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn upsert-assistant-message (messages content thinking)
@@ -1648,7 +1707,7 @@
                     send-to-component! event-tuple
               connect-to-worker!
           :examples $ []
-        |main! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn main! () $ let
                 t0 $ .!now js/Date
@@ -1674,17 +1733,25 @@
                   t1 $ .!now js/Date
                 println "|App started at" t1 |cost (- t1 t0) |ms
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+              :features $ #{} :js-ffi
         |mount-target $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             def mount-target $ js/document.querySelector |.app
           :examples $ []
-        |persist-storage! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |persist-storage! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn persist-storage! ()
               println "|Saved at" $ .!toISOString (new js/Date)
               js/localStorage.setItem (:storage-key config/site)
                 format-cirru-edn $ :store @*reel
           :examples $ []
+          :schema $ :: :fn
+            {} (:return :dynamic)
+              :args $ []
+              :features $ #{} :js-ffi
         |reload! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
           :code $ quote
             defn reload! () $ if (nil? build-errors)
