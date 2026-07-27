@@ -11,7 +11,7 @@ Docs https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest#text-a
 Configurations:
 
 - `gemini-key` in localStorage
-- `?model=YOUR_MODEL`, defaults to `gemini-1.5-flash`
+- `?model=YOUR_MODEL`, defaults to `gemini-3.5-flash-lite`
 
 ### Workflow
 

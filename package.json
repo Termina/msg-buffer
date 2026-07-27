@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "@calcit/procs": "^0.12.35",
-    "@google/genai": "^1.49.0",
+    "@calcit/procs": "^0.12.51",
+    "@google/genai": "^2.12.0",
     "@tiye/main-fonts": "0.0.1",
     "axios": "^1.15.0",
     "cirru-color": "^0.2.4",

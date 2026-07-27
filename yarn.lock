@@ -5,14 +5,14 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@calcit/procs@npm:^0.12.35":
-  version: 0.12.35
-  resolution: "@calcit/procs@npm:0.12.35"
+"@calcit/procs@npm:^0.12.51":
+  version: 0.12.51
+  resolution: "@calcit/procs@npm:0.12.51"
   dependencies:
     "@calcit/ternary-tree": "npm:0.0.26"
     "@cirru/parser.ts": "npm:^0.0.9"
     "@cirru/writer.ts": "npm:^0.1.9"
-  checksum: 10c0/b9d8e2926911e81e56635653c596c2b217fe260ae768a132df49dfd2e7f4ee7707882802e06be0f191a4b5e7df6c415f78abb8d8fb8fb06176611139badc2fde
+  checksum: 10c0/f99d4e540ae18d08b2ec5aa099351a05ce2e053180e0d7415953f0ee062f746687399b1fce2d2d664fccd35247e1b49e4076e550450178acd4d2c8f8269c67ae
   languageName: node
   linkType: hard
 
@@ -65,9 +65,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google/genai@npm:^1.49.0":
-  version: 1.49.0
-  resolution: "@google/genai@npm:1.49.0"
+"@google/genai@npm:^2.12.0":
+  version: 2.12.0
+  resolution: "@google/genai@npm:2.12.0"
   dependencies:
     google-auth-library: "npm:^10.3.0"
     p-retry: "npm:^4.6.2"
@@ -78,7 +78,7 @@ __metadata:
   peerDependenciesMeta:
     "@modelcontextprotocol/sdk":
       optional: true
-  checksum: 10c0/9500042020bc54a47ba744143cb8af549a8b154ae8b10acae057a70a7c3f867faa3dcb6d34d087da3542198c2a98b0976c3968d14066772eb65de21b2786be77
+  checksum: 10c0/c3a2f3f6c8a6f236bf6f09fc6d50a90c616f9e7ea22be0922e39aa44ebda9161ae566789b4cfd2b57599b5079e045b89dd997070899f5504249650f75c8775f9
   languageName: node
   linkType: hard
 
@@ -1573,8 +1573,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@calcit/procs": "npm:^0.12.35"
-    "@google/genai": "npm:^1.49.0"
+    "@calcit/procs": "npm:^0.12.51"
+    "@google/genai": "npm:^2.12.0"
     "@tiye/main-fonts": "npm:0.0.1"
     axios: "npm:^1.15.0"
     bottom-tip: "npm:^0.1.5"
