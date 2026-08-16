@@ -520,9 +520,8 @@
           :code $ quote
             defcomp comp-container (reel)
               let
-                  app-store $ decode-map-as
-                    option:unwrap-or (get reel :store) store
-                    , 'app.schema/Store
+                  raw-store $ option:unwrap-or (get reel :store) store
+                  app-store $ if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store) (decode-map-as raw-store 'app.schema/Store)
                   sessions $ :sessions app-store
                   archived-count $ :archived-count app-store
                   current-session-id $ :current-session-id app-store
