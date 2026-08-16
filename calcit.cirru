@@ -311,7 +311,7 @@
                               , false
                             primary-text $ if (js-present-dynamic? part0) (.-text part) (.-text chunk-data)
                             prompt-feedback $ unsafe-coerce (.-promptFeedback chunk-data) 'Dynamic
-                            fallback-text $ .-blockReason prompt-feedback
+                            fallback-text $ if (js-present-dynamic? prompt-feedback) (.-blockReason prompt-feedback) js/undefined
                             text0 $ if (js-present-dynamic? primary-text) primary-text fallback-text
                             text $ if (js-present-dynamic? text0) (unsafe-coerce text0 'String) |
                           if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
