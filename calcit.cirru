@@ -520,13 +520,13 @@
           :code $ quote
             defcomp comp-container (reel)
               let
-                  store $ decode-map-as
+                  app-store $ decode-map-as
                     option:unwrap-or (get reel :store) store
                     , 'app.schema/Store
-                  sessions $ :sessions store
-                  archived-count $ :archived-count store
-                  current-session-id $ :current-session-id store
-                  states $ :states store
+                  sessions $ :sessions app-store
+                  archived-count $ :archived-count app-store
+                  current-session-id $ :current-session-id app-store
+                  states $ :states app-store
                   cursor $ option:unwrap-or (get states :cursor) ([])
                   state $ decode-map-as
                     option:unwrap-or (get states :data)
@@ -871,7 +871,7 @@
                   reply-plugin.render
                   sessions-plugin.render
                   if dev? $ comp-reel (>> states :reel) reel ({})
-                  if dev? $ comp-inspect |Store store nil
+                  if dev? $ comp-inspect |Store app-store nil
           :examples $ []
           :schema $ :: 'Fn
             {} (:return 'Dynamic)
