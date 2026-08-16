@@ -24,13 +24,17 @@ jobs:
 
     - uses: calcit-lang/setup-cr@0.0.9
 
-    - name: "compiles to js"
-      run: >
-        caps --ci && yarn install --immutable
-        && cr js
-        && yarn vite build --base=./
+    - name: Validate and build
+      run: |
+        caps --ci
+        yarn install --immutable
+        cr --check-only
+        cr analyze quality --baseline config/calcit-quality.json
+        cr js
+        yarn vite build --base=./
 
     - name: Deploy to server
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       id: deploy
       uses: Pendect/action-rsyncer@v2.0.0
       env:
@@ -43,4 +47,5 @@ jobs:
         dest: 'rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}'
 
     - name: Display status from deploy
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: echo "${{ steps.deploy.outputs.status }}"
