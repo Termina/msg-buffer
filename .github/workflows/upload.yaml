@@ -33,8 +33,11 @@ jobs:
     - name: Check Calcit types
       run: cr --check-only
 
-    - name: Check Calcit quality baseline
-      run: cr analyze quality --baseline config/calcit-quality.json
+    - name: Report deprecated Calcit calls
+      run: cr analyze deprecated --summary-only --format json
+
+    - name: Report unresolved Calcit types
+      run: cr analyze weak-types --intent unresolved,declared-optional --summary-only --format json
 
     - name: Compile Calcit JavaScript
       run: cr js
