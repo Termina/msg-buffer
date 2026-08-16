@@ -10,7 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - uses: actions/setup-node@v6
       with:
@@ -24,14 +24,23 @@ jobs:
 
     - uses: calcit-lang/setup-cr@0.0.9
 
-    - name: Validate and build
-      run: |
-        caps --ci
-        yarn install --immutable
-        cr --check-only
-        cr analyze quality --baseline config/calcit-quality.json
-        cr js
-        yarn vite build --base=./
+    - name: Resolve Calcit dependencies
+      run: caps --ci
+
+    - name: Install JavaScript dependencies
+      run: yarn install --immutable
+
+    - name: Check Calcit types
+      run: cr --check-only
+
+    - name: Check Calcit quality baseline
+      run: cr analyze quality --baseline config/calcit-quality.json
+
+    - name: Compile Calcit JavaScript
+      run: cr js
+
+    - name: Build site
+      run: yarn vite build --base=./
 
     - name: Deploy to server
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
