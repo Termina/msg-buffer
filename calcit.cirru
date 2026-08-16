@@ -2103,7 +2103,8 @@
                   let
                       store1 $ update-states-merge store cursor s changes
                     , store1
-                (:hydrate-storage data) (decode-map-as data 'app.schema/Store)
+                (:hydrate-storage data)
+                  decode-map-as (dissoc data :current-chapter-id) 'app.schema/Store
                 (:change-model)
                   if
                     = (:model store) :anthropic
