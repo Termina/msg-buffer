@@ -527,13 +527,13 @@
                   current-session-id $ :current-session-id app-store
                   states $ :states app-store
                   cursor $ option:unwrap-or (get states :cursor) ([])
-                  state $ decode-map-as
-                    option:unwrap-or (get states :data)
-                      {} (:answer nil) (:loading? false) (:done? false)
-                        :messages $ []
-                        :model :gemini
-                        :thinking nil
-                    , 'app.schema/ChatState
+                  state $ let
+                      raw-chat-state $ option:unwrap-or (get states :data)
+                        {} (:answer nil) (:loading? false) (:done? false)
+                          :messages $ []
+                          :model :gemini
+                          :thinking nil
+                    if (struct? raw-chat-state) (unsafe-coerce raw-chat-state 'app.schema/ChatState) (decode-map-as raw-chat-state 'app.schema/ChatState)
                   done? $ :done? state
                   messages $ :messages state
                   model $ if
@@ -576,11 +576,11 @@
                     {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                       :validator $ fn (text)
                         if (blank? text) "|Please enter text" nil
-                  message-box-state $ decode-map-as
-                    option:unwrap-or
-                      get (>> states :message-box) :data
-                      {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                    , 'app.schema/MessageBoxState
+                  message-box-state $ let
+                      raw-message-box-state $ option:unwrap-or
+                        get (>> states :message-box) :data
+                        {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
+                    if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
                   sessions-plugin $ use-drawer (>> states :sessions-modal)
                     {} (:title "|History Sessions")
                       :style $ {} (:min-width "||max(320px,30vw)\"") (:max-width |80vw)
@@ -892,10 +892,10 @@
             defcomp comp-message-box (states picker-el on-submit model)
               let
                   cursor $ option:unwrap-or (get states :cursor) ([])
-                  state $ decode-map-as
-                    option:unwrap-or (get states :data)
-                      {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                    , 'app.schema/MessageBoxState
+                  state $ let
+                      raw-message-box-state $ option:unwrap-or (get states :data)
+                        {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
+                    if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
                 [] (effect-focus) (on-fill cursor state on-submit)
                   div
                     {} $ :class-name (str-spaced css/center style-message-box-panel)
@@ -2095,53 +2095,67 @@
       :defs $ {}
         |updater $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defn updater (store op op-id op-time)
-              tag-match op
-                (:states cursor s) (update-states store cursor s)
-                (:states-merge cursor s changes)
-                  let
-                      store1 $ update-states-merge store cursor s changes
-                    , store1
-                (:hydrate-storage data)
-                  if (struct? data) (unsafe-coerce data 'app.schema/Store)
-                    decode-map-as (dissoc data :current-chapter-id) 'app.schema/Store
-                (:change-model)
-                  if
-                    = (:model store) :anthropic
-                    assoc store :model :gemini
-                    assoc store :model :anthropic
-                (:save-session state)
-                  let
-                      store1 $ save-current-session store state
-                    assoc store1 :current-session-id nil
-                (:session session-id id) (assoc store :current-session-id id)
-                (:load-session cursor state session)
-                  let
-                      typed-session $ decode-map-as session 'app.schema/ChatSession
-                      store1 $ update-states store cursor
-                        -> state
-                          assoc :messages $ :messages typed-session
-                          assoc :done? true
-                    assoc store1 :current-session-id $ :id typed-session
-                (:remove-session id)
-                  assoc store :sessions $ filter
-                    or (:sessions store) ([])
-                    fn (s)
-                      hint-fn $ {}
-                        :args $ [] 'app.schema/ChatSession
-                      not $ = (:id s) id
-                (:archive-sessions new-count)
-                  -> store
-                    assoc :sessions $ []
-                    assoc :archived-count new-count
-                    assoc :current-session-id nil
-                (:update-archived-count new-count)
-                  -> store $ assoc :archived-count new-count
-                (:clear-sessions)
-                  -> store
-                    assoc :sessions $ []
-                    assoc :current-session-id nil
-                _ $ do (eprintln "|unknown op:" op) store
+            defn updater (raw-store op op-id op-time)
+              let
+                  store $ if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store)
+                    decode-map-as (dissoc raw-store :current-chapter-id) 'app.schema/Store
+                tag-match op
+                  (:states cursor s)
+                    assoc store :states $ assoc-in (:states store)
+                      concat cursor $ [] :data
+                      , s
+                  (:states-merge cursor s changes)
+                    let
+                        path $ concat cursor ([] :data)
+                        state $ option:unwrap-or
+                          get-in (:states store) path
+                          , s
+                        updated-states $ assoc-in (:states store) path
+                          if
+                            or (map? state) (struct? state)
+                            noted |merge-base-latest-state $ merge state changes
+                            do (js/console.warn |unknown-state-to-merge state) state
+                      assoc store :states updated-states
+                  (:hydrate-storage data)
+                    if (struct? data) (unsafe-coerce data 'app.schema/Store)
+                      decode-map-as (dissoc data :current-chapter-id) 'app.schema/Store
+                  (:change-model)
+                    if
+                      = (:model store) :anthropic
+                      assoc store :model :gemini
+                      assoc store :model :anthropic
+                  (:save-session state)
+                    let
+                        store1 $ save-current-session store state
+                      assoc store1 :current-session-id nil
+                  (:session session-id id) (assoc store :current-session-id id)
+                  (:load-session cursor state session)
+                    let
+                        typed-session $ decode-map-as session 'app.schema/ChatSession
+                        store1 $ update-states store cursor
+                          -> state
+                            assoc :messages $ :messages typed-session
+                            assoc :done? true
+                      assoc store1 :current-session-id $ :id typed-session
+                  (:remove-session id)
+                    assoc store :sessions $ filter
+                      or (:sessions store) ([])
+                      fn (s)
+                        hint-fn $ {}
+                          :args $ [] 'app.schema/ChatSession
+                        not $ = (:id s) id
+                  (:archive-sessions new-count)
+                    -> store
+                      assoc :sessions $ []
+                      assoc :archived-count new-count
+                      assoc :current-session-id nil
+                  (:update-archived-count new-count)
+                    -> store $ assoc :archived-count new-count
+                  (:clear-sessions)
+                    -> store
+                      assoc :sessions $ []
+                      assoc :current-session-id nil
+                  _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
           :schema $ :: 'Fn
             {} (:return 'app.schema/Store)
