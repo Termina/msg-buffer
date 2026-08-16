@@ -5,40 +5,46 @@
       :modules $ [] |respo.calcit/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/ |genai.calcit/
       :type-slots $ {}
   :files $ {}
-    |app.comp.container $ %{} :FileEntry
+    |app.comp.container $ %{} 'FileEntry
       :defs $ {}
-        |*abort-control $ %{} :CodeEntry (:doc |) (:schema :ref)
+        |*abort-control $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *abort-control nil)
           :examples $ []
-        |*archived-sessions $ %{} :CodeEntry (:doc |) (:schema :ref)
+          :schema $ :: 'Ref
+        |*archived-sessions $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *archived-sessions nil)
           :examples $ []
-        |*gen-ai-new $ %{} :CodeEntry (:doc |) (:schema :ref)
+          :schema $ :: 'Ref
+        |*gen-ai-new $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *gen-ai-new nil)
           :examples $ []
-        |*image-cache $ %{} :CodeEntry (:doc |) (:schema :ref)
+          :schema $ :: 'Ref
+        |*image-cache $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *image-cache nil)
           :examples $ []
-        |*openai $ %{} :CodeEntry (:doc "|called openai sdk, but actually for openrouter") (:schema :ref)
+          :schema $ :: 'Ref
+        |*openai $ %{} 'CodeEntry (:doc "|called openai sdk, but actually for openrouter")
           :code $ quote (defatom *openai nil)
           :examples $ []
-        |*viewing-archive-session $ %{} :CodeEntry (:doc |) (:schema :ref)
+          :schema $ :: 'Ref
+        |*viewing-archive-session $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *viewing-archive-session nil)
           :examples $ []
-        |append-user-message $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Ref
+        |append-user-message $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn append-user-message (messages content)
               let
                   messages0 $ if (some? messages) messages ([])
                 conj messages0 $ {} (:role :user) (:content content)
           :examples $ []
-          :schema $ :: :fn
+          :schema $ :: 'Fn
             {}
               :args $ []
-                :: :optional $ :: :list (:: :map :tag :dynamic)
-                , :string
-              :return $ :: :list (:: :map :tag :dynamic)
-        |call-anthropic-msg! $ %{} :CodeEntry (:doc |)
+                :: 'Optional $ :: 'List (:: 'Map 'Tag 'Dynamic)
+                , 'String
+              :return $ :: 'List (:: 'Map 'Tag 'Dynamic)
+        |call-anthropic-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
               hint-fn $ {} (:async true)
@@ -124,11 +130,11 @@
                                             recur xss
                         recur
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
-              :args $ [] :list (:: :map :tag :dynamic) :string :string :bool :dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'List (:: 'Map 'Tag 'Dynamic) 'String 'String 'Bool 'Dynamic
               :features $ #{} :js-ffi
-        |call-flash-imagen-msg! $ %{} :CodeEntry (:doc |)
+        |call-flash-imagen-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
               hint-fn $ {} (:async true)
@@ -187,11 +193,11 @@
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
-              :args $ [] :tag :list (:: :map :tag :dynamic) :string :dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'Tag 'List (:: 'Map 'Tag 'Dynamic) 'String 'Dynamic
               :features $ #{} :js-ffi
-        |call-genai-msg! $ %{} :CodeEntry (:doc |)
+        |call-genai-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text)
               hint-fn $ {} (:async true)
@@ -266,11 +272,11 @@
                     {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                       :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
-              :args $ [] :tag :list (:: :map :tag :dynamic) :string :bool :bool :dynamic :ref :ref
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'Tag 'List (:: 'Map 'Tag 'Dynamic) 'String 'Bool 'Bool 'Dynamic 'Ref 'Ref
               :features $ #{} :js-ffi
-        |call-imagen-4-msg! $ %{} :CodeEntry (:doc |)
+        |call-imagen-4-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn call-imagen-4-msg! (variant cursor state prompt-text d!)
               hint-fn $ {} (:async true)
@@ -317,11 +323,11 @@
                 d! $ :: :states cursor
                   -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
-              :args $ [] :tag :list (:: :map :tag :dynamic) :string :dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'Tag 'List (:: 'Map 'Tag 'Dynamic) 'String 'Dynamic
               :features $ #{} :js-ffi
-        |call-openrouter! $ %{} :CodeEntry (:doc |)
+        |call-openrouter! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
               hint-fn $ {} (:async true)
@@ -394,16 +400,17 @@
                       {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                         :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
-              :args $ [] :list (:: :map :tag :dynamic) :string :string :bool :dynamic :ref
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'List (:: 'Map 'Tag 'Dynamic) 'String 'String 'Bool 'Dynamic 'Ref
               :features $ #{} :js-ffi
-        |clear-image-cache! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |clear-image-cache! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn clear-image-cache! () $ if-let (url @*image-cache)
               do (js/URL.revokeObjectURL url) (reset! *image-cache nil)
           :examples $ []
-        |comp-abort $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |comp-abort $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn comp-abort (t)
               span
@@ -419,7 +426,8 @@
                 =< 8 nil
                 <> "|✕" style-abort-close
           :examples $ []
-        |comp-container $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-container (reel)
               let
@@ -751,11 +759,11 @@
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect |Store store nil
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
-              :args $ [] (:: :map :tag :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] (:: 'Map 'Tag 'Dynamic)
               :features $ #{} :js-ffi
-        |comp-fill $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |comp-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-fill (text)
               div
@@ -765,7 +773,8 @@
                       js-object (:action |fill-text) (:text text)
                 comp-i :send 12 :currentColor
           :examples $ []
-        |comp-message-box $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |comp-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-message-box (states picker-el on-submit model)
               let
@@ -878,7 +887,8 @@
                                     on-submit (:content state) (:search? state) (:think? state) d!
                         , nil
           :examples $ []
-        |comp-sessions-modal $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |comp-sessions-modal $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
               let
@@ -971,13 +981,13 @@
                         :style $ {} (:height 200)
                     , nil
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
-                :: :list $ :: :map :tag :dynamic
-                , :number :dynamic :dynamic :dynamic
+                :: 'List $ :: 'Map 'Tag 'Dynamic
+                , 'Number 'Dynamic 'Dynamic 'Dynamic
               :features $ #{} :js-ffi
-        |create-session $ %{} :CodeEntry (:doc |)
+        |create-session $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn create-session (messages model)
               let
@@ -996,13 +1006,13 @@
                     .!slice first-msg 0 end
                   :is-history? false
           :examples $ []
-          :schema $ :: :fn
+          :schema $ :: 'Fn
             {}
               :args $ []
-                :: :list $ :: :map :tag :dynamic
-                , :tag
-              :return $ :: :map :tag :dynamic
-        |download-sessions! $ %{} :CodeEntry (:doc |)
+                :: 'List $ :: 'Map 'Tag 'Dynamic
+                , 'Tag
+              :return $ :: 'Map 'Tag 'Dynamic
+        |download-sessions! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn download-sessions! (sessions)
               let
@@ -1017,19 +1027,20 @@
                     fn () $ js/URL.revokeObjectURL url
                     , 0
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
-                :: :list $ :: :map :tag :dynamic
+                :: 'List $ :: 'Map 'Tag 'Dynamic
               :features $ #{} :js-ffi
-        |effect-focus $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |effect-focus $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defeffect effect-focus () (action el at?)
               when (= action :mount)
                 js/setTimeout $ fn ()
                   .!select $ .!querySelector el |textarea
           :examples $ []
-        |first-line $ %{} :CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
+          :schema $ :: 'Dynamic
+        |first-line $ %{} 'CodeEntry (:doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now.")
           :code $ quote
             defn first-line (tt)
               let
@@ -1041,17 +1052,17 @@
                   js/console.warn "|Droping some unexpected lines:" $ .!slice lines 1
                 .-0 lines
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :string)
-              :args $ [] :string
-        |generate-session-id $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Fn
+            {} (:return 'String)
+              :args $ [] 'String
+        |generate-session-id $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn generate-session-id () $ str (js/Date.now)
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :string)
+          :schema $ :: 'Fn
+            {} (:return 'String)
               :args $ []
-        |get-anthropic-key! $ %{} :CodeEntry (:doc |)
+        |get-anthropic-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn get-anthropic-key! () $ let
                 key $ js/localStorage.getItem |claude-key
@@ -1064,11 +1075,11 @@
                   , v
                 , key
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |get-deepinfra-key! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |get-deepinfra-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn get-deepinfra-key! () $ let
                 key $ js/localStorage.getItem |deepinfra-key
@@ -1081,7 +1092,8 @@
                   , v
                 , key
           :examples $ []
-        |get-deepseek-key! $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |get-deepseek-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn get-deepseek-key! () $ let
                 key $ js/localStorage.getItem |deepseek-key
@@ -1095,11 +1107,11 @@
                   , v
                 , key
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |get-gemini-key! $ %{} :CodeEntry (:doc |)
+        |get-gemini-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn get-gemini-key! () $ let
                 key $ js/localStorage.getItem |gemini-key
@@ -1113,11 +1125,11 @@
                   , v
                 , key
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |get-openrouter-key! $ %{} :CodeEntry (:doc |)
+        |get-openrouter-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn get-openrouter-key! () $ let
                 key $ js/localStorage.getItem |openrouter-key
@@ -1130,19 +1142,19 @@
                   , v
                 , key
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |json-pattern? $ %{} :CodeEntry (:doc |)
+        |json-pattern? $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn json-pattern? (text)
               or (.!startsWith text |{) (.!startsWith text |[)
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :bool)
-              :args $ [] :string
-        |messages->anthropic $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Fn
+            {} (:return 'Bool)
+              :args $ [] 'String
+        |messages->anthropic $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn messages->anthropic (messages)
               to-js-data $ map (or messages [])
@@ -1153,12 +1165,12 @@
                       , |assistant |user
                     :content $ :content m
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
-                :: :optional $ :: :list (:: :map :tag :dynamic)
+                :: 'Optional $ :: 'List (:: 'Map 'Tag 'Dynamic)
               :features $ #{} :js-ffi
-        |messages->gemini $ %{} :CodeEntry (:doc |)
+        |messages->gemini $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn messages->gemini (messages)
               let
@@ -1172,13 +1184,13 @@
                       :parts $ []
                         {} $ :text (:content m)
           :examples $ []
-          :schema $ :: :fn
+          :schema $ :: 'Fn
             {}
               :args $ []
-                :: :list $ :: :map :tag :dynamic
+                :: 'List $ :: 'Map 'Tag 'Dynamic
               :features $ #{} :js-ffi
-              :return $ :: :map :tag :dynamic
-        |messages->openai $ %{} :CodeEntry (:doc |)
+              :return $ :: 'Map 'Tag 'Dynamic
+        |messages->openai $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn messages->openai (messages)
               let
@@ -1191,16 +1203,17 @@
                         , |assistant |user
                       :content $ :content m
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
-                :: :optional $ :: :list (:: :map :tag :dynamic)
+                :: 'Optional $ :: 'List (:: 'Map 'Tag 'Dynamic)
               :features $ #{} :js-ffi
-        |models-menu $ %{} :CodeEntry (:doc |) (:schema :list)
+        |models-menu $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            def models-menu $ [] (:: :item :gemini-3.5-flash-lite "|Gemini Flash Lite 3.5") (:: :item :gemini-3.6-flash "|Gemini Flash 3.6") (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1") (:: :item :deepseek-v4-pro "|DeepSeek V4 Pro") (:: :item :deepseek-v4-flash "|DeepSeek V4 Flash") (; :: :item :claude-4.5 "|Claude 4.5")
+            def models-menu $ [] (:: :item :gemini-3.5-flash-lite "|Gemini Flash Lite 3.5") (:: :item :gemini-3.6-flash "|Gemini Flash 3.6") (:: :item :gemini-3.7-flash "|Gemini Flash 3.7") (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1") (:: :item :deepseek-v4-pro "|DeepSeek V4 Pro") (:: :item :deepseek-v4-flash "|DeepSeek V4 Flash") (; :: :item :claude-4.5 "|Claude 4.5")
           :examples $ []
-        |on-fill $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'List
+        |on-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-fill (cursor state on-submit)
               %{} respo.schema/RespoListener (:name :on-fill)
@@ -1216,19 +1229,21 @@
                           on-submit (:text info) (:search? state) (:think? state) dispatch!
                           , nil
           :examples $ []
-        |pattern-spaced-code $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |pattern-spaced-code $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def pattern-spaced-code $ noted "|temp fix of nested code block" (&raw-code "|/\\n\\s+```/g")
           :examples $ []
-        |pick-model $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |pick-model $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn pick-model (variant)
-              case-default variant |gemini-3.5-flash (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.6-flash |gemini-3.5-flash) (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
+              case-default variant |gemini-3.5-flash (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.6-flash |gemini-3.5-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :string)
-              :args $ [] :tag
-        |save-current-session $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Fn
+            {} (:return 'String)
+              :args $ [] 'Tag
+        |save-current-session $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn save-current-session (store state)
               let
@@ -1243,22 +1258,24 @@
                     assoc store :sessions $ append sessions updated-session
                   , store
           :examples $ []
-          :schema $ :: :fn
+          :schema $ :: 'Fn
             {}
-              :args $ [] (:: :map :tag :dynamic) (:: :map :tag :dynamic)
-              :return $ :: :map :tag :dynamic
-        |style-a-toggler $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+              :args $ [] (:: 'Map 'Tag 'Dynamic) (:: 'Map 'Tag 'Dynamic)
+              :return $ :: 'Map 'Tag 'Dynamic
+        |style-a-toggler $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
               |& $ {} (:cursor :pointer) (:background-color :white) (:color :black)
               "|.focus-within &" $ {} (:color :black)
           :examples $ []
-        |style-abort-close $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-abort-close $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-abort-close $ {}
               |& $ {} (:vertical-align :middle) (:font-size 10)
           :examples $ []
-        |style-app-global $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-app-global $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-app-global $ {}
                 str "|& ." style-code-block
@@ -1269,7 +1286,8 @@
               |&:hover $ {} (:color |#777)
                 :background-color $ hsl 0 0 100
           :examples $ []
-        |style-archive-close $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-archive-close $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-archive-close $ {}
               |& $ {} (:cursor :pointer) (:font-size 18)
@@ -1278,7 +1296,8 @@
               |&:hover $ {}
                 :color $ hsl 0 0 20
           :examples $ []
-        |style-archive-header $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-archive-header $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-archive-header $ {}
               |& $ {} (:padding "|12px 16px")
@@ -1289,7 +1308,8 @@
                 :align-items :center
                 :justify-content :space-between
           :examples $ []
-        |style-archive-row $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-archive-row $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-archive-row $ {}
               |& $ {} (:padding |12px)
@@ -1298,22 +1318,26 @@
                 :justify-content :space-between
                 :align-items :center
           :examples $ []
-        |style-checkbox $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-checkbox $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-checkbox $ {}
               |& $ {} (:cursor :pointer) (:user-select :none) (:font-size 12) (:line-height |28px) (:vertical-align :middle)
           :examples $ []
-        |style-clear $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-clear $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-clear $ {}
               |& $ {} (:opacity 0.4) (:padding "|4px 8px") (:display :inline-block) (:height |24px)
           :examples $ []
-        |style-code-content $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-code-content $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-code-content $ {}
               |& $ {} (:line-height |1.5) (:font-size 13)
           :examples $ []
-        |style-delete-button $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-delete-button $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-delete-button $ {}
               |& $ {} (:padding "|4px 8px") (:font-size |18px) (:font-weight |50)
@@ -1327,7 +1351,8 @@
               |&:active $ {} (:opacity 1)
                 :color $ hsl 0 90 40
           :examples $ []
-        |style-fill $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-fill $ {}
               |& $ {} (:cursor :pointer) (:user-select :none) (:display :inline-flex) (:align-items :center) (:justify-content :center) (:transition-duration |200ms)
@@ -1337,12 +1362,14 @@
                 :color $ hsl 0 0 40
                 :transform "|scale(1.06)"
           :examples $ []
-        |style-focus-box $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-focus-box $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-focus-box $ {}
               |& $ {} (:width |100%) (:border-radius 12) (:min-height 40) (:max-height 40) (:padding "|9px 12px") (:cursor :text) (:overflow :hidden) (:white-space :pre) (:text-overflow :ellipsis) (:background-color :transparent)
           :examples $ []
-        |style-focus-link $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-focus-link $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-focus-link $ {}
               |& $ {} (:cursor :pointer) (:font-size 13)
@@ -1351,12 +1378,14 @@
                 :padding "|4px 0"
               |&:hover $ {} (:text-decoration :underline)
           :examples $ []
-        |style-gap12 $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-gap12 $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-gap12 $ {}
               |& $ {} (:gap 12)
           :examples $ []
-        |style-history-button $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-history-button $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-history-button $ {}
               |& $ {} (:font-size |20px)
@@ -1369,7 +1398,8 @@
                 |&:hover $ {}
                   :color $ hsl 200 80 50
           :examples $ []
-        |style-history-count $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-history-count $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-history-count $ {}
               |& $ {}
@@ -1377,39 +1407,46 @@
                 :font-size |12px
                 :display :inline-block
           :examples $ []
-        |style-image $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-image $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-image $ {}
               |& $ {} (:max-width |100%) (:align-self :flex-start) (:border-radius |6px)
                 :border $ str "|1px solid " (hsl 0 0 90)
           :examples $ []
-        |style-md-content $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-md-content $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-md-content $ {}
               "|& .md-p" $ {} (:margin "|16px 0") (:line-height |1.6)
           :examples $ []
-        |style-message-actions $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-actions $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-actions $ {}
               |& $ {} (:margin-top 6) (:justify-content :flex-end) (:width |100%)
           :examples $ []
-        |style-message-area $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-area $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-area $ {}
               |& $ {} (:flex 2) (:overflow :scroll)
           :examples $ []
-        |style-message-assistant $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-assistant $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-assistant $ {}
               |& $ {} (:align-self :flex-start)
           :examples $ []
-        |style-message-box $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box $ {}
               |& $ {} (:width |100%) (:max-width 1200) (:right |50%) (:padding |8px) (:margin :auto) (:transition-duration |300ms) (; :transform "|translate(50%,0)") (:transition-property |height)
               |&:focus-within $ {} (:opacity 1) (; :transform "|translate(50%,0)")
           :examples $ []
-        |style-message-box-panel $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-box-panel $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-box-panel $ {}
               |& $ {} (:position :absolute) (:bottom 0) (:opacity 1) (:width |100%)
@@ -1419,17 +1456,20 @@
                 :background-color $ hsl 0 0 100 0.9
                 :box-shadow $ str "|0 0px 8px " (hsl 0 0 0 0.3)
           :examples $ []
-        |style-message-item $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-item $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-item $ {}
               |& $ {} (:line-height |1.6)
           :examples $ []
-        |style-message-list $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-list $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-list $ {}
               |& $ {} (:flex 2) (:padding "|40px 16px 20vh 16px") (:width |100%) (:max-width 1200) (:margin :auto) (:position :relative)
           :examples $ []
-        |style-message-role $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-role $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-role $ {}
               |& $ {} (:font-size 12)
@@ -1437,12 +1477,14 @@
                 :margin-bottom 6
                 :padding-right |16px
           :examples $ []
-        |style-message-text $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-text $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-text $ {}
               |& $ {} (:white-space :pre-wrap) (:line-height |1.6) (:margin 0) (:padding-right |16px)
           :examples $ []
-        |style-message-user $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-message-user $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-message-user $ {}
               |& $ {} (:align-self :flex-end)
@@ -1458,7 +1500,8 @@
                 :border-radius |2px
               |&::-webkit-scrollbar-track $ {} (:background-color :transparent)
           :examples $ []
-        |style-more $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-more $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-more $ {}
               |& $ {} (:text-align :center) (:min-width 80)
@@ -1471,12 +1514,14 @@
               |&:hover $ {}
                 :box-shadow $ str "|1px 1px 4px " (hsl 0 0 0 0.2)
           :examples $ []
-        |style-reply-actions $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-reply-actions $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-reply-actions $ {}
               |& $ {} (:margin-top 6) (:justify-content :flex-start) (:width |100%)
           :examples $ []
-        |style-reply-button $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-reply-button $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-reply-button $ {}
               |& $ {} (:text-align :center) (:min-width 80)
@@ -1489,7 +1534,8 @@
               |&:hover $ {}
                 :box-shadow $ str "|1px 1px 4px " (hsl 0 0 0 0.2)
           :examples $ []
-        |style-session-item $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-session-item $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-session-item $ {}
               |& $ {} (:padding |12px)
@@ -1501,29 +1547,34 @@
                 |:hover $ {}
                   :background-color $ hsl 0 0 96
           :examples $ []
-        |style-sessions-list $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-sessions-list $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-sessions-list $ {}
               |& $ {} (:flex |1) (:overflow-y :auto) (:min-width |300px)
           :examples $ []
-        |style-submit $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-submit $ {}
               |& $ {}
           :examples $ []
-        |style-textbox $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-textbox $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox $ {}
               |& $ {} (:border-radius 12) (:height "|max(100px,15vh)") (:width |100%) (:transition-duration |320ms) (:border :none) (:background-color :transparent)
               |&.focus-within $ {} (:height "|max(240px,32vh)") (:border :none) (:box-shadow :none)
           :examples $ []
-        |style-textbox-compact $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-textbox-compact $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-textbox-compact $ {}
               |& $ {} (:height 40) (:min-height 40) (:max-height 40) (:overflow :hidden)
               |&.focus-within $ {} (:height "|max(240px,32vh)") (:min-height |unset) (:max-height |unset)
           :examples $ []
-        |style-thinking $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |style-thinking $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-thinking $ {}
               |& $ {} (:max-height 200) (:overflow :auto) (:padding "|12px 16px")
@@ -1536,7 +1587,8 @@
                 :border $ str "|1px solid " (hsl 0 0 90)
               "|& .md-p" $ {} (:margin "|4px 0")
           :examples $ []
-        |submit-message! $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |submit-message! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!)
               hint-fn $ {} (:async true)
@@ -1575,11 +1627,11 @@
                       d! cursor $ -> state (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
                         assoc :messages $ upsert-assistant-message (:messages state) err-text nil
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
-              :args $ [] :list (:: :map :tag :dynamic) :dynamic :bool :bool :tag :dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'List (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Bool 'Bool 'Tag 'Dynamic
               :features $ #{} :js-ffi
-        |upsert-assistant-message $ %{} :CodeEntry (:doc |)
+        |upsert-assistant-message $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn upsert-assistant-message (messages content thinking)
               let
@@ -1593,14 +1645,14 @@
                     -> last-msg (assoc :content content) (assoc :thinking thinking)
                   conj messages0 $ {} (:role :assistant) (:content content) (:thinking thinking)
           :examples $ []
-          :schema $ :: :fn
+          :schema $ :: 'Fn
             {}
               :args $ []
-                :: :optional $ :: :list (:: :map :tag :dynamic)
-                :: :optional :string
-                :: :optional :string
-              :return $ :: :list (:: :map :tag :dynamic)
-      :ns $ %{} :NsEntry (:doc |)
+                :: 'Optional $ :: 'List (:: 'Map 'Tag 'Dynamic)
+                :: 'Optional 'String
+                :: 'Optional 'String
+              :return $ :: 'List (:: 'Map 'Tag 'Dynamic)
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.comp.container $ :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
@@ -1620,29 +1672,33 @@
             feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
             respo-ui.util :refer $ tab-echo!
-    |app.config $ %{} :FileEntry
+    |app.config $ %{} 'FileEntry
       :defs $ {}
-        |chrome-extension? $ %{} :CodeEntry (:doc |) (:schema :bool)
+        |chrome-extension? $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def chrome-extension? $ and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.id)
           :examples $ []
-        |dev? $ %{} :CodeEntry (:doc |) (:schema :bool)
+          :schema $ :: 'Bool
+        |dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def dev? $ = |dev (get-env |mode |release)
           :examples $ []
-        |site $ %{} :CodeEntry (:doc |) (:schema :map)
+          :schema $ :: 'Bool
+        |site $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def site $ {} (:storage-key |msg-buffer) (:archive-key |msg-buffer-archive)
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Map
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote (ns app.config)
-    |app.main $ %{} :FileEntry
+    |app.main $ %{} 'FileEntry
       :defs $ {}
-        |*reel $ %{} :CodeEntry (:doc |) (:schema :ref)
+        |*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
-        |connect-to-worker! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Ref
+        |connect-to-worker! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn connect-to-worker! () $ if
               and (some? js/window.chrome) (some? js/window.chrome.runtime) (some? js/window.chrome.runtime.connect)
@@ -1655,7 +1711,8 @@
                       do (println "|Worker disconnected, retrying in 500ms...") (js/setTimeout connect-to-worker! 500)
               , nil
           :examples $ []
-        |dispatch! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn dispatch! (op)
               when
@@ -1663,7 +1720,8 @@
                 js/console.log |Dispatch: op
               reset! *reel $ reel-updater updater @*reel op
           :examples $ []
-        |hydrate-storage-later! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn hydrate-storage-later! () $ js/setTimeout
               fn () $ let
@@ -1676,7 +1734,8 @@
                       - (.!now js/Date) t_start
                       , |ms
           :examples $ []
-        |listen-extension! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |listen-extension! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn listen-extension! ()
               js/chrome.runtime.onMessage.addListener $ fn (message sender respond!)
@@ -1711,7 +1770,8 @@
                     send-to-component! event-tuple
               connect-to-worker!
           :examples $ []
-        |main! $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |main! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn main! () $ let
                 t0 $ .!now js/Date
@@ -1738,26 +1798,27 @@
                     t1 $ .!now js/Date
                   println "|App started at" t1 |cost (- t1 t0) |ms
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |mount-target $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def mount-target $ js/document.querySelector |.app
           :examples $ []
-        |persist-storage! $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn persist-storage! ()
               println "|Saved at" $ .!toISOString (new js/Date)
               js/localStorage.setItem (:storage-key config/site)
                 format-cirru-edn $ :store @*reel
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |reload! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+        |reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn reload! () $ if (nil? build-errors)
               do (remove-watch *reel :changes) (remove-watch *archived-sessions :changes) (remove-watch *viewing-archive-session :changes) (clear-cache!)
@@ -1768,7 +1829,8 @@
                 hud! |ok~ |Ok
               hud! |error build-errors
           :examples $ []
-        |render-app! $ %{} :CodeEntry (:doc |) (:schema :dynamic)
+          :schema $ :: 'Dynamic
+        |render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn render-app! ()
               let
@@ -1780,7 +1842,8 @@
                   , |ms
               render! mount-target (comp-container @*reel) dispatch!
           :examples $ []
-        |sync-gemini-key! $ %{} :CodeEntry (:doc |)
+          :schema $ :: 'Dynamic
+        |sync-gemini-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn sync-gemini-key! () $ when
               and (some? js/window.chrome) (some? js/window.chrome.runtime)
@@ -1795,11 +1858,11 @@
                   js/chrome.runtime.sendMessage $ js-object (:action |sync-deepseek-key) (:key deepseek-key)
                   js/chrome.storage.local.set $ js-object (:deepseekKey deepseek-key)
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :dynamic)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-      :ns $ %{} :NsEntry (:doc |)
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.main $ :require
             respo.core :refer $ render! clear-cache!
@@ -1813,9 +1876,9 @@
             |./calcit.build-errors :default build-errors
             |bottom-tip :default hud!
             respo.controller.client :refer $ send-to-component!
-    |app.schema $ %{} :FileEntry
+    |app.schema $ %{} 'FileEntry
       :defs $ {}
-        |store $ %{} :CodeEntry (:doc |) (:schema :map)
+        |store $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def store $ {}
               :states $ {}
@@ -1825,11 +1888,12 @@
               :model nil
               :archived-count 0
           :examples $ []
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Map
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote (ns app.schema)
-    |app.updater $ %{} :FileEntry
+    |app.updater $ %{} 'FileEntry
       :defs $ {}
-        |updater $ %{} :CodeEntry (:doc |)
+        |updater $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn updater (store op op-id op-time)
               tag-match op
@@ -1874,10 +1938,10 @@
                     assoc :current-session-id nil
                 _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
-          :schema $ :: :fn
-            {} (:return :map)
-              :args $ [] :map :tuple :string :number
-      :ns $ %{} :NsEntry (:doc |)
+          :schema $ :: 'Fn
+            {} (:return 'Map)
+              :args $ [] 'Map 'Enum 'String 'Number
+      :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
             respo.cursor :refer $ update-states update-states-merge
