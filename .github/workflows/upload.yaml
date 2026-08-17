@@ -42,8 +42,30 @@ jobs:
     - name: Build site
       run: yarn vite build --base=./
 
+    - name: Select deployment path
+      id: deploy-path
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        REPOSITORY: ${{ github.repository }}
+      run: |
+        if [ "$EVENT_NAME" = "pull_request" ]; then
+          echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}/pr" >> "$GITHUB_OUTPUT"
+        else
+          echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Prepare deployment directory
+      env:
+        DEPLOY_KEY: ${{ secrets.rsync_private_key }}
+        DEPLOY_DEST: ${{ steps.deploy-path.outputs.dest }}
+      run: |
+        key_file="$RUNNER_TEMP/deploy_key"
+        printf '%s\n' "$DEPLOY_KEY" > "$key_file"
+        chmod 600 "$key_file"
+        deploy_path="${DEPLOY_DEST#*:}"
+        ssh -i "$key_file" -o StrictHostKeyChecking=no rsync-user@tiye.me "mkdir -p -- '$deploy_path'"
+
     - name: Deploy to server
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       id: deploy
       uses: Pendect/action-rsyncer@v2.0.0
       env:
@@ -53,8 +75,7 @@ jobs:
         options: ''
         ssh_options: ''
         src: 'dist/*'
-        dest: 'rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}'
+        dest: ${{ steps.deploy-path.outputs.dest }}
 
     - name: Display status from deploy
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: echo "${{ steps.deploy.outputs.status }}"
