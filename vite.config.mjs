@@ -17,7 +17,6 @@ export default defineConfig({
           if (
             id.includes("/node_modules/respo") ||
             id.includes("/node_modules/reel") ||
-            id.includes("/node_modules/memof") ||
             id.includes("/node_modules/@calcit/procs")
           ) {
             return "vendor-core";

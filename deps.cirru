@@ -7,4 +7,3 @@
     |Respo/respo-markdown.calcit |0.4.22
     |Respo/respo-ui.calcit |0.7.7
     |Respo/respo.calcit |0.16.72
-    |calcit-lang/memof |main

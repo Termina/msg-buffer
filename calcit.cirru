@@ -2,7 +2,7 @@
 {} (:about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `cr query` to inspect and `cr edit`/`cr tree` to modify. Run `cr docs agents --full` first. Manual edits must follow format and schema conventions, then run `cr edit format`.") (:package |app) (:version |0.0.1)
   :entries $ {}
     :default $ {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!)
-      :modules $ [] |respo.calcit/ |memof/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/
+      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/
       :type-slots $ {}
   :files $ {}
     |app.comp.container $ %{} 'FileEntry
@@ -651,11 +651,11 @@
                                       not $ blank? thinking
                                       div
                                         {} $ :class-name style-thinking
-                                        memof1-call comp-md-block thinking $ {} (:class-name style-md-content)
+                                        memo-comp-by thinking comp-md-block thinking $ {} (:class-name style-md-content)
                                     if (= role :assistant)
                                       if (json-pattern? content)
                                         pre $ {} (:class-name style-code-content) (:inner-text content)
-                                        memof1-call comp-md-block content $ {} (:class-name style-md-content)
+                                        memo-comp-by content comp-md-block content $ {} (:class-name style-md-content)
                                       pre $ {} (:class-name style-message-text) (:inner-text content)
                       ; Render archived sessions list
                       div
@@ -776,11 +776,11 @@
                                       not $ blank? thinking
                                       div
                                         {} $ :class-name style-thinking
-                                        memof1-call comp-md-block thinking $ {} (:class-name style-md-content)
+                                        memo-comp-by thinking comp-md-block thinking $ {} (:class-name style-md-content)
                                     if (= role :assistant)
                                       if (json-pattern? content)
                                         pre $ {} (:class-name style-code-content) (:inner-text content)
-                                        memof1-call comp-md-block content $ {} (:class-name style-md-content)
+                                        memo-comp-by content comp-md-block content $ {} (:class-name style-md-content)
                                       pre $ {} (:class-name style-message-text) (:inner-text content)
                                     if
                                       and (= role :assistant)
@@ -1804,7 +1804,7 @@
           ns app.comp.container $ :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
             respo.util.format :refer $ hsl
-            respo.core :refer $ defcomp defeffect <> >> list-> div button textarea span input a pre img
+            respo.core :refer $ defcomp defeffect <> >> list-> div button textarea span input a pre img memo-comp-by
             respo.comp.space :refer $ =<
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
@@ -1814,7 +1814,6 @@
             respo-ui.comp :refer $ comp-copy style-close
             |../extension/get-selected :refer $ get-selected
             |../lib/db :refer $ db-get db-set
-            memof.once :refer $ memof1-call
             |../lib/image :refer $ base64ToBlob
             feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
@@ -1998,13 +1997,17 @@
               let
                   t_start $ unsafe-coerce (js/Date.now) 'Number
                 println "|Rendering app..."
-                render! mount-target (comp-container @*reel) dispatch!
+                render-with! mount-target
+                  fn () $ comp-container @*reel
+                  , dispatch!
                 println "|Rendered in"
                   -
                     unsafe-coerce (js/Date.now) 'Number
                     , t_start
                   , |ms
-              render! mount-target (comp-container @*reel) dispatch!
+              render-with! mount-target
+                fn () $ comp-container @*reel
+                , dispatch!
           :examples $ []
           :schema $ :: 'Dynamic
         |sync-gemini-key! $ %{} 'CodeEntry (:doc |)
@@ -2029,7 +2032,7 @@
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.main $ :require
-            respo.core :refer $ render! clear-cache!
+            respo.core :refer $ render-with! clear-cache!
             app.comp.container :refer $ comp-container submit-message! *archived-sessions *viewing-archive-session
             app.updater :refer $ updater
             app.schema :as schema
