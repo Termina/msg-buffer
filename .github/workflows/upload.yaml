@@ -55,6 +55,17 @@ jobs:
           echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}" >> "$GITHUB_OUTPUT"
         fi
 
+    - name: Prepare deployment directory
+      env:
+        DEPLOY_KEY: ${{ secrets.rsync_private_key }}
+        DEPLOY_DEST: ${{ steps.deploy-path.outputs.dest }}
+      run: |
+        key_file="$RUNNER_TEMP/deploy_key"
+        printf '%s\n' "$DEPLOY_KEY" > "$key_file"
+        chmod 600 "$key_file"
+        deploy_path="${DEPLOY_DEST#*:}"
+        ssh -i "$key_file" -o StrictHostKeyChecking=no rsync-user@tiye.me "mkdir -p -- '$deploy_path'"
+
     - name: Deploy to server
       id: deploy
       uses: Pendect/action-rsyncer@v2.0.0
