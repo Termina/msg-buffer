@@ -280,7 +280,9 @@
                         :config $ js-object
                           :thinkingConfig $ if think?
                             js-object (:thinkingLevel |high) (:includeThoughts true)
-                            js-object (:thinkingLevel |minimal) (:includeThoughts false)
+                            js-object
+                              :thinkingLevel $ if (= model |gemini-3.7-flash) |low |minimal
+                              :includeThoughts false
                           :tools $ if
                             >
                               unsafe-coerce
