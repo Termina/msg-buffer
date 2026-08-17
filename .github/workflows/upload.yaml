@@ -47,10 +47,9 @@ jobs:
       env:
         EVENT_NAME: ${{ github.event_name }}
         REPOSITORY: ${{ github.repository }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         if [ "$EVENT_NAME" = "pull_request" ]; then
-          echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}/pr/${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}/pr" >> "$GITHUB_OUTPUT"
         else
           echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}" >> "$GITHUB_OUTPUT"
         fi
