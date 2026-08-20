@@ -1995,21 +1995,17 @@
           :schema $ :: 'Dynamic
         |render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defn render-app! ()
-              let
-                  t_start $ unsafe-coerce (js/Date.now) 'Number
-                println "|Rendering app..."
-                render-with! mount-target
-                  fn () $ comp-container @*reel
-                  , dispatch!
-                println "|Rendered in"
-                  -
-                    unsafe-coerce (js/Date.now) 'Number
-                    , t_start
-                  , |ms
+            defn render-app! () $ let
+                t_start $ unsafe-coerce (js/Date.now) 'Number
+              println "|Rendering app..."
               render-with! mount-target
                 fn () $ comp-container @*reel
                 , dispatch!
+              println "|Rendered in"
+                -
+                  unsafe-coerce (js/Date.now) 'Number
+                  , t_start
+                , |ms
           :examples $ []
           :schema $ :: 'Dynamic
         |sync-gemini-key! $ %{} 'CodeEntry (:doc |)
