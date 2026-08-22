@@ -22,7 +22,7 @@ jobs:
         corepack prepare yarn@4.12.0 --activate
         yarn --version
 
-    - uses: calcit-lang/setup-cr@0.0.9
+    - uses: calcit-lang/setup-calcit@v1
 
     - name: Resolve Calcit dependencies
       run: caps --ci
@@ -31,13 +31,13 @@ jobs:
       run: yarn install --immutable
 
     - name: Check Calcit types
-      run: cr --check-only
+      run: calcit calcit.cirru --check-only
 
     - name: Check Calcit quality baseline
-      run: cr analyze quality --baseline config/calcit-quality.json
+      run: calcit calcit.cirru analyze quality --baseline config/calcit-quality.json
 
     - name: Compile Calcit JavaScript
-      run: cr js
+      run: calcit calcit.cirru js
 
     - name: Build site
       run: yarn vite build --base=./
