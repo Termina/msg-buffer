@@ -1828,7 +1828,7 @@
           :code $ quote
             defstruct Site (:storage-key 'String) (:archive-key 'String)
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ :: 'Enum
         |chrome-extension? $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def chrome-extension? $ let
@@ -2048,7 +2048,7 @@
           :code $ quote
             defstruct ChatMessage (:role 'Tag) (:content 'String) (:thinking 'String)
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ :: 'Enum
         |ChatSession $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstruct ChatSession (:id 'String) (:created-at 'Number)
@@ -2057,7 +2057,7 @@
               :preview 'String
               :is-history? 'Bool
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ :: 'Enum
         |ChatState $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstruct ChatState (:answer 'Dynamic) (:loading? 'Bool) (:done? 'Bool)
@@ -2065,12 +2065,12 @@
               :model 'Dynamic
               :thinking 'Dynamic
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ :: 'Enum
         |MessageBoxState $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstruct MessageBoxState (:content 'String) (:search? 'Bool) (:think? 'Bool) (:focus-mode? 'Bool)
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ :: 'Enum
         |Store $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstruct Store (:states 'Map)
@@ -2079,7 +2079,7 @@
               :model 'Dynamic
               :archived-count 'Number
           :examples $ []
-          :schema $ :: 'StructDef
+          :schema $ :: 'Enum
         |store $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def store $ {}
