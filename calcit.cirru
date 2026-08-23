@@ -1414,9 +1414,18 @@
         |stream-text $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn stream-text (value)
+              hint-fn $ {}
+                :generics $ [] 'T
+                :args $ [] 'T
+                :return 'String
+                :features $ #{} :js-ffi
               if (string? value) value $ do (js/console.warn "|msg-buffer: ignored non-string streaming text" value) |
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn
+            {} (:return 'String)
+              :args $ [] 'T
+              :features $ #{} :js-ffi
+              :generics $ [] 'T
         |style-a-toggler $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
