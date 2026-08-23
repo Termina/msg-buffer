@@ -123,7 +123,7 @@
                                         if (option:none? content-opt)
                                           do (println |content-is-nil) (recur xss)
                                           let
-                                              content $ option:unwrap-or content-opt |
+                                              content $ stream-text (option:unwrap-or content-opt |)
                                             do (swap! *text str content)
                                               d! (:: :states-merge cursor state)
                                                 {} (:answer @*text) (:loading? false) (:done? false)
@@ -316,7 +316,7 @@
                             prompt-feedback $ unsafe-coerce (.-promptFeedback chunk-data) 'Dynamic
                             fallback-text $ if (js-present-dynamic? prompt-feedback) (.-blockReason prompt-feedback) js/undefined
                             text0 $ if (js-present-dynamic? primary-text) primary-text fallback-text
-                            text $ if (js-present-dynamic? text0) (unsafe-coerce text0 'String) |
+                            text $ if (js-present-dynamic? text0) (stream-text text0) |
                           if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
                           d! $ :: :states-merge cursor state
                             {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
@@ -462,9 +462,9 @@
                               choice0 $ unsafe-coerce (.-0 choices) 'Dynamic
                               choice $ unsafe-coerce (.-delta choice0) 'Dynamic
                               reason0 $ .-reasoning_content choice
-                              reason $ if (js-present-dynamic? reason0) (unsafe-coerce reason0 'String) |
+                              reason $ if (js-present-dynamic? reason0) (stream-text reason0) |
                               text0 $ .-content choice
-                              text $ if (js-present-dynamic? text0) (unsafe-coerce text0 'String) |
+                              text $ if (js-present-dynamic? text0) (stream-text text0) |
                             if
                               not $ blank? reason
                               swap! *thinking-text str reason
@@ -642,8 +642,8 @@
                                   :args $ [] 'Number 'app.schema/ChatMessage
                                 [] idx $ let
                                     role $ :role msg
-                                    content $ :content msg
-                                    thinking $ :thinking msg
+                                    content $ stream-text (:content msg)
+                                    thinking $ stream-text (:thinking msg)
                                   div
                                     {} $ :class-name
                                       str-spaced style-message-item $ if (= role :assistant) style-message-assistant style-message-user
@@ -767,8 +767,8 @@
                                   :args $ [] 'Number 'app.schema/ChatMessage
                                 [] idx $ let
                                     role $ :role msg
-                                    content $ :content msg
-                                    thinking $ :thinking msg
+                                    content $ stream-text (:content msg)
+                                    thinking $ stream-text (:thinking msg)
                                   div
                                     {} $ :class-name
                                       str-spaced style-message-item $ if (= role :assistant) style-message-assistant style-message-user
@@ -1411,6 +1411,21 @@
           :schema $ :: 'Fn
             {} (:return 'app.schema/Store)
               :args $ [] 'app.schema/Store 'app.schema/ChatState
+        |stream-text $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn stream-text (value)
+              hint-fn $ {}
+                :generics $ [] 'T
+                :args $ [] 'T
+                :return 'String
+                :features $ #{} :js-ffi
+              if (string? value) value $ do (js/console.warn "|msg-buffer: ignored non-string streaming text" value) |
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'String)
+              :args $ [] 'T
+              :features $ #{} :js-ffi
+              :generics $ [] 'T
         |style-a-toggler $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstyle style-a-toggler $ {}
