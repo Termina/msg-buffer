@@ -514,7 +514,7 @@
                         let
                             abort-controller $ unsafe-coerce abort 'Dynamic
                           do (js/console.warn |Aborting-prev) (.!abort abort-controller)
-                    ;nil
+                    , &unit
                 <> t
                 =< 8 nil
                 <> "|✕" style-abort-close
@@ -628,7 +628,7 @@
                               :preview $ decode-map-as @*viewing-archive-session 'app.schema/ChatSession
                           div
                             {} (:class-name style-archive-close)
-                              :on-click $ fn (e d!) (reset! *viewing-archive-session false) (;nil)
+                              :on-click $ fn (e d!) (reset! *viewing-archive-session false) &unit
                             <> "|✕"
                         ; Messages list $ read only
                         div
@@ -671,7 +671,7 @@
                             :inner-text "|All Archived Sessions"
                           div
                             {} (:class-name style-archive-close)
-                              :on-click $ fn (e d!) (reset! *archived-sessions false) (reset! *viewing-archive-session false) (;nil)
+                              :on-click $ fn (e d!) (reset! *archived-sessions false) (reset! *viewing-archive-session false) &unit
                             <> "|✕"
                         ; List
                         div
@@ -702,7 +702,7 @@
                                         div
                                           {} (:role |button)
                                             :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
-                                            :on-click $ fn (e d!) (reset! *viewing-archive-session session) (;nil)
+                                            :on-click $ fn (e d!) (reset! *viewing-archive-session session) &unit
                                           div
                                             {} $ :style
                                               {} (:font-size |12px)
@@ -729,7 +729,7 @@
                                                       archive-key $ :archive-key site
                                                     js-await $ db-set archive-key (format-cirru-edn new-archives)
                                                     d! $ :: :update-archived-count (count new-archives)
-                                              ;nil
+                                              , &unit
                                           <> "|✕"
                     ; Else render normal chat view
                     div
@@ -744,7 +744,7 @@
                           div
                             {} (:class-name css/row-middle) (:title |History) (:role |button) (:aria-label |history-open)
                               :style $ {} (:cursor :pointer)
-                              :on-click $ fn (e d!) (.show sessions-plugin d!) (;nil)
+                              :on-click $ fn (e d!) (.show sessions-plugin d!) &unit
                             div
                               {} $ :class-name style-history-button
                               comp-i |clock
@@ -809,7 +809,7 @@
                                   :on-click $ fn (e d!)
                                     .show reply-plugin d! $ fn (text)
                                       submit-message! cursor state text (:search? message-box-state) (:think? message-box-state) model d!
-                                    ;nil
+                                    , &unit
                                 <> |Reply
                               if (:focus-mode? message-box-state) nil $ a
                                 {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
@@ -824,7 +824,7 @@
                                             get (>> states :message-box) :cursor
                                             []
                                           assoc message-box-state :focus-mode? true
-                                    ;nil
+                                    , &unit
                             , nil
                           if (:loading? state)
                             div ({}) (comp-abort |Loading...)
@@ -851,7 +851,7 @@
                           :on-click $ fn (e d!)
                             ; d! $ :: :change-model
                             .show model-plugin d!
-                            ;nil
+                            , &unit
                         fn (text search? think? d!)
                           do
                             when
@@ -892,7 +892,7 @@
                   :on-click $ fn (e d!)
                     when chrome-extension? $ js/chrome.runtime.sendMessage
                       js-object (:action |fill-text) (:text text)
-                    ;nil
+                    , &unit
                 comp-i :send 12 :currentColor
           :examples $ []
           :schema $ :: 'Dynamic
@@ -921,7 +921,7 @@
                                   fn () $ .!focus
                                     unsafe-coerce (js/document.querySelector |#message) 'Dynamic
                                   , 0
-                              ;nil
+                              , &unit
                           <> $ if
                             blank? $ :content state
                             , "|Click to expand and type..." (:content state)
@@ -935,7 +935,7 @@
                           :on-input $ fn (e d!)
                             d! cursor $ assoc state :content
                               str $ option:unwrap-or (get e :value) |
-                            ;nil
+                            , &unit
                           :on-keydown $ fn (e d!)
                             if
                               and
@@ -944,7 +944,7 @@
                                   option:unwrap-or (get e :meta?) false
                                   option:unwrap-or (get e :ctrl?) false
                               on-submit (:content state) (:search? state) (:think? state) d!
-                            ;nil
+                            , &unit
                           :on-focus $ fn (e d!)
                             let
                                 target $ unsafe-coerce
@@ -960,7 +960,7 @@
                               if
                                 not $ unsafe-coerce (.!contains box-class |focus-within) 'Bool
                                 .!add box-class |focus-within
-                            ;nil
+                            , &unit
                           :on-blur $ fn (e d!)
                             let
                                 target $ unsafe-coerce
@@ -976,7 +976,7 @@
                               if
                                 unsafe-coerce (.!contains box-class |focus-within) 'Bool
                                 .!remove box-class |focus-within
-                            ;nil
+                            , &unit
                       if
                         not $ :focus-mode? state
                         do (=< nil 4)
@@ -991,7 +991,7 @@
                                 :on-click $ fn (e d!)
                                   d! cursor $ assoc state :content |
                                   .!focus $ unsafe-coerce (js/document.querySelector |#message) 'Dynamic
-                                  ;nil
+                                  , &unit
                               span $ {} (:class-name style-clear)
                             div
                               {} $ :class-name (str-spaced css/row style-gap12)
@@ -1004,7 +1004,7 @@
                                       :on-click $ fn (e d!)
                                         d! cursor $ assoc state :think?
                                           not $ :think? state
-                                        ;nil
+                                        , &unit
                                     input $ {}
                                       :checked $ :think? state
                                       :type |checkbox
@@ -1018,7 +1018,7 @@
                                     :on-click $ fn (e d!)
                                       d! cursor $ assoc state :search?
                                         not $ :search? state
-                                      ;nil
+                                      , &unit
                                   input $ {}
                                     :checked $ :search? state
                                     :type |checkbox
@@ -1030,7 +1030,7 @@
                                   :inner-text |Submit
                                   :on-click $ fn (e d!)
                                     on-submit (:content state) (:search? state) (:think? state) d!
-                                    ;nil
+                                    , &unit
                         , nil
           :examples $ []
           :schema $ :: 'Fn
@@ -1059,7 +1059,7 @@
                       button
                         {} (:class-name css/button)
                           :style $ {} (:cursor :pointer)
-                          :on-click $ fn (e d!) (on-close d!) (on-view-archive d!) (;nil)
+                          :on-click $ fn (e d!) (on-close d!) (on-view-archive d!) &unit
                         <> "|View Archive"
                   if (empty? sessions)
                     div
@@ -1086,7 +1086,7 @@
                                 {} (:role |button)
                                   :aria-label $ str |session-select: preview
                                   :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
-                                  :on-click $ fn (e d!) (on-select session-id d!) (on-close d!) (;nil)
+                                  :on-click $ fn (e d!) (on-select session-id d!) (on-close d!) &unit
                                 div
                                   {} $ :style
                                     {} (:font-size |12px)
@@ -1106,7 +1106,7 @@
                                           , 'Dynamic
                                       .!stopPropagation event
                                     d! $ :: :remove-session session-id
-                                    ;nil
+                                    , &unit
                                 <> "|✕"
                   if
                     > (count sessions) 0
@@ -1119,9 +1119,9 @@
                         div
                           {} $ :class-name (str-spaced css/row css/gap8)
                           a $ {} (:class-name style-clear) (:inner-text |Data) (:role |button) (:aria-label |sessions-export-data)
-                            :on-click $ fn (e d!) (tab-echo! sessions :edn) (;nil)
+                            :on-click $ fn (e d!) (tab-echo! sessions :edn) &unit
                           a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button) (:aria-label |sessions-download)
-                            :on-click $ fn (e d!) (download-sessions! sessions) (;nil)
+                            :on-click $ fn (e d!) (download-sessions! sessions) &unit
                         if
                           > (count sessions) 0
                           a $ {} (:class-name style-clear) (:inner-text "|Archive all") (:role |button) (:aria-label |sessions-archive-all)
@@ -1137,7 +1137,7 @@
                                     new-archives $ concat old-archives sessions
                                   js-await $ db-set archive-key (format-cirru-edn new-archives)
                                   d! $ :: :archive-sessions (count new-archives)
-                              ;nil
+                              , &unit
                           span $ {}
                       div $ {}
                         :style $ {} (:height 200)
