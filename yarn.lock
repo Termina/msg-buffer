@@ -5,7 +5,7 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@calcit/procs@npm:^0.13.33":
+"@calcit/procs@npm:^0.13.40":
   version: 0.13.40
   resolution: "@calcit/procs@npm:0.13.40"
   dependencies:
@@ -1573,7 +1573,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@calcit/procs": "npm:^0.13.33"
+    "@calcit/procs": "npm:^0.13.40"
     "@google/genai": "npm:^2.13.0"
     "@tiye/main-fonts": "npm:0.0.1"
     axios: "npm:^1.15.0"
