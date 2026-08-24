@@ -1803,10 +1803,11 @@
                     :deepseek-v4-pro $ js-await (call-openrouter! cursor state1 prompt-text |deepseek-v4-pro true d! *text)
                     :deepseek-v4-flash $ js-await (call-openrouter! cursor state1 prompt-text |deepseek-v4-flash true d! *text)
                   fn (e)
-                    let
-                        err-text $ str "|Failed to load: " e
-                      d! cursor $ -> state (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
-                        assoc :messages $ upsert-assistant-message (:messages state) err-text nil
+                    do (js/console.error :msg-buffer-request-failed e)
+                      let
+                          err-text $ str |Failed-to-load: e
+                        d! cursor $ -> state (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
+                          assoc :messages $ upsert-assistant-message (:messages state) err-text nil
           :examples $ []
           :schema $ :: 'Fn
             {} (:return 'Dynamic)

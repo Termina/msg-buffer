@@ -65,9 +65,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google/genai@npm:^2.13.0":
-  version: 2.17.1
-  resolution: "@google/genai@npm:2.17.1"
+"@google/genai@npm:^2.18.0":
+  version: 2.18.0
+  resolution: "@google/genai@npm:2.18.0"
   dependencies:
     google-auth-library: "npm:^10.3.0"
     p-retry: "npm:^4.6.2"
@@ -78,7 +78,7 @@ __metadata:
   peerDependenciesMeta:
     "@modelcontextprotocol/sdk":
       optional: true
-  checksum: 10c0/f94efe55f23a10a1b54d0297a607747acc98d5ad1e26a4dabbc7a81869ef68bc15b2c056517b7870fa866fdb6aa77c7c39e8ce407e89dcac26ec363fb6a96aa2
+  checksum: 10c0/c3d1dafac8d467748504317bb3a11dbb219cffba3cfef7e371291d947c64f592a7367332b66278ff6c4ada8b7cfd7dbabf6622e8c49c6723dbd0317cbc317d37
   languageName: node
   linkType: hard
 
@@ -1574,7 +1574,7 @@ __metadata:
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
     "@calcit/procs": "npm:^0.13.41"
-    "@google/genai": "npm:^2.13.0"
+    "@google/genai": "npm:^2.18.0"
     "@tiye/main-fonts": "npm:0.0.1"
     axios: "npm:^1.15.0"
     bottom-tip: "npm:^0.1.5"
