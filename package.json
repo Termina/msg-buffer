@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@calcit/procs": "^0.13.40",
+    "@calcit/procs": "^0.13.41",
     "@google/genai": "^2.13.0",
     "@tiye/main-fonts": "0.0.1",
     "axios": "^1.15.0",
