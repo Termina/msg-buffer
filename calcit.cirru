@@ -1190,21 +1190,39 @@
                 :features $ #{} :js-ffi
               let
                   chunk-data $ unsafe-coerce chunk 'Dynamic
-                  candidates $ unsafe-coerce (.-candidates chunk-data) 'Dynamic
-                  candidate $ unsafe-coerce (.-0 candidates) 'Dynamic
-                  candidate-content $ unsafe-coerce (.-content candidate) 'Dynamic
-                  parts $ unsafe-coerce (.-parts candidate-content) 'Dynamic
-                  part0 $ .-0 parts
+                  candidates0 $ .?-candidates chunk-data
+                  candidate0 $ if (js-present-dynamic? candidates0)
+                    .?-0 $ unsafe-coerce candidates0 'Dynamic
+                    , js/undefined
+                  content0 $ if (js-present-dynamic? candidate0)
+                    .?-content $ unsafe-coerce candidate0 'Dynamic
+                    , js/undefined
+                  parts0 $ if (js-present-dynamic? content0)
+                    .?-parts $ unsafe-coerce content0 'Dynamic
+                    , js/undefined
+                  part0 $ if (js-present-dynamic? parts0)
+                    .?-0 $ unsafe-coerce parts0 'Dynamic
+                    , js/undefined
                   part $ unsafe-coerce part0 'Dynamic
-                  thought0 $ if (js-present-dynamic? part0) (.-thought part) js/undefined
+                  thought0 $ if (js-present-dynamic? part0) (.?-thought part) js/undefined
                   thinking? $ if (bool? thought0) (unsafe-coerce thought0 'Bool) false
-                  primary-text $ if (js-present-dynamic? part0) (.-text part) (.-text chunk-data)
-                  prompt-feedback $ unsafe-coerce (.-promptFeedback chunk-data) 'Dynamic
-                  fallback-text $ if (js-present-dynamic? prompt-feedback) (.-blockReason prompt-feedback) js/undefined
+                  part-text $ if (js-present-dynamic? part0) (.?-text part) js/undefined
+                  chunk-text $ .?-text chunk-data
+                  primary-text $ if (js-present-dynamic? part-text) part-text chunk-text
+                  prompt-feedback $ .?-promptFeedback chunk-data
+                  fallback-text $ if (js-present-dynamic? prompt-feedback)
+                    .?-blockReason $ unsafe-coerce prompt-feedback 'Dynamic
+                    , js/undefined
                   text0 $ if (js-present-dynamic? primary-text) primary-text fallback-text
                   text $ stream-text text0
                 %{} StreamChunk (:text text) (:thinking? thinking?)
           :examples $ []
+            quote $ let
+                feedback-only $ js-object
+                  :promptFeedback $ js-object (:blockReason |blocked)
+                decoded $ unsafe-coerce (decode-genai-chunk feedback-only) 'app.comp.container/StreamChunk
+              assert= |blocked $ :text decoded
+              assert= false $ :thinking? decoded
           :schema $ :: 'Fn
             {} (:return 'app.comp.container/StreamChunk)
               :args $ [] 'JsObject
@@ -1428,13 +1446,13 @@
                 let
                     data $ unsafe-coerce raw (:: 'Map 'Tag 'Dynamic)
                     loading-value $ option:unwrap-or (get data :loading?) false
-                    done-value $ option:unwrap-or (get data :done?) false
+                    done-value $ option:unwrap-or (get data :done?) true
                     model-value $ option:unwrap-or (get data :model) :gemini
                   %{} app.schema/ChatState
                     :answer $ stream-text
                       option:unwrap-or (get data :answer) |
                     :loading? $ if (bool? loading-value) loading-value false
-                    :done? $ if (bool? done-value) done-value false
+                    :done? $ if (bool? done-value) done-value true
                     :messages $ unsafe-coerce
                       option:unwrap-or (get data :messages) ([])
                       :: 'List 'app.schema/ChatMessage
@@ -1451,14 +1469,28 @@
             %{} 'TestEntry (:name |legacy-nil-fields)
               :code $ quote
                 let
-                    state $ unsafe-coerce
+                    legacy $ unsafe-coerce
                       normalize-chat-state $ {} (:answer nil) (:loading? false) (:done? true)
                         :messages $ []
                         :model :gemini
                         :thinking nil
                       , 'app.schema/ChatState
-                  is $ = | (:answer state)
-                  is $ = | (:thinking state)
+                    missing-done $ unsafe-coerce
+                      normalize-chat-state $ {} (:answer |) (:loading? false)
+                        :messages $ []
+                        :model :gemini
+                        :thinking |
+                      , 'app.schema/ChatState
+                    invalid-done $ unsafe-coerce
+                      normalize-chat-state $ {} (:answer |) (:loading? false) (:done? nil)
+                        :messages $ []
+                        :model :gemini
+                        :thinking |
+                      , 'app.schema/ChatState
+                  is $ = | (:answer legacy)
+                  is $ = | (:thinking legacy)
+                  is $ :done? missing-done
+                  is $ :done? invalid-done
         'on-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-fill (cursor state on-submit)
