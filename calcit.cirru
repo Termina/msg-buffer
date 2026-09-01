@@ -634,7 +634,7 @@
                           div $ {}
                             :style $ {} (:font-weight :bold)
                             :inner-text $ str "|Archived: "
-                              :preview $ decode-map-as @*viewing-archive-session 'app.schema/ChatSession
+                              :preview $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
                           div
                             {} (:class-name style-archive-close)
                               :on-click $ fn (e d!) (reset! *viewing-archive-session false) &unit
@@ -646,7 +646,7 @@
                           list->
                             {} $ :class-name (str-spaced css/column css/gap8)
                             ->
-                              :messages $ decode-map-as @*viewing-archive-session 'app.schema/ChatSession
+                              :messages $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
                               map-indexed $ fn (idx msg)
                                 hint-fn $ {}
                                   :args $ [] 'Number 'app.schema/ChatMessage
@@ -2251,6 +2251,42 @@
               :archived-count 'Number
           :examples $ []
           :schema $ :: 'StructDef
+        'normalize-chat-session $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn normalize-chat-session (raw)
+              hint-fn $ {}
+                :args $ [] 'T
+                :return 'app.schema/ChatSession
+                :features $ #{} :js-ffi
+                :generics $ [] 'T
+              if (struct? raw) (unsafe-coerce raw 'app.schema/ChatSession) (decode-map-as raw 'app.schema/ChatSession)
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'app.schema/ChatSession)
+              :args $ [] 'T
+              :features $ #{} :js-ffi
+              :generics $ [] 'T
+          :tests $ []
+            %{} 'TestEntry (:name |accepts-typed-and-map)
+              :code $ quote
+                let
+                    typed $ %{} ChatSession (:id |typed) (:created-at 1)
+                      :messages $ []
+                      :model :gemini
+                      :preview |Typed
+                      :is-history? true
+                    typed-result $ assert-type (normalize-chat-session typed) 'app.schema/ChatSession
+                    decoded $ assert-type
+                      normalize-chat-session $ {} (:id |decoded) (:created-at 2)
+                        :messages $ []
+                        :model :anthropic
+                        :preview |Decoded
+                        :is-history? false
+                      , 'app.schema/ChatSession
+                  is $ = |typed (:id typed-result)
+                  is $ = |decoded (:id decoded)
+                  is $ = :anthropic (:model decoded)
+              :tags $ #{} :regression :unit
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def store $ {}
@@ -2263,7 +2299,9 @@
           :examples $ []
           :schema $ :: 'Map
       :ns $ %{} 'NsEntry (:doc |)
-        :code $ quote (ns app.schema)
+        :code $ quote
+          ns app.schema $ :require
+            calcit.test :refer $ [] is
     'app.updater $ %{} 'FileEntry
       :defs $ {}
         'updater $ %{} 'CodeEntry (:doc |)
@@ -2304,11 +2342,13 @@
                   (:session session-id id) (assoc store :current-session-id id)
                   (:load-session cursor state session)
                     let
-                        typed-session $ decode-map-as session 'app.schema/ChatSession
-                        store1 $ update-states store cursor
-                          -> state
-                            assoc :messages $ :messages typed-session
-                            assoc :done? true
+                        typed-session $ assert-type (app.schema/normalize-chat-session session) 'app.schema/ChatSession
+                        store1 $ assoc store :states
+                          assoc-in (:states store)
+                            concat cursor $ [] :data
+                            -> state
+                              assoc :messages $ :messages typed-session
+                              assoc :done? true
                       assoc store1 :current-session-id $ :id typed-session
                   (:remove-session id)
                     assoc store :sessions $ filter
@@ -2336,6 +2376,5 @@
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.updater $ :require
-            respo.cursor :refer $ update-states update-states-merge
             app.comp.container :refer $ save-current-session generate-session-id
             app.schema :refer $ Store ChatState ChatSession
