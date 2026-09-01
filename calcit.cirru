@@ -572,23 +572,26 @@
                   reply-plugin $ use-prompt (>> states :reply-prompt)
                     {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                       :validator $ fn (text)
-                        if (blank? text) "|Please enter text" nil
+                        if (blank? text) "|Please enter text" |
                   api-key-plugin $ use-prompt (>> states :api-key-prompt)
                     {} (:text "|API key required") (:placeholder "|Enter API key") (:button-text |Save)
                       :validator $ fn (text)
                         if (blank? text) "|Please enter API key" |
+                  text-alert-plugin $ use-alert (>> states :empty-message-alert)
+                    {} $ :text "|Please enter text"
                   submit-with-key! $ fn (submit-state text search? think? d!)
                     hint-fn $ {}
                       :args $ [] 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic
                       :features $ #{} :js-ffi
-                    let
-                        storage-key $ model-storage-key model
-                        stored0 $ js/localStorage.getItem storage-key
-                        stored $ if (js-present-dynamic? stored0) (unsafe-coerce stored0 'String) |
-                      if (blank? stored)
-                        .show api-key-plugin d! $ fn (key)
-                          do (js/localStorage.setItem storage-key key) (submit-message! cursor submit-state text search? think? model d!)
-                        submit-message! cursor submit-state text search? think? model d!
+                    if (blank? text) (.show text-alert-plugin d!)
+                      let
+                          storage-key $ model-storage-key model
+                          stored0 $ js/localStorage.getItem storage-key
+                          stored $ if (js-present-dynamic? stored0) (unsafe-coerce stored0 'String) |
+                        if (blank? stored)
+                          .show api-key-plugin d! $ fn (key)
+                            do (js/localStorage.setItem storage-key key) (submit-message! cursor submit-state text search? think? model d!)
+                          submit-message! cursor submit-state text search? think? model d!
                   message-box-state $ let
                       raw-message-box-state $ option:unwrap-or
                         get (>> states :message-box) :data
@@ -862,29 +865,26 @@
                             .show model-plugin d!
                             , &unit
                         fn (text search? think? d!)
-                          do
-                            when
-                              and
-                                > (count messages) 0
-                                :done? state
-                                not $ js-present-dynamic? current-session-id
-                              d! $ :: :save-session state
-                            d! cursor $ -> state
-                              assoc :messages $ []
-                              assoc :answer |
-                              assoc :thinking |
-                              assoc :done? false
-                            d! $ :: :session :session-id nil
-                            submit-with-key!
-                              -> state
-                                assoc :messages $ []
-                                assoc :answer |
-                                assoc :thinking |
-                                assoc :done? false
-                              , text search? think? d!
+                          if (blank? text) (.show text-alert-plugin d!)
+                            do
+                              when
+                                and
+                                  > (count messages) 0
+                                  :done? state
+                                  not $ js-present-dynamic? current-session-id
+                                d! $ :: :save-session state
+                              d! $ :: :session :session-id nil
+                              submit-with-key!
+                                -> state
+                                  assoc :messages $ []
+                                  assoc :answer |
+                                  assoc :thinking |
+                                  assoc :done? false
+                                , text search? think? d!
                         , model
                   model-plugin.render
                   reply-plugin.render
+                  text-alert-plugin.render
                   api-key-plugin.render
                   sessions-plugin.render
                   if dev? $ comp-reel (>> states :reel) reel ({})
@@ -1989,7 +1989,7 @@
             |../lib/db :refer $ db-get db-set
             |../lib/image :refer $ base64ToBlob
             feather.core :refer $ comp-i
-            respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer
+            respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer use-alert
             respo-ui.util :refer $ tab-echo!
             app.schema :refer $ Store ChatState ChatSession ChatMessage MessageBoxState store
             calcit.test :refer $ [] is
