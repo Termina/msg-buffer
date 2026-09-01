@@ -573,6 +573,22 @@
                     {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                       :validator $ fn (text)
                         if (blank? text) "|Please enter text" nil
+                  api-key-plugin $ use-prompt (>> states :api-key-prompt)
+                    {} (:text "|API key required") (:placeholder "|Enter API key") (:button-text |Save)
+                      :validator $ fn (text)
+                        if (blank? text) "|Please enter API key" |
+                  submit-with-key! $ fn (submit-state text search? think? d!)
+                    hint-fn $ {}
+                      :args $ [] 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic
+                      :features $ #{} :js-ffi
+                    let
+                        storage-key $ model-storage-key model
+                        stored0 $ js/localStorage.getItem storage-key
+                        stored $ if (js-present-dynamic? stored0) (unsafe-coerce stored0 'String) |
+                      if (blank? stored)
+                        .show api-key-plugin d! $ fn (key)
+                          do (js/localStorage.setItem storage-key key) (submit-message! cursor submit-state text search? think? model d!)
+                        submit-message! cursor submit-state text search? think? model d!
                   message-box-state $ let
                       raw-message-box-state $ option:unwrap-or
                         get (>> states :message-box) :data
@@ -801,7 +817,7 @@
                                   :class-name $ str-spaced css/button style-reply-button
                                   :on-click $ fn (e d!)
                                     .show reply-plugin d! $ fn (text)
-                                      submit-message! cursor state (stream-text text) (:search? message-box-state) (:think? message-box-state) model d!
+                                      submit-with-key! state (stream-text text) (:search? message-box-state) (:think? message-box-state) d!
                                     , &unit
                                 <> |Reply
                               if (:focus-mode? message-box-state) nil $ a
@@ -859,16 +875,17 @@
                               assoc :thinking |
                               assoc :done? false
                             d! $ :: :session :session-id nil
-                            submit-message! cursor
+                            submit-with-key!
                               -> state
                                 assoc :messages $ []
                                 assoc :answer |
                                 assoc :thinking |
                                 assoc :done? false
-                              , text search? think? model d!
+                              , text search? think? d!
                         , model
                   model-plugin.render
                   reply-plugin.render
+                  api-key-plugin.render
                   sessions-plugin.render
                   if dev? $ comp-reel (>> states :reel) reel ({})
                   if dev? $ comp-inspect |Store app-store nil
@@ -1261,16 +1278,7 @@
               :features $ #{} :js-ffi
         'get-deepinfra-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defn get-deepinfra-key! () $ let
-                key $ js/localStorage.getItem |deepinfra-key
-              if (blank? key)
-                let
-                    v $ js/prompt "|Required deepinfra-key in localStorage"
-                  if (blank? v)
-                    raise $ new js/Error "|key is empty"
-                  js/localStorage.setItem |deepinfra-key v
-                  , v
-                , key
+            defn get-deepinfra-key! () $ required-key! |deepinfra-key "|Required deepinfra-key in localStorage"
           :examples $ []
           :schema $ :: 'Dynamic
         'get-deepseek-key! $ %{} 'CodeEntry (:doc |)
@@ -1375,6 +1383,22 @@
             {} (:return 'Dynamic)
               :args $ [] (:: 'List 'app.schema/ChatMessage)
               :features $ #{} :js-ffi
+        'model-storage-key $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn model-storage-key (model)
+              case-default model |gemini-key (:claude-3.7 |claude-key) (:openrouter/anthropic/claude-sonnet-4 |openrouter-key) (:openrouter/anthropic/claude-sonnet-4.5 |openrouter-key) (:openrouter/anthropic/claude-opus-4 |openrouter-key) (:openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key) (:openrouter/google/gemini-2.5-pro-preview |openrouter-key) (:openrouter/google/gemini-2.5-flash-preview-05-20 |openrouter-key) (:openrouter/openai/gpt-5 |openrouter-key) (:openrouter/deepseek/deepseek-chat-v3.1 |openrouter-key) (:deepseek-v4-pro |deepseek-key) (:deepseek-v4-flash |deepseek-key)
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'String)
+              :args $ [] 'Tag
+          :tests $ []
+            %{} 'TestEntry (:name |maps-provider-keys)
+              :code $ quote
+                do
+                  assert= |gemini-key $ model-storage-key :gemini
+                  assert= |openrouter-key $ model-storage-key :openrouter/openai/gpt-5
+                  assert= |deepseek-key $ model-storage-key :deepseek-v4-pro
+                  assert= |claude-key $ model-storage-key :claude-3.7
         'models-menu $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def models-menu $ [] (:: :item :gemini-3.5-flash-lite "|Gemini Flash Lite 3.5") (:: :item :gemini-3.6-flash "|Gemini Flash 3.6") (:: :item :gemini-3.7-flash "|Gemini Flash 3.7") (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview") (:: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview") (:: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5") (:: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1") (:: :item :deepseek-v4-pro "|DeepSeek V4 Pro") (:: :item :deepseek-v4-flash "|DeepSeek V4 Flash") (; :: :item :claude-4.5 "|Claude 4.5")
@@ -1474,12 +1498,7 @@
                   stored $ js/localStorage.getItem storage-key
                   key $ if (js-present-dynamic? stored) (unsafe-coerce stored 'String) |
                 if (blank? key)
-                  let
-                      input $ js/prompt prompt-text
-                      value $ if (js-present-dynamic? input) (unsafe-coerce input 'String) |
-                    if (blank? value)
-                      raise $ new js/Error |key-is-empty
-                      do (js/localStorage.setItem storage-key value) value
+                  raise $ new js/Error prompt-text
                   , key
           :examples $ []
           :schema $ :: 'Fn
@@ -1880,6 +1899,7 @@
                     :gemini-learnlm $ js-await (call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text)
                     :claude-3.7 $ js-await (call-anthropic-msg! cursor state1 prompt-text |claude-3-7-sonnet-20250219 false d!)
                     :openrouter/anthropic/claude-sonnet-4 $ js-await (call-openrouter! cursor state1 prompt-text |anthropic/claude-sonnet-4 true d! *text)
+                    :openrouter/anthropic/claude-sonnet-4.5 $ js-await (call-openrouter! cursor state1 prompt-text |anthropic/claude-sonnet-4.5 true d! *text)
                     :openrouter/anthropic/claude-opus-4 $ js-await (call-openrouter! cursor state1 prompt-text |anthropic/claude-opus-4 true d! *text)
                     :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await (call-openrouter! cursor state1 prompt-text |anthropic/claude-3.7-sonnet:thinking true d! *text)
                     :openrouter/google/gemini-2.5-pro-preview $ js-await (call-openrouter! cursor state1 prompt-text |google/gemini-2.5-pro-preview true d! *text)
