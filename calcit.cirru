@@ -2308,8 +2308,7 @@
           :code $ quote
             defn updater (raw-store op op-id op-time)
               let
-                  store $ if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store)
-                    decode-map-as (dissoc raw-store :current-chapter-id) 'app.schema/Store
+                  store raw-store
                 match op
                   (:states cursor s)
                     assoc store :states $ assoc-in (:states store)
