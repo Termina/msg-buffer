@@ -27,7 +27,7 @@ jobs:
         tools: calcit,caps
 
     - name: Resolve Calcit dependencies
-      run: caps --ci
+      run: caps --strict --ci
 
     - name: Install JavaScript dependencies
       run: yarn install --immutable
@@ -36,7 +36,7 @@ jobs:
       run: calcit calcit.cirru --check-only
 
     - name: Check Calcit quality baseline
-      run: calcit calcit.cirru analyze quality --baseline config/calcit-quality.json
+      run: calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
 
     - name: Compile Calcit JavaScript
       run: calcit calcit.cirru js

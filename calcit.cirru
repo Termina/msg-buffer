@@ -32,6 +32,39 @@
           :code $ quote (defatom *viewing-archive-session false)
           :examples $ []
           :schema $ :: 'Ref
+        'DomTokenListHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            deftrait DomTokenListHost
+              .contains? $ :: 'Fn
+                {}
+                  :args $ [] 'app.comp.container/DomTokenListHost 'String
+                  :return 'Bool
+              .add! $ :: 'Fn
+                {}
+                  :args $ [] 'app.comp.container/DomTokenListHost 'String
+                  :return 'Unit
+              .remove! $ :: 'Fn
+                {}
+                  :args $ [] 'app.comp.container/DomTokenListHost 'String
+                  :return 'Unit
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} (:add! |add) (:contains? |contains) (:remove! |remove)
+          :schema $ :: 'Trait
+        'FocusEventHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            deftrait FocusEventHost $ :target (:: 'JsNullish 'app.comp.container/FocusTargetHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'FocusTargetHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            deftrait FocusTargetHost
+              :parentElement $ :: 'JsNullish 'app.comp.container/FocusTargetHost
+              :classList 'app.comp.container/DomTokenListHost
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
         'StreamChunk $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defstruct StreamChunk (:text 'String) (:thinking? 'Bool)
@@ -955,38 +988,8 @@
                                   option:unwrap-or (get e :ctrl?) false
                               on-submit (:content state) (:search? state) (:think? state) d!
                             , &unit
-                          :on-focus $ fn (e d!)
-                            let
-                                target $ unsafe-coerce
-                                  .-target $ option:unwrap-or (get e :event) js/undefined
-                                  , 'Dynamic
-                                parent $ unsafe-coerce (.-parentElement target) 'Dynamic
-                                box $ unsafe-coerce (.-parentElement parent) 'Dynamic
-                                class-list $ unsafe-coerce (.-classList target) 'Dynamic
-                                box-class $ unsafe-coerce (.-classList box) 'Dynamic
-                              if
-                                not $ unsafe-coerce (.!contains class-list |focus-within) 'Bool
-                                .!add class-list |focus-within
-                              if
-                                not $ unsafe-coerce (.!contains box-class |focus-within) 'Bool
-                                .!add box-class |focus-within
-                            , &unit
-                          :on-blur $ fn (e d!)
-                            let
-                                target $ unsafe-coerce
-                                  .-target $ option:unwrap-or (get e :event) js/undefined
-                                  , 'Dynamic
-                                parent $ unsafe-coerce (.-parentElement target) 'Dynamic
-                                box $ unsafe-coerce (.-parentElement parent) 'Dynamic
-                                class-list $ unsafe-coerce (.-classList target) 'Dynamic
-                                box-class $ unsafe-coerce (.-classList box) 'Dynamic
-                              if
-                                unsafe-coerce (.!contains class-list |focus-within) 'Bool
-                                .!remove class-list |focus-within
-                              if
-                                unsafe-coerce (.!contains box-class |focus-within) 'Bool
-                                .!remove box-class |focus-within
-                            , &unit
+                          :on-focus $ fn (e d!) (toggle-focus-within! e true) &unit
+                          :on-blur $ fn (e d!) (toggle-focus-within! e false) &unit
                       if
                         not $ :focus-mode? state
                         do (=< nil 4)
@@ -1451,8 +1454,8 @@
                   %{} app.schema/ChatState
                     :answer $ stream-text
                       option:unwrap-or (get data :answer) |
-                    :loading? $ if (bool? loading-value) loading-value false
-                    :done? $ if (bool? done-value) done-value true
+                    :loading? $ case-default loading-value false (true true) (false false)
+                    :done? $ case-default done-value true (true true) (false false)
                     :messages $ unsafe-coerce
                       option:unwrap-or (get data :messages) ([])
                       :: 'List 'app.schema/ChatMessage
@@ -1951,6 +1954,45 @@
             {} (:return 'Dynamic)
               :args $ [] 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Tag 'Dynamic
               :features $ #{} :js-ffi
+        'toggle-focus-within! $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn toggle-focus-within! (respo-event active?)
+              let
+                  raw-event $ option:unwrap-or (get respo-event :event) js/undefined
+                when (js-present-dynamic? raw-event)
+                  let
+                      event $ unsafe-coerce raw-event FocusEventHost
+                      target0 $ .-target event
+                    when (js-present? target0)
+                      let
+                          target $ unsafe-coerce target0 FocusTargetHost
+                          parent0 $ .-parentElement target
+                        when (js-present? parent0)
+                          let
+                              parent $ unsafe-coerce parent0 FocusTargetHost
+                              box0 $ .-parentElement parent
+                            when (js-present? box0)
+                              let
+                                  box $ unsafe-coerce box0 FocusTargetHost
+                                  class-list $ .-classList target
+                                  box-class $ .-classList box
+                                if active?
+                                  do
+                                    when
+                                      not $ class-list .contains? |focus-within
+                                      class-list .add! |focus-within
+                                    when
+                                      not $ box-class .contains? |focus-within
+                                      box-class .add! |focus-within
+                                  do
+                                    when (class-list .contains? |focus-within) (class-list .remove! |focus-within)
+                                    when (box-class .contains? |focus-within) (box-class .remove! |focus-within)
+              , &unit
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'Unit)
+              :args $ [] (:: 'Map 'Tag 'Dynamic) 'Bool
+              :features $ #{} :js-ffi
         'upsert-assistant-message $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn upsert-assistant-message (messages content thinking)
@@ -2028,6 +2070,22 @@
             defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
           :schema $ :: 'Ref
+        'DocumentHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            deftrait DocumentHost $ :visibilityState (:: 'JsNullish 'String)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'ExtensionMessageHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            deftrait ExtensionMessageHost
+              :action $ :: 'JsNullish 'String
+              :content $ :: 'JsNullish 'String
+              :text $ :: 'JsNullish 'String
+              :submit? $ :: 'JsNullish 'Bool
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
         'connect-to-worker! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn connect-to-worker! () $ when config/chrome-extension?
@@ -2051,6 +2109,16 @@
               reset! *reel $ reel-updater updater @*reel op
           :examples $ []
           :schema $ :: 'Dynamic
+        'extension-action $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn extension-action (message)
+              js-nullish->option $ .-action message
+          :examples $ []
+          :schema $ :: 'Fn
+            {}
+              :args $ [] 'app.main/ExtensionMessageHost
+              :features $ #{} :js-ffi
+              :return $ :: 'Option 'String
         'hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn hydrate-storage-later! () $ js/setTimeout
@@ -2070,41 +2138,55 @@
         'listen-extension! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn listen-extension! ()
-              js/chrome.runtime.onMessage.addListener $ fn (message sender respond!)
-                when
-                  = |menu-summary $ .-action message
-                  let
-                      content $ str "|你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline (.-content message)
-                      event-tuple $ :: :fill-text
-                        {} (:text content) (:submit? true)
-                    send-to-component! event-tuple
-                when
-                  = |fill-text $ .-action message
-                  let
-                      content $ .-text message
-                      submit? $ let
-                          raw-submit? $ .-submit? message
-                        if (js-present? raw-submit?) (unsafe-coerce raw-submit? 'Bool) true
-                      event-tuple $ :: :fill-text
-                        {} (:text content) (:submit? submit?)
-                    send-to-component! event-tuple
-                when
-                  = |menu-translate $ .-action message
-                  let
-                      content $ str "|请将以下内容翻译成中文, 保持简洁分段:\n\n" &newline &newline (.-content message)
-                      event-tuple $ :: :fill-text
-                        {} (:text content) (:submit? true)
-                    send-to-component! event-tuple
-                when
-                  = |menu-custom $ .-action message
-                  let
-                      content $ .-content message
-                      event-tuple $ :: :fill-text
-                        {} (:text content) (:submit? false)
-                    send-to-component! event-tuple
+              js/chrome.runtime.onMessage.addListener $ fn (raw-message sender respond!)
+                let
+                    message $ unsafe-coerce raw-message ExtensionMessageHost
+                    action $ option:unwrap-or (extension-action message) |
+                  when (= |menu-summary action)
+                    let
+                        source $ option:unwrap-or
+                          js-nullish->option $ .-content message
+                          , |
+                        content $ str "|你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline source
+                        event-tuple $ :: :fill-text
+                          {} (:text content) (:submit? true)
+                      send-to-component! event-tuple
+                  when (= |fill-text action)
+                    let
+                        content $ option:unwrap-or
+                          js-nullish->option $ .-text message
+                          , |
+                        submit? $ option:unwrap-or
+                          js-nullish->option $ .-submit? message
+                          , true
+                        event-tuple $ :: :fill-text
+                          {} (:text content) (:submit? submit?)
+                      send-to-component! event-tuple
+                  when (= |menu-translate action)
+                    let
+                        source $ option:unwrap-or
+                          js-nullish->option $ .-content message
+                          , |
+                        content $ str "|请将以下内容翻译成中文, 保持简洁分段:\n\n" &newline &newline source
+                        event-tuple $ :: :fill-text
+                          {} (:text content) (:submit? true)
+                      send-to-component! event-tuple
+                  when (= |menu-custom action)
+                    let
+                        content $ option:unwrap-or
+                          js-nullish->option $ .-content message
+                          , |
+                        event-tuple $ :: :fill-text
+                          {} (:text content) (:submit? false)
+                      send-to-component! event-tuple
+                , &unit
               connect-to-worker!
+              , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Unit)
+              :args $ []
+              :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn main! () $ let
@@ -2119,7 +2201,12 @@
               listen-devtools! |k dispatch!
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
-                if (= |hidden js/document.visibilityState) (persist-storage!)
+                let
+                    document $ unsafe-coerce js/document DocumentHost
+                    visibility-state $ option:unwrap-or
+                      js-nullish->option $ .-visibilityState document
+                      , |
+                  if (= |hidden visibility-state) (persist-storage!)
               js/window.addEventListener |dblclick $ fn (event) (.!preventDefault event)
               js/window.addEventListener |wheel
                 fn (event)
@@ -2127,13 +2214,14 @@
                 js-object $ :passive false
               hydrate-storage-later!
               if config/chrome-extension? $ listen-extension!
-              , sync-gemini-key!
-                let
-                    t1 $ unsafe-coerce (js/Date.now) 'Number
-                  println "|App started at" t1 |cost (- t1 t0) |ms
+              sync-gemini-key!
+              let
+                  t1 $ unsafe-coerce (js/Date.now) 'Number
+                println "|App started at" t1 |cost (- t1 t0) |ms
+              , &unit
           :examples $ []
           :schema $ :: 'Fn
-            {} (:return 'Dynamic)
+            {} (:return 'Unit)
               :args $ []
               :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
