@@ -320,7 +320,9 @@
                           :thinkingConfig $ if think?
                             js-object (:thinkingLevel |high) (:includeThoughts true)
                             js-object
-                              :thinkingLevel $ if (= model |gemini-3.7-flash) |low |minimal
+                              :thinkingLevel $ if
+                                contains? (#{} |gemini-3.7-flash |gemini-3.8-flash) model
+                                , |low |minimal
                               :includeThoughts false
                           :tools $ if
                             >
