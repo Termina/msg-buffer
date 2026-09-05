@@ -138,9 +138,14 @@
                     if (wo-log done?) (:: :unit)
                       do
                         let
-                            events $ -> value .split-lines
-                              filter $ fn (s) (.starts-with? s "|data: ")
+                            events $ -> (stream-text value) .split-lines
+                              filter $ fn (s)
+                                hint-fn $ {}
+                                  :args $ [] 'String
+                                .starts-with? s "|data: "
                               map $ fn (s)
+                                hint-fn $ {}
+                                  :args $ [] 'String
                                 -> (.strip-prefix s "|data: ") js/JSON.parse to-calcit-data
                           apply-args (events)
                             fn (xs)
@@ -552,8 +557,10 @@
           :code $ quote
             defcomp comp-container (reel)
               let
-                  raw-store $ option:unwrap-or (get reel :store) store
-                  app-store $ if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store) (decode-map-as raw-store 'app.schema/Store)
+                  app-store $ option:fold (get reel :store)
+                    fn () store
+                    fn (raw-store)
+                      if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store) (decode-map-as raw-store 'app.schema/Store)
                   sessions $ :sessions app-store
                   archived-count $ :archived-count app-store
                   current-session-id $ :current-session-id app-store
@@ -2379,7 +2386,7 @@
               :tags $ #{} :regression :unit
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            def store $ {}
+            def store $ %{} Store
               :states $ {}
                 :cursor $ []
               :sessions $ []
@@ -2387,7 +2394,7 @@
               :model nil
               :archived-count 0
           :examples $ []
-          :schema $ :: 'Map
+          :schema $ :: 'app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.schema $ :require
