@@ -557,8 +557,10 @@
           :code $ quote
             defcomp comp-container (reel)
               let
-                  raw-store $ option:unwrap-or (get reel :store) store
-                  app-store $ if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store) (decode-map-as raw-store 'app.schema/Store)
+                  app-store $ option:fold (get reel :store)
+                    fn () store
+                    fn (raw-store)
+                      if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store) (decode-map-as raw-store 'app.schema/Store)
                   sessions $ :sessions app-store
                   archived-count $ :archived-count app-store
                   current-session-id $ :current-session-id app-store
@@ -2392,7 +2394,7 @@
               :model nil
               :archived-count 0
           :examples $ []
-          :schema $ :: 'Map
+          :schema $ :: 'app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.schema $ :require

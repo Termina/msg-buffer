@@ -77,14 +77,9 @@ jobs:
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       id: deploy-path
       env:
-        EVENT_NAME: ${{ github.event_name }}
         REPOSITORY: ${{ github.repository }}
       run: |
-        if [ "$EVENT_NAME" = "pull_request" ]; then
-          echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}/pr" >> "$GITHUB_OUTPUT"
-        else
-          echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}" >> "$GITHUB_OUTPUT"
-        fi
+        echo "dest=rsync-user@tiye.me:/web-assets/repo/${REPOSITORY}" >> "$GITHUB_OUTPUT"
 
     - name: Prepare deployment directory
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
