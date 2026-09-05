@@ -32,11 +32,11 @@ jobs:
     - name: Resolve Calcit dependencies
       run: caps --strict --ci
 
-    - name: Verify Calcit toolchain
-      run: caps verify --toolchain
-
     - name: Install JavaScript dependencies
       run: yarn install --immutable
+
+    - name: Verify Calcit toolchain
+      run: caps verify --toolchain
 
     - name: Check canonical Calcit snapshot
       run: |
