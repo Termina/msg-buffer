@@ -17,6 +17,6 @@
   "scripts": {
     "build": "rm -rfv dist && calcit calcit.cirru js && yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
   },
-  "version": "0.0.5",
+  "version": "0.0.6",
   "packageManager": "yarn@4.12.0"
 }
