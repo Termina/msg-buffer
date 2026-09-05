@@ -29,20 +29,46 @@ jobs:
     - name: Resolve Calcit dependencies
       run: caps --strict --ci
 
+    - name: Verify Calcit toolchain
+      run: caps verify --toolchain
+
     - name: Install JavaScript dependencies
       run: yarn install --immutable
+
+    - name: Check canonical Calcit snapshot
+      run: |
+        before="$(sha256sum calcit.cirru | cut -d ' ' -f 1)"
+        calcit calcit.cirru edit format
+        after="$(sha256sum calcit.cirru | cut -d ' ' -f 1)"
+        test "$before" = "$after"
+        git diff --exit-code -- calcit.cirru
 
     - name: Check Calcit types
       run: calcit calcit.cirru --check-only
 
+    - name: Check application dynamic methods
+      run: calcit calcit.cirru analyze dynamic-methods --max 0 --format json
+
+    - name: Audit provider dynamic methods
+      run: calcit calcit.cirru analyze dynamic-methods --deps --summary-only --format json
+
     - name: Check Calcit quality baseline
       run: calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
 
-    - name: Compile Calcit JavaScript
-      run: calcit calcit.cirru js
+    - name: Run Calcit regression tests
+      run: calcit calcit.cirru test --summary-only --format json
 
-    - name: Build site
-      run: yarn vite build --base=./
+    - name: Build extension package
+      run: yarn build
+
+    - name: Validate extension package
+      run: |
+        test -f extension/dist/index.html
+        find extension/dist/assets -maxdepth 1 -name '*.css' -print -quit | grep -q .
+        node --check extension/content.js
+        node --check extension/service-worker.js
+        node --check extension/get-selected.mjs
+        node -e 'const manifest = require("./extension/manifest.json"); if (manifest.manifest_version !== 3 || manifest.side_panel?.default_path !== "dist/index.html") process.exit(1)'
 
     - name: Select deployment path
       id: deploy-path

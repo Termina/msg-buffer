@@ -138,9 +138,14 @@
                     if (wo-log done?) (:: :unit)
                       do
                         let
-                            events $ -> value .split-lines
-                              filter $ fn (s) (.starts-with? s "|data: ")
+                            events $ -> (stream-text value) .split-lines
+                              filter $ fn (s)
+                                hint-fn $ {}
+                                  :args $ [] 'String
+                                .starts-with? s "|data: "
                               map $ fn (s)
+                                hint-fn $ {}
+                                  :args $ [] 'String
                                 -> (.strip-prefix s "|data: ") js/JSON.parse to-calcit-data
                           apply-args (events)
                             fn (xs)
@@ -2379,7 +2384,7 @@
               :tags $ #{} :regression :unit
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            def store $ {}
+            def store $ %{} Store
               :states $ {}
                 :cursor $ []
               :sessions $ []
