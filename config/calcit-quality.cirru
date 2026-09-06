@@ -742,10 +742,10 @@
       :codeNil 2
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 2
+      :schemaDynamic 0
       :typeNone 0
-      :typeNotFull 1
-      :unresolved 4
+      :typeNotFull 0
+      :unresolved 2
       :unsafeCoerce 0
     |app.updater/updater $ {} (:codeDynamic 0)
       :codeNil 3
@@ -760,10 +760,10 @@
     :codeNil 20
     :declaredOptional 0
     :deprecatedCalls 0
-    :schemaDynamic 63
+    :schemaDynamic 61
     :typeNone 49
-    :typeNotFull 76
-    :unresolved 83
+    :typeNotFull 75
+    :unresolved 81
     :unsafeCoerce 99
   :scope $ {} (:includeDependencies false)
     :namespace nil

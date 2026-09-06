@@ -13,11 +13,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
       with:
         node-version: 24
+        package-manager-cache: false
 
     - name: Enable Corepack
       run: |
@@ -25,7 +28,7 @@ jobs:
         corepack prepare yarn@4.12.0 --activate
         yarn --version
 
-    - uses: calcit-lang/setup-calcit@v1.4.0
+    - uses: calcit-lang/setup-calcit@704b3f5cd6f9ce3bd1e0c926dbdd1d181adb8180 # v1.4.0
       with:
         tools: calcit,caps
 
@@ -51,6 +54,9 @@ jobs:
 
     - name: Check application dynamic methods
       run: calcit calcit.cirru analyze dynamic-methods --max 0 --format json
+
+    - name: Check deprecated Calcit APIs
+      run: calcit calcit.cirru analyze deprecated --summary-only
 
     - name: Audit provider dynamic methods
       run: calcit calcit.cirru analyze dynamic-methods --deps --format json
@@ -96,7 +102,7 @@ jobs:
     - name: Deploy to server
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       id: deploy
-      uses: Pendect/action-rsyncer@v2.0.0
+      uses: Pendect/action-rsyncer@b7f90f4f8ed893d4e3f852f7a73180631f63d4bd # v2.0.0
       env:
         DEPLOY_KEY: ${{secrets.rsync_private_key}}
       with:
