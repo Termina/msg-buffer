@@ -1,53 +1,24 @@
-export let get_selected = () => {
-  return new Promise((resolve, reject) => {
-    if (window.chrome?.runtime?.id == null) {
-      resolve(null);
-      return;
+export let get_selected = async () => {
+  if (window.chrome?.runtime?.id == null) {
+    return null;
+  }
+
+  try {
+    let [activeTab] = await window.chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (activeTab?.id == null) {
+      return null;
     }
-    console.log("calling content script...");
-    window.chrome.tabs
-      .query({ active: true, currentWindow: true })
-      .then((x) => {
-        let activeTab = x[0];
-        if (activeTab) {
-          let id = activeTab.id;
-          window.chrome.tabs.sendMessage(id, { get: "selected" }, function (response) {
-            // 接收来自 content.js 的返回数据
-            // console.info('Content script returned: ' + response);
-            resolve(response);
-          });
-        } else {
-          reject("found not active tab");
-        }
-      })
-      .catch((error) => {
-        console.error("Error", error);
-      });
-  });
+
+    let results = await window.chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      func: () => window.getSelection?.().toString() ?? "",
+    });
+    return results[0]?.result ?? "";
+  } catch (error) {
+    console.warn("Unable to read selection from the active tab", error);
+    return null;
+  }
 };
-
-//   setTimeout(()=>{
-//   chrome.tabs.query({active: true, currentWindow: true}).then(x => {
-//     let activeTab = x[0]
-//     if (activeTab) {
-//       let id = activeTab.id
-//       chrome.tabs.sendMessage(id, {get: 'selected'}, function(response) {
-//         // 接收来自 content.js 的返回数据
-//         console.info('Content script returned: ' + response);
-//       });
-
-//     } else {
-//       throw Error("no active tab found")
-//     }
-//   })
-// }, 2000)
-
-// chrome.scripting.executeScript({
-//   target: { tabId: 1201634844 },
-//   function: () => { console.log(document.body.innerText) }
-// });
-
-// chrome.tabs.sendMessage(1201634844, {get: 'selected'}, function(response) {
-//   // 接收来自 content.js 的返回数据
-//   console.info('Content script returned: ' + response.message);
-// });

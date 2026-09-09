@@ -74,10 +74,11 @@ jobs:
       run: |
         test -f extension/dist/index.html
         find extension/dist/assets -maxdepth 1 -name '*.css' -print -quit | grep -q .
-        node --check extension/content.js
+        find extension/dist/assets -maxdepth 1 -name 'gemini-icon-*.png' -print -quit | grep -q .
         node --check extension/service-worker.js
         node --check extension/get-selected.mjs
-        node -e 'const manifest = require("./extension/manifest.json"); if (manifest.manifest_version !== 3 || manifest.side_panel?.default_path !== "dist/index.html") process.exit(1)'
+        node -e 'const manifest = require("./extension/manifest.json"); if (manifest.manifest_version !== 3 || manifest.side_panel?.default_path !== "dist/index.html" || manifest.content_scripts || manifest.permissions.includes("tabs")) process.exit(1)'
+        test -z "$(grep -E 'https?://' extension/dist/index.html)"
 
     - name: Select deployment path
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'

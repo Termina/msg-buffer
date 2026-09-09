@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
-    minify: false,
+    minify: "oxc",
     rollupOptions: {
       output: {
         manualChunks(id) {

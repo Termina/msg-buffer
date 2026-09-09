@@ -74,14 +74,8 @@ chrome.contextMenus.onClicked.addListener((item, tab) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message && message.action === "fill-text") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
-      if (tab && tab.id != null) {
-        chrome.tabs.sendMessage(tab.id, {
-          action: "fill-text",
-          text: message.text || "",
-        });
-      }
+    fillTextInActiveTab(message.text || "").catch((error) => {
+      console.warn("[Worker] Unable to fill text in the active tab:", error);
     });
   }
 
@@ -94,6 +88,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("[Worker] DeepSeek API key synced:", deepseekApiKey ? "present" : "cleared");
   }
 });
+
+async function fillTextInActiveTab(text) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id == null) {
+    return;
+  }
+
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: insertTextAtCursor,
+    args: [String(text)],
+  });
+}
+
+function insertTextAtCursor(text) {
+  const active = document.activeElement;
+  if (!active) return;
+
+  if (active.tagName === "INPUT" || active.tagName === "TEXTAREA") {
+    if (active.readOnly || active.disabled) return;
+    const start = active.selectionStart ?? active.value.length;
+    const end = active.selectionEnd ?? active.value.length;
+    active.setRangeText(text, start, end, "end");
+    active.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
+  if (active.isContentEditable) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (!active.contains(range.commonAncestorContainer)) return;
+    range.deleteContents();
+    const textNode = document.createTextNode(text);
+    range.insertNode(textNode);
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+}
 
 // =========================================================================
 // Page Translation
