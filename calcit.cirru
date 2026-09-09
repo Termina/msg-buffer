@@ -3,7 +3,7 @@
   :entries $ {}
     :default $ {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/ |respo-feather.calcit/
+      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
       :type-slots $ {}
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
@@ -83,6 +83,7 @@
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
               hint-fn $ {} (:async true)
+                :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic
               let
                   abort $ deref *abort-control
                 when (js-present-dynamic? abort)
@@ -91,9 +92,12 @@
                     do (js/console.warn |Aborting-prev) (.!abort abort-controller)
               d! $ :: :change-model
               let
+                  axios $ unsafe-coerce
+                    .-default $ js-await (js/import |axios)
+                    , 'Dynamic
                   selected $ let
                       selected0 $ js-await (get-selected)
-                    if (js-present? selected0) (unsafe-coerce selected0 'String) "|<未找到内容>"
+                    if (js-present? selected0) (stream-text selected0) "|<未找到内容>"
                   content $ .replace prompt-text |{{selected}} selected
                   messages0 $ append-user-message (:messages state) content
                   messages1 $ upsert-assistant-message messages0 | |
@@ -275,6 +279,7 @@
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text)
               hint-fn $ {} (:async true)
+                :args $ [] 'Tag 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic 'Ref 'Ref
               if (= false @*gen-ai-new)
                 let
                     mod $ js-await (js/import |@google/genai)
@@ -434,6 +439,7 @@
           :code $ quote
             defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
               hint-fn $ {} (:async true)
+                :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic 'Ref
               if (= false @*openai)
                 let
                     mod $ js-await (js/import |openai)
@@ -801,7 +807,7 @@
                               :on-click $ fn (e d!) (.show sessions-plugin d!) &unit
                             div
                               {} $ :class-name style-history-button
-                              comp-i |clock
+                              comp-local-icon :clock 14
                             =< 4 nil
                             if
                               > (count sessions) 0
@@ -933,7 +939,7 @@
                   if dev? $ comp-inspect |Store app-store nil
           :examples $ []
           :schema $ :: 'Fn
-            {} (:return 'Dynamic)
+            {} (:return 'respo.schema/Component)
               :args $ [] (:: 'Map 'Tag 'Dynamic)
               :features $ #{} :js-ffi
         'comp-fill $ %{} 'CodeEntry (:doc |)
@@ -945,9 +951,22 @@
                     when chrome-extension? $ js/chrome.runtime.sendMessage
                       js-object (:action |fill-text) (:text text)
                     , &unit
-                comp-i :send 12 :currentColor
+                comp-local-icon :send 12
           :examples $ []
           :schema $ :: 'Dynamic
+        'comp-local-icon $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defcomp comp-local-icon (icon size)
+              span $ {} (:aria-hidden |true)
+                :style $ {} (:display :inline-flex) (:align-items :center) (:justify-content :center)
+                  :width $ str size |px
+                  :height $ str size |px
+                  :line-height |0
+                :innerHTML $ case-default icon | (:clock "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><polyline points=\"12 6 12 12 16 14\"></polyline></svg>") (:send "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"22\" y1=\"2\" x2=\"11\" y2=\"13\"></line><polygon points=\"22 2 15 22 11 13 2 9 22 2\"></polygon></svg>")
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'respo.schema/Component)
+              :args $ [] 'Tag 'Number
         'comp-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-message-box (states picker-el on-submit model)
@@ -1921,6 +1940,7 @@
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!)
               hint-fn $ {} (:async true)
+                :args $ [] 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Tag 'Dynamic
               let
                   state1 $ unsafe-coerce
                     assoc state :messages $ append-user-message (:messages state) prompt-text
@@ -2033,13 +2053,11 @@
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-reel
             app.config :refer $ dev? chrome-extension? site
-            |axios :default axios
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy style-close
             |../extension/get-selected :refer $ get-selected
             |../lib/db :refer $ db-get db-set
             |../lib/image :refer $ base64ToBlob
-            feather.core :refer $ comp-i
             respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer use-alert
             respo-ui.util :refer $ tab-echo!
             app.schema :refer $ Store ChatState ChatSession ChatMessage MessageBoxState store
@@ -2276,7 +2294,10 @@
                   , t_start
                 , |ms
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Unit)
+              :args $ []
+              :features $ #{} :js-ffi
         'sync-gemini-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn sync-gemini-key! () $ when config/chrome-extension?

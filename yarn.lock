@@ -5,14 +5,14 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@calcit/procs@npm:0.13.77":
-  version: 0.13.77
-  resolution: "@calcit/procs@npm:0.13.77"
+"@calcit/procs@npm:0.14.4":
+  version: 0.14.4
+  resolution: "@calcit/procs@npm:0.14.4"
   dependencies:
     "@calcit/ternary-tree": "npm:0.0.26"
     "@cirru/parser.ts": "npm:^0.0.9"
     "@cirru/writer.ts": "npm:^0.1.9"
-  checksum: 10c0/7f0d79ad9e7963728518c3754174136d7c2e906c7177785d633f622300be11b84a8f9ae659c5b93c9fb8f7d47e4fffba773bbe90a30a0f53fc3d1258ab850851
+  checksum: 10c0/50b8e0cb0f65eab75dffdbf2624ed5b02610a75546f04d53d2ee7adaa81dceb1676b268a76112a715972a0fe52faacf2ffd953042fb86c673e749f214b73e8f2
   languageName: node
   linkType: hard
 
@@ -435,13 +435,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"classnames@npm:^2.2.5":
-  version: 2.5.1
-  resolution: "classnames@npm:2.5.1"
-  checksum: 10c0/afff4f77e62cea2d79c39962980bf316bacb0d7c49e13a21adaadb9221e1c6b9d3cdb829d8bb1b23c406f4e740507f37e1dcf506f7e3b7113d17c5bab787aa69
-  languageName: node
-  linkType: hard
-
 "combined-stream@npm:^1.0.8":
   version: 1.0.8
   resolution: "combined-stream@npm:1.0.8"
@@ -455,13 +448,6 @@ __metadata:
   version: 3.2.2
   resolution: "copy-text-to-clipboard@npm:3.2.2"
   checksum: 10c0/451796734a380f7da7b0af27c4d94e449719d3a2f2170e99c7e46eeee54cf3c4b4fdeabc185f6d6e8cbdf932e350831d05e8387c4bae8dcedb7fb961c600ddd4
-  languageName: node
-  linkType: hard
-
-"core-js@npm:^3.1.3":
-  version: 3.47.0
-  resolution: "core-js@npm:3.47.0"
-  checksum: 10c0/9b1a7088b7c660c7b8f1d4c90bb1816a8d5352ebdcb7bc742e3a0e4eb803316b5aa17bacb8769522342196351a5430178f46914644f2bfdb94ce0ced3c7fd523
   languageName: node
   linkType: hard
 
@@ -633,16 +619,6 @@ __metadata:
     picomatch:
       optional: true
   checksum: 10c0/e345083c4306b3aed6cb8ec551e26c36bab5c511e99ea4576a16750ddc8d3240e63826cc624f5ae17ad4dc82e68a253213b60d556c11bfad064b7607847ed07f
-  languageName: node
-  linkType: hard
-
-"feather-icons@npm:^4.29.2":
-  version: 4.29.2
-  resolution: "feather-icons@npm:4.29.2"
-  dependencies:
-    classnames: "npm:^2.2.5"
-    core-js: "npm:^3.1.3"
-  checksum: 10c0/a23f8fbb6e96c901290308bb96267660ddd32c367074411e6a641c030448eff8041072c46e82cbf3bb3c4b2440df107e8defed09ff068e55117db6b867ca7b32
   languageName: node
   linkType: hard
 
@@ -1527,7 +1503,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@calcit/procs": "npm:0.13.77"
+    "@calcit/procs": "npm:0.14.4"
     "@google/genai": "npm:^2.20.0"
     "@tiye/main-fonts": "npm:0.0.1"
     axios: "npm:^1.15.0"
@@ -1535,7 +1511,6 @@ __metadata:
     cirru-color: "npm:^0.2.4"
     copy-text-to-clipboard: "npm:^3.2.2"
     dayjs: "npm:^1.11.18"
-    feather-icons: "npm:^4.29.2"
     openai: "npm:^6.34.0"
     vite: "npm:8.2.2"
   languageName: unknown

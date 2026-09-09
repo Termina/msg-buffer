@@ -50,22 +50,22 @@ jobs:
         git diff --exit-code -- calcit.cirru
 
     - name: Check Calcit types
-      run: calcit calcit.cirru --check-only
+      run: calcit calcit.cirru --compat-types --check-only
 
     - name: Check application dynamic methods
-      run: calcit calcit.cirru analyze dynamic-methods --max 0 --format json
+      run: calcit calcit.cirru --compat-types analyze dynamic-methods --max 0 --format json
 
     - name: Check deprecated Calcit APIs
       run: calcit calcit.cirru analyze deprecated --summary-only
 
     - name: Audit provider dynamic methods
-      run: calcit calcit.cirru analyze dynamic-methods --deps --format json
+      run: calcit calcit.cirru --compat-types analyze dynamic-methods --deps --format json
 
     - name: Check Calcit quality baseline
       run: calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
 
     - name: Run Calcit regression tests
-      run: calcit calcit.cirru test --summary-only --format json
+      run: calcit calcit.cirru --compat-types test --summary-only --format json
 
     - name: Build extension package
       run: yarn build
@@ -74,10 +74,14 @@ jobs:
       run: |
         test -f extension/dist/index.html
         find extension/dist/assets -maxdepth 1 -name '*.css' -print -quit | grep -q .
-        node --check extension/content.js
+        find extension/dist/assets -maxdepth 1 -name 'gemini-icon-*.png' -print -quit | grep -q .
+        find extension/dist/assets -maxdepth 1 -name 'axios-*.js' -print -quit | grep -q .
         node --check extension/service-worker.js
         node --check extension/get-selected.mjs
-        node -e 'const manifest = require("./extension/manifest.json"); if (manifest.manifest_version !== 3 || manifest.side_panel?.default_path !== "dist/index.html") process.exit(1)'
+        node -e 'const manifest = require("./extension/manifest.json"); if (manifest.manifest_version !== 3 || manifest.side_panel?.default_path !== "dist/index.html" || manifest.content_scripts || manifest.permissions.includes("tabs")) process.exit(1)'
+        test -z "$(grep -E 'https?://' extension/dist/index.html)"
+        test -z "$(grep -E 'axios-' extension/dist/index.html)"
+        test -z "$(grep -R 'feathericons.com' extension/dist/assets || true)"
 
     - name: Select deployment path
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
