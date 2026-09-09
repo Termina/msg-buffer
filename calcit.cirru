@@ -83,6 +83,7 @@
           :code $ quote
             defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
               hint-fn $ {} (:async true)
+                :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic
               let
                   abort $ deref *abort-control
                 when (js-present-dynamic? abort)
@@ -275,6 +276,7 @@
           :code $ quote
             defn call-genai-msg! (variant cursor state prompt-text search? think? d! *text *thinking-text)
               hint-fn $ {} (:async true)
+                :args $ [] 'Tag 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic 'Ref 'Ref
               if (= false @*gen-ai-new)
                 let
                     mod $ js-await (js/import |@google/genai)
@@ -434,6 +436,7 @@
           :code $ quote
             defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
               hint-fn $ {} (:async true)
+                :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic 'Ref
               if (= false @*openai)
                 let
                     mod $ js-await (js/import |openai)
@@ -933,7 +936,7 @@
                   if dev? $ comp-inspect |Store app-store nil
           :examples $ []
           :schema $ :: 'Fn
-            {} (:return 'Dynamic)
+            {} (:return 'respo.schema/Component)
               :args $ [] (:: 'Map 'Tag 'Dynamic)
               :features $ #{} :js-ffi
         'comp-fill $ %{} 'CodeEntry (:doc |)
@@ -1921,6 +1924,7 @@
           :code $ quote
             defn submit-message! (cursor state prompt-text search? think? model d!)
               hint-fn $ {} (:async true)
+                :args $ [] 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Tag 'Dynamic
               let
                   state1 $ unsafe-coerce
                     assoc state :messages $ append-user-message (:messages state) prompt-text
@@ -2276,7 +2280,10 @@
                   , t_start
                 , |ms
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Unit)
+              :args $ []
+              :features $ #{} :js-ffi
         'sync-gemini-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn sync-gemini-key! () $ when config/chrome-extension?

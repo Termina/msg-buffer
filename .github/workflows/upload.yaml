@@ -50,22 +50,22 @@ jobs:
         git diff --exit-code -- calcit.cirru
 
     - name: Check Calcit types
-      run: calcit calcit.cirru --check-only
+      run: calcit calcit.cirru --compat-types --check-only
 
     - name: Check application dynamic methods
-      run: calcit calcit.cirru analyze dynamic-methods --max 0 --format json
+      run: calcit calcit.cirru --compat-types analyze dynamic-methods --max 0 --format json
 
     - name: Check deprecated Calcit APIs
       run: calcit calcit.cirru analyze deprecated --summary-only
 
     - name: Audit provider dynamic methods
-      run: calcit calcit.cirru analyze dynamic-methods --deps --format json
+      run: calcit calcit.cirru --compat-types analyze dynamic-methods --deps --format json
 
     - name: Check Calcit quality baseline
       run: calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
 
     - name: Run Calcit regression tests
-      run: calcit calcit.cirru test --summary-only --format json
+      run: calcit calcit.cirru --compat-types test --summary-only --format json
 
     - name: Build extension package
       run: yarn build
