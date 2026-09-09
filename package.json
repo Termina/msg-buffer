@@ -7,7 +7,6 @@
     "cirru-color": "^0.2.4",
     "copy-text-to-clipboard": "^3.2.2",
     "dayjs": "^1.11.18",
-    "feather-icons": "^4.29.2",
     "openai": "^6.34.0"
   },
   "devDependencies": {
