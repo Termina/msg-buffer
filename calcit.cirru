@@ -643,7 +643,7 @@
                     :args $ [] 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic
                     :features $ #{} :js-ffi
                   if (blank? text)
-                    .show text-alert-plugin d!
+                    .show text-alert-plugin d! "|Please enter text"
                     let
                         storage-key $ model-storage-key model
                         stored0 $ js/localStorage.getItem storage-key
@@ -958,7 +958,7 @@
                           , &unit
                       fn (text search? think? d!)
                         if (blank? text)
-                          .show text-alert-plugin d!
+                          .show text-alert-plugin d! "|Please enter text"
                           do
                             when
                               and
@@ -1207,7 +1207,9 @@
                         {} $ :class-name $ str-spaced css/row css/gap8
                         a $ {} (:class-name style-clear) (:inner-text |Data) (:role |button)
                           :aria-label |sessions-export-data
-                          :on-click $ fn (e d!) (tab-echo! sessions :edn) &unit
+                          :on-click $ fn (e d!)
+                            tab-echo! sessions $ %some :edn
+                            , &unit
                         a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button)
                           :aria-label |sessions-download
                           :on-click $ fn (e d!)
