@@ -1429,10 +1429,17 @@
             :args $ [] 'Dynamic 'app.schema/MessageBoxState 'Dynamic
         'pick-model $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn pick-model (variant)
-            case-default variant |gemini-3.5-flash (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.6-flash |gemini-3.5-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
+            case-default variant |gemini-3.5-flash-lite (:gemini-3.5-flash-lite |gemini-3.5-flash-lite) (:gemini-3.6-flash |gemini-3.6-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-flash |gemini-3-flash-preview) (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
+          :tests $ [] $ %{} 'TestEntry (:name |routes-current-gemini-models)
+            :code $ quote $ do
+              assert= |gemini-3.5-flash-lite $ pick-model :gemini
+              assert= |gemini-3.5-flash-lite $ pick-model :gemini-3.5-flash-lite
+              assert= |gemini-3.6-flash $ pick-model :gemini-3.6-flash
+              assert= |gemini-3-flash-preview $ pick-model :gemini-flash
+              assert= |gemini-3.1-pro-preview $ pick-model :gemini-pro
         'required-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn required-key! (storage-key prompt-text)
             let
