@@ -3,8 +3,7 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {} $ :default
-    {} (:description |) (:init-fn 'app.main/main!) (:mode :js)
-      :reload-fn 'app.main/reload!
+    {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
       :type-slots $ {}
@@ -16,9 +15,9 @@
           :examples $ []
           :schema $ :: 'Ref
         '*archived-sessions $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *archived-sessions false
+          :code $ quote $ defatom *archived-sessions nil
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'JsNullish (:: 'List 'app.schema/ChatSession)
         '*gen-ai-new $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defatom *gen-ai-new false
           :examples $ []
@@ -27,15 +26,14 @@
           :code $ quote $ defatom *image-cache false
           :examples $ []
           :schema $ :: 'Ref
-        '*openai $ %{} 'CodeEntry
-          :doc "|called openai sdk, but actually for openrouter"
+        '*openai $ %{} 'CodeEntry (:doc "|called openai sdk, but actually for openrouter")
           :code $ quote $ defatom *openai false
           :examples $ []
           :schema $ :: 'Ref
         '*viewing-archive-session $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *viewing-archive-session false
+          :code $ quote $ defatom *viewing-archive-session nil
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'JsNullish 'app.schema/ChatSession
         'DomTokenListHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait DomTokenListHost
             .contains? $ :: 'Fn $ {}
@@ -68,26 +66,26 @@
           :code $ quote $ defstruct StreamChunk (:text 'String) (:thinking? 'Bool)
           :examples $ []
           :schema $ :: 'StructDef
+        'abort-dynamic! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn abort-dynamic! (value)
+            ffi/abort! $ unsafe-coerce value 'js-ffi.shared/AbortControllerHost
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
         'append-user-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn append-user-message (messages content)
-            conj messages $ %{} ChatMessage (:role :user) (:content content) (:thinking |)
+            conj messages $ ChatMessage :role :user :content content :thinking |
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ []
-              :: 'List 'app.schema/ChatMessage
-              , 'String
+            :args $ [] (:: 'List 'app.schema/ChatMessage) 'String
             :return $ :: 'List 'app.schema/ChatMessage
         'call-anthropic-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
-            hint-fn $ {} (:async true)
-              :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic
             let
                 abort $ deref *abort-control
-              when
-                js-present-dynamic? abort
-                let
-                    abort-controller $ unsafe-coerce abort 'Dynamic
-                  do (js/console.warn |Aborting-prev) (.!abort abort-controller)
+              when (js-present-dynamic? abort)
+                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             d! $ :: :change-model
             let
                 axios $ unsafe-coerce
@@ -95,15 +93,13 @@
                   , 'Dynamic
                 selected $ let
                     selected0 $ js-await $ get-selected
-                  if (js-present? selected0) (stream-text selected0) "|<未找到内容>"
-                content $ .replace prompt-text |{{selected}} selected
+                  if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到内容>"
+                content $ &str:replace prompt-text |{{selected}} selected
                 messages0 $ append-user-message (:messages state) content
                 messages1 $ upsert-assistant-message messages0 | |
-                result $ js-await $ .!post axios
-                  str |https://sa.chenyong.life/v1/messages
+                result $ js-await $ .!post axios (str |https://sa.chenyong.life/v1/messages)
                   js-object
-                    :model $ option:unwrap-or (get-env |claude-model)
-                      or model |claude-3-5-sonnet-latest
+                    :model $ option:unwrap-or (get-env |claude-model) (or model |claude-3-5-sonnet-latest)
                     :max_tokens 1024
                     :stream true
                     :thinking $ if thinking?
@@ -112,18 +108,16 @@
                     :messages $ messages->anthropic messages0
                   js-object
                     :params $ js-object
-                    :headers $ js-object
-                      ; :Accept |text/event-stream
-                      ; :Content-Type |application/json
+                    :headers $ js-object (; :Accept |text/event-stream) (; :Content-Type |application/json)
                       |x-api-key $ get-anthropic-key!
                       |anthropic-version |2023-06-01
                       |anthropic-dangerous-direct-browser-access true
                     :responseType |stream
                     :adapter |fetch
                     :signal $ let
-                        abort $ new js/AbortController
+                        abort $ ffi/abort-controller-create
                       reset! *abort-control abort
-                      .-signal abort
+                      ffi/abort-signal abort
                 stream $ unsafe-coerce (.-data result) 'Dynamic
                 reader $ unsafe-coerce
                   .!getReader $ unsafe-coerce
@@ -142,19 +136,14 @@
                   if (wo-log done?) (:: :unit)
                     do
                       let
-                          events $ -> (stream-text value) .split-lines
-                            filter $ fn (s)
-                              hint-fn $ {} $ :args ([] 'String)
-                              .starts-with? s "|data: "
+                          events $ -> (stream-text value) split-lines
+                            filter $ fn (s) (starts-with? s "|data: ")
                             map $ fn (s)
-                              hint-fn $ {} $ :args ([] 'String)
-                              -> (.strip-prefix s "|data: ") js/JSON.parse to-calcit-data
+                              -> (strip-prefix s "|data: ") js/JSON.parse to-calcit-data
                         apply-args (events)
                           fn (xs)
                             list-match xs
-                              () $ do
-                                println "|no thing to handle in this Loop"
-                                , &unit
+                              () $ do (println "|no thing to handle in this Loop") &unit
                               (x0 xss)
                                 let
                                     stop? $ =
@@ -170,19 +159,18 @@
                                         do (println |content-is-nil) (recur xss)
                                         let
                                             content $ stream-text $ option:unwrap-or content-opt |
-                                          do (swap! *text str content)
-                                            d! (:: :states-merge cursor state)
-                                              {} (:answer @*text) (:loading? false) (:done? false)
-                                                :messages $ upsert-assistant-message messages1 @*text |
-                                            recur xss
+                                          swap! *text str content
+                                          d! (:: :states-merge cursor state)
+                                            {} (:answer @*text) (:loading? false) (:done? false)
+                                              :messages $ upsert-assistant-message messages1 @*text |
+                                          recur xss
                       recur
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+            :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'String 'Bool 'Dynamic
             :features $ #{} :js-ffi
         'call-flash-imagen-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
-            hint-fn $ {} $ :async true
             if (= false @*gen-ai-new)
               let
                   mod $ js-await $ js/import |@google/genai
@@ -191,37 +179,31 @@
                   :apiKey $ get-gemini-key!
             let
                 target0 $ js/document.querySelector |.show-image
-              when
-                js-present-dynamic? target0
+              when (js-present-dynamic? target0)
                 let
                     target $ unsafe-coerce target0 'Dynamic
                   .!setAttribute target |src |
             let
                 abort $ deref *abort-control
-              when
-                js-present-dynamic? abort
-                let
-                    abort-controller $ unsafe-coerce abort 'Dynamic
-                  do (js/console.warn |Aborting-prev) (.!abort abort-controller)
+              when (js-present-dynamic? abort)
+                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             clear-image-cache!
             d! $ :: :states cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
-                  if (js-present? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
+                  if (js-present-dynamic? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
                 gen-ai @*gen-ai-new
-                content $ .!replace prompt-text |{{selected}} selected
+                content $ &str:replace prompt-text |{{selected}} selected
                 abort-signal $ let
-                    abort $ new js/AbortController
+                    abort $ ffi/abort-controller-create
                   reset! *abort-control abort
-                  .-signal abort
+                  ffi/abort-signal abort
                 sdk-result $ js-await $ .!generateContent
                   unsafe-coerce
                     .-models $ unsafe-coerce gen-ai 'Dynamic
                     , 'Dynamic
-                  js-object
-                    :model |gemini-2.5-flash-image
-                    :contents content
+                  js-object (:model |gemini-2.5-flash-image) (:contents content)
                     :config $ js-object (:abortSignal abort-signal)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :responseModalities $ js-array |TEXT |IMAGE
@@ -238,48 +220,41 @@
                   , 'Dynamic
                 *text $ atom |
               js-await $ .!forEach parts $ fn (chunk _a _b)
-                if
-                  js-present-dynamic? chunk
+                if (js-present-dynamic? chunk)
                   let
                       chunk-data $ unsafe-coerce chunk 'Dynamic
                       text0 $ .-text chunk-data
-                    if
-                      js-present-dynamic? text0
+                    if (js-present-dynamic? text0)
                       let
                           text $ unsafe-coerce text0 'String
-                        do (swap! *text str text)
-                          d! (:: :states cursor)
-                            -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                        swap! *text str text
+                        d! (:: :states cursor)
+                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                       let
                           image-data0 $ .-inlineData chunk-data
-                        when
-                          js-present-dynamic? image-data0
+                        when (js-present-dynamic? image-data0)
                           let
                               image-data $ unsafe-coerce image-data0 'Dynamic
                               data $ unsafe-coerce (.-data image-data) 'String
                               image-blob $ base64ToBlob data
                               url $ js/URL.createObjectURL image-blob
-                              target $ unsafe-coerce
-                                js/document.querySelector |.show-image
-                                , 'Dynamic
+                              target $ unsafe-coerce (js/document.querySelector |.show-image) 'Dynamic
                             .!setAttribute target |src url
                             reset! *image-cache url
-                            do (swap! *text str | "|(image ready)")
-                              d! (:: :states cursor)
-                                -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                            swap! *text str | "|(image ready)"
+                            d! (:: :states cursor)
+                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                   d! (:: :states cursor)
                     -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
               d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Tag 'List 'app.schema/ChatState 'String 'Dynamic
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+            :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Dynamic
             :features $ #{} :js-ffi
         'call-genai-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-genai-msg!
             variant cursor state prompt-text search? think? d! *text *thinking-text
-            hint-fn $ {} (:async true)
-              :args $ [] 'Tag 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic 'Ref 'Ref
             if (= false @*gen-ai-new)
               let
                   mod $ js-await $ js/import |@google/genai
@@ -288,38 +263,27 @@
                   :apiKey $ get-gemini-key!
             let
                 abort $ deref *abort-control
-              when
-                js-present-dynamic? abort
-                let
-                    abort-controller $ unsafe-coerce abort 'Dynamic
-                  do (js/console.warn |Aborting-prev) (.!abort abort-controller)
+              when (js-present-dynamic? abort)
+                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             let
                 selected $ let
-                    selected0 $ if (.includes? prompt-text |{{selected}})
+                    selected0 $ if (includes? prompt-text |{{selected}})
                       js-await $ get-selected
                       , js/undefined
-                  if (js-present? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
+                  if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
                 gen-ai @*gen-ai-new
                 model $ pick-model variant
-                content $ .!replace prompt-text |{{selected}} selected
+                content $ &str:replace prompt-text |{{selected}} selected
                 json? $ or (includes? prompt-text |{{json}}) (includes? prompt-text |{{JSON}})
                 pro? $ includes? model |pro
                 has-url? $ or (includes? prompt-text |http://) (includes? prompt-text |https://)
-                messages0 $ or (:messages state) ([])
+                messages0 $ :messages state
                 messages1 $ upsert-assistant-message messages0 | |
                 abort-signal $ let
-                    abort $ new js/AbortController
+                    abort $ ffi/abort-controller-create
                   reset! *abort-control abort
-                  .-signal abort
-                tools $ ->
-                  js-array
-                    if search?
-                      js-object $ :googleSearch $ js-object
-                      , js/undefined
-                    if has-url?
-                      js-object $ :urlContext $ js-object
-                      , js/undefined
-                  .!filter $ fn (x _idx _arr) x
+                  ffi/abort-signal abort
+                tools $ make-genai-tools search? has-url?
                 sdk-result $ js-await $ .!generateContentStream
                   unsafe-coerce
                     .-models $ unsafe-coerce gen-ai 'Dynamic
@@ -331,9 +295,7 @@
                         js-object (:thinkingLevel |high) (:includeThoughts true)
                         js-object
                           :thinkingLevel $ if
-                            contains?
-                              #{} |gemini-3.7-flash |gemini-3.8-flash
-                              , model
+                            contains? (#{} |gemini-3.7-flash |gemini-3.8-flash) model
                             , |low |minimal
                           :includeThoughts false
                       :tools $ if
@@ -346,32 +308,27 @@
                       :abortSignal abort-signal
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :responseMimeType $ if json? |application/json js/undefined
-              do
-                js/setTimeout $ fn () $ d!
-                  :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
-                js-await $ js-for-await sdk-result $ fn (chunk)
-                  if
-                    js-present-dynamic? chunk
-                    let
-                        stream-chunk $ unsafe-coerce
-                          decode-genai-chunk chunk
-                          , 'app.comp.container/StreamChunk
-                        is-thinking? $ :thinking? stream-chunk
-                        text $ :text stream-chunk
-                      if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
-                      d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                        :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+              js/setTimeout $ fn () $ d!
+                :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+              js-await $ js-for-await sdk-result $ fn (chunk)
+                if (js-present-dynamic? chunk)
+                  let
+                      stream-chunk $ unsafe-coerce (decode-genai-chunk chunk) 'app.comp.container/StreamChunk
+                      is-thinking? $ :thinking? stream-chunk
+                      text $ :text stream-chunk
+                    if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
                     d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
                       :messages $ upsert-assistant-message messages1 @*text @*thinking-text
-                d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
-                  :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                  d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
+                    :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+              d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
+                :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Tag 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic 'Ref 'Ref
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+            :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic (:: 'Ref 'String) (:: 'Ref 'String)
             :features $ #{} :js-ffi
         'call-imagen-4-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-imagen-4-msg! (variant cursor state prompt-text d!)
-            hint-fn $ {} $ :async true
             if (= false @*gen-ai-new)
               let
                   mod $ js-await $ js/import |@google/genai
@@ -380,69 +337,55 @@
                   :apiKey $ get-gemini-key!
             let
                 target0 $ js/document.querySelector |.show-image
-              when
-                js-present-dynamic? target0
+              when (js-present-dynamic? target0)
                 let
                     target $ unsafe-coerce target0 'Dynamic
                   .!removeAttribute target |src
             let
                 abort $ deref *abort-control
-              when
-                js-present-dynamic? abort
-                let
-                    abort-controller $ unsafe-coerce abort 'Dynamic
-                  do (js/console.warn |Aborting-prev) (.!abort abort-controller)
+              when (js-present-dynamic? abort)
+                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             clear-image-cache!
             d! $ :: :states cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
                 gen-ai @*gen-ai-new
                 abort-signal $ let
-                    abort $ new js/AbortController
+                    abort $ ffi/abort-controller-create
                   reset! *abort-control abort
-                  .-signal abort
+                  ffi/abort-signal abort
                 response $ js-await $ .!generateImages
                   unsafe-coerce
                     .-models $ unsafe-coerce gen-ai 'Dynamic
                     , 'Dynamic
-                  js-object
-                    :model |imagen-4.0-generate-001
-                    :prompt prompt-text
-                    :config $ js-object (:numberOfImages 1)
-                      :includeRaiReason true
+                  js-object (:model |imagen-4.0-generate-001) (:prompt prompt-text)
+                    :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :signal abort-signal
                 *text $ atom |
               let
                   response-data $ unsafe-coerce response 'Dynamic
-                  generated-images $ unsafe-coerce
-                    .-generatedImages response-data
-                    , 'Dynamic
+                  generated-images $ unsafe-coerce (.-generatedImages response-data) 'Dynamic
                   generated-image $ unsafe-coerce (.-0 generated-images) 'Dynamic
                   image $ unsafe-coerce (.-image generated-image) 'Dynamic
                   image-data0 $ .-imageBytes image
-                when
-                  js-present-dynamic? image-data0
+                when (js-present-dynamic? image-data0)
                   let
                       image-data $ unsafe-coerce image-data0 'String
                       image-blob $ base64ToBlob image-data
                       url $ js/URL.createObjectURL image-blob
-                      target $ unsafe-coerce
-                        js/document.querySelector |.show-image
-                        , 'Dynamic
+                      target $ unsafe-coerce (js/document.querySelector |.show-image) 'Dynamic
                     reset! *image-cache url
                     .!setAttribute target |src url
-                    do (swap! *text str | "|(image ready)")
-                      d! (:: :states cursor)
-                        -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    swap! *text str | "|(image ready)"
+                    d! (:: :states cursor)
+                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
               d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Tag 'List 'app.schema/ChatState 'String 'Dynamic
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+            :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Dynamic
             :features $ #{} :js-ffi
         'call-openrouter! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
-            hint-fn $ {} (:async true)
-              :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic 'Ref
             if (= false @*openai)
               let
                   mod $ js-await $ js/import |openai
@@ -456,21 +399,18 @@
                   :dangerouslyAllowBrowser true
             let
                 abort $ deref *abort-control
-              when
-                js-present-dynamic? abort
-                let
-                    abort-controller $ unsafe-coerce abort 'Dynamic
-                  do (js/console.warn |Aborting-prev) (.!abort abort-controller)
+              when (js-present-dynamic? abort)
+                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
-                  if (js-present? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
+                  if (js-present-dynamic? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
                 openai $ let
                     ai @*openai
                   , ai
-                content $ .!replace prompt-text |{{selected}} selected
+                content $ &str:replace prompt-text |{{selected}} selected
                 json? $ or (includes? prompt-text |{{json}}) (includes? prompt-text |{{JSON}})
-                messages0 $ or (:messages state) ([])
+                messages0 $ :messages state
                 messages1 $ upsert-assistant-message messages0 | |
                 sdk-result $ js-await $ .!create
                   unsafe-coerce
@@ -483,52 +423,44 @@
                     :stream true
                     :headers $ js-object $ :HTTP-Referer js/location.host
                   js-object $ :signal $ let
-                      abort $ new js/AbortController
+                      abort $ ffi/abort-controller-create
                     reset! *abort-control abort
-                    .-signal abort
-              do
-                js/setTimeout $ fn () $ d!
-                  :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
-                let
-                    *thinking-text $ atom |
-                    *char-buf $ atom 0
-                  js-await $ js-for-await sdk-result $ fn (chunk)
-                    if
-                      js-present-dynamic? chunk
-                      let
-                          chunk-data $ unsafe-coerce chunk 'Dynamic
-                          choices $ unsafe-coerce (.-choices chunk-data) 'Dynamic
-                          choice0 $ unsafe-coerce (.-0 choices) 'Dynamic
-                          choice $ unsafe-coerce (.-delta choice0) 'Dynamic
-                          reason0 $ .-reasoning_content choice
-                          reason $ if
-                            js-present-dynamic? reason0
-                            stream-text reason0
-                            , |
-                          text0 $ .-content choice
-                          text $ if
-                            js-present-dynamic? text0
-                            stream-text text0
-                            , |
-                        if
-                          not $ blank? reason
-                          swap! *thinking-text str reason
-                        if
-                          not $ blank? text
-                          swap! *text str text
-                        swap! *char-buf + $ count text
-                        when
-                          or (> @*char-buf 80) (includes? text &newline)
-                          do (reset! *char-buf 0)
-                            d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                              :messages $ upsert-assistant-message messages1 @*text @*thinking-text
-                    d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
-                      :messages $ upsert-assistant-message messages1 @*text @*thinking-text
-                  d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
+                    ffi/abort-signal abort
+              js/setTimeout $ fn () $ d!
+                :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+              let
+                  *thinking-text $ atom |
+                  *char-buf $ atom 0
+                js-await $ js-for-await sdk-result $ fn (chunk)
+                  if (js-present-dynamic? chunk)
+                    let
+                        chunk-data $ unsafe-coerce chunk 'Dynamic
+                        choices $ unsafe-coerce (.-choices chunk-data) 'Dynamic
+                        choice0 $ unsafe-coerce (.-0 choices) 'Dynamic
+                        choice $ unsafe-coerce (.-delta choice0) 'Dynamic
+                        reason0 $ .-reasoning_content choice
+                        reason $ if (js-present-dynamic? reason0) (stream-text reason0) |
+                        text0 $ .-content choice
+                        text $ if (js-present-dynamic? text0) (stream-text text0) |
+                      if
+                        not $ blank? reason
+                        swap! *thinking-text str reason
+                      if
+                        not $ blank? text
+                        swap! *text str text
+                      swap! *char-buf + $ count text
+                      when
+                        or (> @*char-buf 80) (includes? text &newline)
+                        do (reset! *char-buf 0)
+                          d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
+                            :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                  d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? false)
                     :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+                d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
+                  :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'List 'app.schema/ChatState 'String 'String 'Bool 'Dynamic 'Ref
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+            :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'String 'Bool 'Dynamic $ :: 'Ref 'String
             :features $ #{} :js-ffi
         'clear-image-cache! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn clear-image-cache! ()
@@ -539,7 +471,9 @@
                   js/URL.revokeObjectURL $ unsafe-coerce url 'String
                   reset! *image-cache false
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'comp-abort $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn comp-abort (t)
             span
@@ -550,26 +484,23 @@
                 :on-click $ fn (e d!)
                   let
                       abort $ deref *abort-control
-                    when
-                      js-present-dynamic? abort
-                      let
-                          abort-controller $ unsafe-coerce abort 'Dynamic
-                        do (js/console.warn |Aborting-prev) (.!abort abort-controller)
+                    when (js-present-dynamic? abort)
+                      do (js/console.warn |Aborting-prev) (abort-dynamic! abort)
                   , &unit
               <> t
               =< 8 nil
               <> "|✕" style-abort-close
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Element)
+            :args $ [] 'String
+            :features $ #{} :js-ffi
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel)
             let
                 app-store $ option:fold (get reel :store)
                   fn () store
                   fn (raw-store)
-                    if (struct? raw-store)
-                      unsafe-coerce raw-store 'app.schema/Store
-                      decode-map-as raw-store 'app.schema/Store
+                    if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store) (decode-map-as raw-store 'app.schema/Store)
                 sessions $ :sessions app-store
                 archived-count $ :archived-count app-store
                 current-session-id $ :current-session-id app-store
@@ -581,32 +512,39 @@
                         :messages $ []
                         :model :gemini
                         :thinking |
-                  unsafe-coerce
-                    normalize-chat-state raw-chat-state
-                    , 'app.schema/ChatState
+                  unsafe-coerce (normalize-chat-state raw-chat-state) 'app.schema/ChatState
                 done? $ :done? state
                 messages $ :messages state
                 model $ if
                   tag? $ :model state
                   :model state
                   , :gemini
-                is-viewing-history? $ and
-                  some? current-session-id
+                is-viewing-history? $ and (js-present-dynamic? current-session-id)
                   option:fold
-                    first $ filter sessions $ fn (s)
-                      hint-fn $ {} $ :args
-                        [] 'app.schema/ChatSession
-                      = (:id s) current-session-id
-                    fn () false
+                    assert-type
+                      first $ filter sessions $ fn (s)
+                        hint-fn $ {}
+                          :args $ [] 'app.schema/ChatSession
+                          :return 'Bool
+                        = (:id s) (assert-type current-session-id 'String)
+                      :: 'Option 'app.schema/ChatSession
+                    fn ()
+                      hint-fn $ {} $ :return 'Bool
+                      , false
                     fn (session)
-                      hint-fn $ {} $ :args
-                        [] 'app.schema/ChatSession
+                      hint-fn $ {}
+                        :args $ [] 'app.schema/ChatSession
+                        :return 'Bool
                       :is-history? session
-                last-assistant $ option:fold (last messages)
-                  fn () $ :answer state
+                last-assistant $ option:fold
+                  assert-type (last messages) (:: 'Option 'app.schema/ChatMessage)
+                  fn ()
+                    hint-fn $ {} $ :return 'String
+                    :answer state
                   fn (last-msg)
-                    hint-fn $ {} $ :args
-                      [] 'app.schema/ChatMessage
+                    hint-fn $ {}
+                      :args $ [] 'app.schema/ChatMessage
+                      :return 'String
                     if
                       = :assistant $ :role last-msg
                       :content last-msg
@@ -622,58 +560,38 @@
                     :on-result $ fn (result d!)
                       d! cursor $ assoc state :model $ option:unwrap-or (nth result 1) :gemini
                 reply-plugin $ use-prompt (>> states :reply-prompt)
-                  {} (:text |Follow-up)
-                    :placeholder "|Enter your follow-up"
-                    :multiline? true
-                    :button-text |Send
+                  {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                     :validator $ fn (text)
                       if (blank? text) "|Please enter text" |
                 api-key-plugin $ use-prompt (>> states :api-key-prompt)
-                  {}
-                    :text "|API key required"
-                    :placeholder "|Enter API key"
-                    :button-text |Save
+                  {} (:text "|API key required") (:placeholder "|Enter API key") (:button-text |Save)
                     :validator $ fn (text)
                       if (blank? text) "|Please enter API key" |
-                text-alert-plugin $ use-alert
-                  >> states :empty-message-alert
+                text-alert-plugin $ use-alert (>> states :empty-message-alert)
                   {} $ :text "|Please enter text"
                 submit-with-key! $ fn (submit-state text search? think? d!)
                   hint-fn $ {}
                     :args $ [] 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic
                     :features $ #{} :js-ffi
-                  if (blank? text)
-                    .show text-alert-plugin d! "|Please enter text"
+                  if (blank? text) (.show text-alert-plugin d! "|Please enter text")
                     let
                         storage-key $ model-storage-key model
-                        stored0 $ js/localStorage.getItem storage-key
-                        stored $ if
-                          js-present-dynamic? stored0
-                          unsafe-coerce stored0 'String
-                          , |
+                        stored $ browser/storage-get-or storage-key |
                       if (blank? stored)
-                        .show api-key-plugin d! $ fn (key)
-                          do
-                            js/localStorage.setItem storage-key key
-                            submit-message! cursor submit-state text search? think? model d!
+                        .show api-key-plugin d! $ fn (key) (browser/storage-set! storage-key key) (submit-message! cursor submit-state text search? think? model d!)
                         submit-message! cursor submit-state text search? think? model d!
                 message-box-state $ let
                     raw-message-box-state $ option:unwrap-or
                       get (>> states :message-box) :data
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if
-                    struct? raw-message-box-state
-                    unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState
-                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
+                  if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
                 sessions-plugin $ use-drawer (>> states :sessions-modal)
-                  {}
-                    :title "|History Sessions"
-                    :style $ {}
-                      :min-width "||max(320px,30vw)\""
-                      :max-width |80vw
+                  {} (:title "|History Sessions")
+                    :style $ {} (:min-width "||max(320px,30vw)\"") (:max-width |80vw)
                     :render $ fn (on-close)
                       comp-sessions-modal sessions archived-count
                         fn (session-id d!)
+                          hint-fn $ {} $ :args ([] 'String 'Dynamic)
                           when
                             and
                               > (count messages) 0
@@ -682,8 +600,9 @@
                             d! $ :: :save-session state
                           d! $ :: :load-session cursor state $ -> sessions
                             filter $ fn (s)
-                              hint-fn $ {} $ :args
-                                [] 'app.schema/ChatSession
+                              hint-fn $ {}
+                                :args $ [] 'app.schema/ChatSession
+                                :return 'Bool
                               = (:id s) session-id
                             , first option:unwrap
                           on-close d!
@@ -692,18 +611,14 @@
                           let
                               archive-key $ :archive-key site
                               raw $ js-await $ db-get archive-key
-                            if (blank? raw)
-                              js/alert "|No archives found!"
+                            if (blank? raw) (js/alert "|No archives found!")
                               let
-                                  parsed $ parse-cirru-edn raw
+                                  parsed $ parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
                                 reset! *archived-sessions parsed
               div
                 {} $ :class-name $ str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global
-                if
-                  not= false @*archived-sessions
-                  if
-                    not= false @*viewing-archive-session
-                    ; Render specific read-only archived session
+                if (js-present? @*archived-sessions)
+                  if (js-present? @*viewing-archive-session) (; Render specific read-only archived session)
                     div
                       {} $ :class-name $ str-spaced css/expand style-message-area
                       div
@@ -711,15 +626,10 @@
                         div $ {}
                           :style $ {} $ :font-weight :bold
                           :inner-text $ str "|Archived: " $ :preview
-                            assert-type
-                              app.schema/normalize-chat-session @*viewing-archive-session
-                              , 'app.schema/ChatSession
+                            assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
                         div
-                          {}
-                            :class-name style-archive-close
-                            :on-click $ fn (e d!)
-                              reset! *viewing-archive-session false
-                              , &unit
+                          {} (:class-name style-archive-close)
+                            :on-click $ fn (e d!) (reset! *viewing-archive-session nil) &unit
                           <> "|✕"
                       ; Messages list $ read only
                       div
@@ -728,12 +638,9 @@
                         list->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           ->
-                            :messages $ assert-type
-                              app.schema/normalize-chat-session @*viewing-archive-session
-                              , 'app.schema/ChatSession
+                            :messages $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
                             map-indexed $ fn (idx msg)
-                              hint-fn $ {} $ :args
-                                [] 'Number 'app.schema/ChatMessage
+                              hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatMessage)
                               [] idx $ let
                                   role $ :role msg
                                   content $ stream-text $ :content msg
@@ -751,13 +658,9 @@
                                       memo-comp-by thinking comp-md-block thinking $ {} $ :class-name style-md-content
                                   if (= role :assistant)
                                     if (json-pattern? content)
-                                      pre $ {}
-                                        :class-name style-code-content
-                                        :inner-text content
+                                      pre $ {} (:class-name style-code-content) (:inner-text content)
                                       memo-comp-by content comp-md-block content $ {} $ :class-name style-md-content
-                                    pre $ {}
-                                      :class-name style-message-text
-                                      :inner-text content
+                                    pre $ {} (:class-name style-message-text) (:inner-text content)
                     ; Render archived sessions list
                     div
                       {} $ :class-name $ str-spaced css/expand style-message-area
@@ -767,12 +670,8 @@
                           :style $ {} $ :font-weight :bold
                           :inner-text "|All Archived Sessions"
                         div
-                          {}
-                            :class-name style-archive-close
-                            :on-click $ fn (e d!)
-                              reset! *archived-sessions false
-                              reset! *viewing-archive-session false
-                              , &unit
+                          {} (:class-name style-archive-close)
+                            :on-click $ fn (e d!) (reset! *archived-sessions nil) (reset! *viewing-archive-session nil) &unit
                           <> "|✕"
                       ; List
                       div
@@ -780,30 +679,25 @@
                         list->
                           {} $ :class-name css/column
                           let
-                              current-archives $ or @*archived-sessions $ []
+                              current-archives $ assert-type @*archived-sessions $ :: 'List 'app.schema/ChatSession
                             if (empty? current-archives)
                               [] :empty $ div
                                 {} $ :style $ {} (:padding |12px)
                                   :color $ hsl 0 0 60
                                 <> "|No archived sessions left."
                               -> current-archives reverse $ map $ fn (session)
-                                hint-fn $ {} $ :args
-                                  [] 'app.schema/ChatSession
+                                hint-fn $ {} $ :args ([] 'app.schema/ChatSession)
                                 let
                                     session-id $ :id session
                                     created-at $ :created-at session
                                     preview $ :preview session
-                                    date-str $ unsafe-coerce
-                                      .!toLocaleString $ new js/Date created-at
-                                      , 'String
+                                    date-str $ ffi/date-local-string $ ffi/date-from-ms created-at
                                   [] session-id $ div
                                     {} $ :class-name style-session-item
                                     div
                                       {} (:role |button)
                                         :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
-                                        :on-click $ fn (e d!)
-                                          reset! *viewing-archive-session session
-                                          , &unit
+                                        :on-click $ fn (e d!) (reset! *viewing-archive-session session) &unit
                                       div
                                         {} $ :style $ {} (:font-size |12px)
                                           :color $ hsl 0 0 60
@@ -812,18 +706,19 @@
                                         {} $ :style $ {} (:margin-top |4px) (:white-space :nowrap) (:overflow :hidden) (:text-overflow :ellipsis) (:max-height |1.2em) (:line-height |1.2)
                                         <> preview
                                     div
-                                      {}
-                                        :class-name style-delete-button
-                                        :role |button
+                                      {} (:class-name style-delete-button) (:role |button)
                                         :on-click $ fn (e d!)
                                           hint-fn $ {} $ :async true
                                           let
                                               proceed? $ js/confirm "|Delete this archived session?"
                                             when proceed? $ let
-                                                new-archives $ filter @*archived-sessions $ fn (s)
-                                                  hint-fn $ {} $ :args
-                                                    [] 'app.schema/ChatSession
-                                                  not= (:id s) session-id
+                                                new-archives $ filter
+                                                  assert-type @*archived-sessions $ :: 'List 'app.schema/ChatSession
+                                                  fn (s)
+                                                    hint-fn $ {}
+                                                      :args $ [] 'app.schema/ChatSession
+                                                      :return 'Bool
+                                                    not= (:id s) session-id
                                               reset! *archived-sessions new-archives
                                               let
                                                   archive-key $ :archive-key site
@@ -863,8 +758,7 @@
                         list->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           -> messages $ map-indexed $ fn (idx msg)
-                            hint-fn $ {} $ :args
-                              [] 'Number 'app.schema/ChatMessage
+                            hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatMessage)
                             [] idx $ let
                                 role $ :role msg
                                 content $ stream-text $ :content msg
@@ -882,13 +776,9 @@
                                     memo-comp-by thinking comp-md-block thinking $ {} $ :class-name style-md-content
                                 if (= role :assistant)
                                   if (json-pattern? content)
-                                    pre $ {}
-                                      :class-name style-code-content
-                                      :inner-text content
+                                    pre $ {} (:class-name style-code-content) (:inner-text content)
                                     memo-comp-by content comp-md-block content $ {} $ :class-name style-md-content
-                                  pre $ {}
-                                    :class-name style-message-text
-                                    :inner-text content
+                                  pre $ {} (:class-name style-message-text) (:inner-text content)
                                 if
                                   and (= role :assistant)
                                     or done? $ not= idx $ dec (count messages)
@@ -909,28 +799,21 @@
                                 :class-name $ str-spaced css/button style-reply-button
                                 :on-click $ fn (e d!)
                                   .show reply-plugin d! $ fn (text)
-                                    submit-with-key! state (stream-text text)
-                                      :search? message-box-state
-                                      :think? message-box-state
-                                      , d!
+                                    submit-with-key! state (stream-text text) (:search? message-box-state) (:think? message-box-state) d!
                                   , &unit
                               <> |Reply
-                            if
-                              :focus-mode? message-box-state
-                              , nil $ a $ {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
-                                :on-click $ fn (e d!)
-                                  let
-                                      focused $ .-activeElement $ unsafe-coerce js/document 'Dynamic
-                                    do
-                                      when
-                                        js-present-dynamic? focused
-                                        .!blur $ unsafe-coerce focused 'Dynamic
-                                      d!
-                                        option:unwrap-or
-                                          get (>> states :message-box) :cursor
-                                          []
-                                        assoc message-box-state :focus-mode? true
-                                  , &unit
+                            if (:focus-mode? message-box-state) nil $ a $ {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
+                              :on-click $ fn (e d!)
+                                let
+                                    focused $ .-activeElement $ unsafe-coerce js/document 'Dynamic
+                                  when (js-present-dynamic? focused)
+                                    .!blur $ unsafe-coerce focused 'Dynamic
+                                  d!
+                                    option:unwrap-or
+                                      get (>> states :message-box) :cursor
+                                      []
+                                    assoc message-box-state :focus-mode? true
+                                , &unit
                           , nil
                         if (:loading? state)
                           div ({}) (comp-abort |Loading...)
@@ -957,8 +840,7 @@
                           .show model-plugin d!
                           , &unit
                       fn (text search? think? d!)
-                        if (blank? text)
-                          .show text-alert-plugin d! "|Please enter text"
+                        if (blank? text) (.show text-alert-plugin d! "|Please enter text")
                           do
                             when
                               and
@@ -983,8 +865,7 @@
                 if dev? $ comp-reel (>> states :reel) reel $ {}
                 if dev? $ comp-inspect |Store app-store nil
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :return 'respo.schema/Component
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
             :args $ [] $ :: 'Map 'Tag 'Dynamic
             :features $ #{} :js-ffi
         'comp-fill $ %{} 'CodeEntry (:doc |)
@@ -996,7 +877,9 @@
                   , &unit
               comp-local-icon :send 12
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'String
+            :features $ #{} :js-ffi
         'comp-local-icon $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-local-icon (icon size)
             span $ {} (:aria-hidden |true)
@@ -1008,8 +891,7 @@
                 :clock "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><polyline points=\"12 6 12 12 16 14\"></polyline></svg>"
                 :send "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"22\" y1=\"2\" x2=\"11\" y2=\"13\"></line><polygon points=\"22 2 15 22 11 13 2 9 22 2\"></polygon></svg>"
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :return 'respo.schema/Component
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
             :args $ [] 'Tag 'Number
         'comp-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-message-box (states picker-el on-submit model)
@@ -1018,10 +900,7 @@
                 state $ let
                     raw-message-box-state $ option:unwrap-or (get states :data)
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if
-                    struct? raw-message-box-state
-                    unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState
-                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
+                  if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
               [] (effect-focus) (on-fill cursor state on-submit)
                 div
                   {} $ :class-name $ str-spaced css/center style-message-box-panel
@@ -1032,13 +911,10 @@
                         {} (:role |button) (:aria-label |expand-prompt)
                           :class-name $ str-spaced css/font-code! style-focus-box style-textbox-compact
                           :on-click $ fn (e d!)
-                            do
-                              d! cursor $ assoc state :focus-mode? false
-                              js/setTimeout
-                                fn () $ .!focus $ unsafe-coerce
-                                  js/document.querySelector |#message
-                                  , 'Dynamic
-                                , 0
+                            d! cursor $ assoc state :focus-mode? false
+                            js/setTimeout
+                              fn () $ .!focus $ unsafe-coerce (js/document.querySelector |#message) 'Dynamic
+                              , 0
                             , &unit
                         <> $ if
                           blank? $ :content state
@@ -1063,12 +939,8 @@
                                 option:unwrap-or (get e :ctrl?) false
                             on-submit (:content state) (:search? state) (:think? state) d!
                           , &unit
-                        :on-focus $ fn (e d!)
-                          toggle-focus-within! e true
-                          , &unit
-                        :on-blur $ fn (e d!)
-                          toggle-focus-within! e false
-                          , &unit
+                        :on-focus $ fn (e d!) (toggle-focus-within! e true) &unit
+                        :on-blur $ fn (e d!) (toggle-focus-within! e false) &unit
                     if
                       not $ :focus-mode? state
                       do (=< nil 4)
@@ -1082,18 +954,14 @@
                               :aria-label |clear-prompt
                               :on-click $ fn (e d!)
                                 d! cursor $ assoc state :content |
-                                .!focus $ unsafe-coerce
-                                  js/document.querySelector |#message
-                                  , 'Dynamic
+                                .!focus $ unsafe-coerce (js/document.querySelector |#message) 'Dynamic
                                 , &unit
                             span $ {} $ :class-name style-clear
                           div
                             {} $ :class-name $ str-spaced css/row style-gap12
                             , picker-el
                               if
-                                contains?
-                                  #{} :gemini-flash :gemini-3.5-flash :gemini-3.1-flash-lite-preview
-                                  , model
+                                contains? (#{} :gemini-flash :gemini-3.5-flash :gemini-3.1-flash-lite-preview) model
                                 div
                                   {} (:role |group) (:aria-label |think-toggle)
                                     :class-name $ str-spaced css/row style-checkbox
@@ -1127,15 +995,17 @@
                                   , &unit
                       , nil
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Map 'Dynamic 'Dynamic 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'respo.schema/Element
+              :: 'Fn $ {} (:return 'Unit)
+                :args $ [] 'String 'Bool 'Bool 'Dynamic
+              , 'Tag
             :features $ #{} :js-ffi
         'comp-sessions-modal $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
             let
                 history-items $ foldl sessions 0 $ fn (acc session)
-                  hint-fn $ {} $ :args
-                    [] 'Number 'app.schema/ChatSession
+                  hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatSession)
                   + acc $ count $ or (:messages session) ([])
               div
                 {} $ :class-name $ str-spaced css/column css/gap8 style-sessions-list
@@ -1158,15 +1028,12 @@
                   list->
                     {} $ :class-name css/column
                     -> sessions reverse $ map $ fn (session)
-                      hint-fn $ {} $ :args
-                        [] 'app.schema/ChatSession
+                      hint-fn $ {} $ :args ([] 'app.schema/ChatSession)
                       let
                           session-id $ :id session
                           created-at $ :created-at session
                           preview $ :preview session
-                          date-str $ unsafe-coerce
-                            .!toLocaleString $ new js/Date created-at
-                            , 'String
+                          date-str $ ffi/date-local-string $ ffi/date-from-ms created-at
                         [] session-id $ div
                           {} $ :class-name style-session-item
                           div
@@ -1182,9 +1049,7 @@
                               {} $ :style $ {} (:margin-top |4px) (:white-space :nowrap) (:overflow :hidden) (:text-overflow :ellipsis) (:max-height |1.2em) (:line-height |1.2)
                               <> preview
                           div
-                            {}
-                              :class-name style-delete-button
-                              :role |button
+                            {} (:class-name style-delete-button) (:role |button)
                               :aria-label $ str |session-delete: session-id
                               :on-click $ fn (e d!)
                                 let
@@ -1205,20 +1070,15 @@
                       {} $ :class-name $ str-spaced css/row-parted
                       div
                         {} $ :class-name $ str-spaced css/row css/gap8
-                        a $ {} (:class-name style-clear) (:inner-text |Data) (:role |button)
-                          :aria-label |sessions-export-data
+                        a $ {} (:class-name style-clear) (:inner-text |Data) (:role |button) (:aria-label |sessions-export-data)
                           :on-click $ fn (e d!)
                             tab-echo! sessions $ %some :edn
                             , &unit
-                        a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button)
-                          :aria-label |sessions-download
-                          :on-click $ fn (e d!)
-                            download-sessions! sessions
-                            , &unit
+                        a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button) (:aria-label |sessions-download)
+                          :on-click $ fn (e d!) (download-sessions! sessions) &unit
                       if
                         > (count sessions) 0
-                        a $ {} (:class-name style-clear) (:inner-text "|Archive all") (:role |button)
-                          :aria-label |sessions-archive-all
+                        a $ {} (:class-name style-clear) (:inner-text "|Archive all") (:role |button) (:aria-label |sessions-archive-all)
                           :on-click $ fn (e d!)
                             hint-fn $ {} $ :async true
                             let
@@ -1226,7 +1086,8 @@
                               when proceed? $ let
                                   archive-key $ :archive-key site
                                   raw $ js-await $ db-get archive-key
-                                  old-archives $ if (blank? raw) ([]) (parse-cirru-edn raw)
+                                  old-archives $ if (blank? raw) (take sessions 0)
+                                    parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
                                   new-archives $ concat old-archives sessions
                                 js-await $ db-set archive-key $ format-cirru-edn new-archives
                                 d! $ :: :archive-sessions $ count new-archives
@@ -1237,95 +1098,67 @@
                   , nil
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ []
-              :: 'List 'app.schema/ChatSession
-              , 'Number 'Dynamic 'Dynamic 'Dynamic
+            :args $ [] (:: 'List 'app.schema/ChatSession) 'Number 'Dynamic 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
         'create-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn create-session (messages model)
             let
                 id $ generate-session-id
-                first-msg $ option:fold (first messages)
+                first-msg $ option:fold
+                  assert-type (first messages) (:: 'Option 'app.schema/ChatMessage)
                   fn () |New-chat
                   fn (message)
-                    hint-fn $ {} $ :args
-                      [] 'app.schema/ChatMessage
+                    hint-fn $ {}
+                      :args $ [] 'app.schema/ChatMessage
+                      :return 'String
                     :content message
-              %{} ChatSession (:id id)
-                :created-at $ unsafe-coerce (js/Date.now) 'Number
-                :messages messages
-                :model model
-                :preview $ let
+              ChatSession :id id :created-at (ffi/now-ms) :messages messages :model model :preview
+                let
                     len $ count first-msg
                     end $ if (< len 100) len 100
                   slice first-msg 0 end
-                :is-history? false
+                , :is-history? false
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :return 'app.schema/ChatSession
-            :args $ []
-              :: 'List 'app.schema/ChatMessage
-              , 'Tag
+          :schema $ :: 'Fn $ {} (:return 'app.schema/ChatSession)
+            :args $ [] (:: 'List 'app.schema/ChatMessage) 'Tag
         'decode-genai-chunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-genai-chunk (chunk)
-            hint-fn $ {}
-              :args $ [] 'JsObject
-              :return 'app.comp.container/StreamChunk
-              :features $ #{} :js-ffi
             let
                 chunk-data $ unsafe-coerce chunk 'Dynamic
                 candidates0 $ .?-candidates chunk-data
-                candidate0 $ if
-                  js-present-dynamic? candidates0
+                candidate0 $ if (js-present-dynamic? candidates0)
                   .?-0 $ unsafe-coerce candidates0 'Dynamic
                   , js/undefined
-                content0 $ if
-                  js-present-dynamic? candidate0
+                content0 $ if (js-present-dynamic? candidate0)
                   .?-content $ unsafe-coerce candidate0 'Dynamic
                   , js/undefined
-                parts0 $ if
-                  js-present-dynamic? content0
+                parts0 $ if (js-present-dynamic? content0)
                   .?-parts $ unsafe-coerce content0 'Dynamic
                   , js/undefined
-                part0 $ if
-                  js-present-dynamic? parts0
+                part0 $ if (js-present-dynamic? parts0)
                   .?-0 $ unsafe-coerce parts0 'Dynamic
                   , js/undefined
                 part $ unsafe-coerce part0 'Dynamic
-                thought0 $ if
-                  js-present-dynamic? part0
-                  .?-thought part
-                  , js/undefined
+                thought0 $ if (js-present-dynamic? part0) (.?-thought part) js/undefined
                 thinking? $ if (bool? thought0) (unsafe-coerce thought0 'Bool) false
-                part-text $ if
-                  js-present-dynamic? part0
-                  .?-text part
-                  , js/undefined
+                part-text $ if (js-present-dynamic? part0) (.?-text part) js/undefined
                 chunk-text $ .?-text chunk-data
-                primary-text $ if
-                  js-present-dynamic? part-text
-                  , part-text chunk-text
+                primary-text $ if (js-present-dynamic? part-text) part-text chunk-text
                 prompt-feedback $ .?-promptFeedback chunk-data
-                fallback-text $ if
-                  js-present-dynamic? prompt-feedback
+                fallback-text $ if (js-present-dynamic? prompt-feedback)
                   .?-blockReason $ unsafe-coerce prompt-feedback 'Dynamic
                   , js/undefined
-                text0 $ if
-                  js-present-dynamic? primary-text
-                  , primary-text fallback-text
+                text0 $ if (js-present-dynamic? primary-text) primary-text fallback-text
                 text $ stream-text text0
-              %{} StreamChunk (:text text) (:thinking? thinking?)
+              StreamChunk :text text :thinking? thinking?
           :examples $ [] $ quote
             let
                 feedback-only $ js-object $ :promptFeedback
                   js-object $ :blockReason |blocked
-                decoded $ unsafe-coerce
-                  decode-genai-chunk feedback-only
-                  , 'app.comp.container/StreamChunk
+                decoded $ unsafe-coerce (decode-genai-chunk feedback-only) 'app.comp.container/StreamChunk
               assert= |blocked $ :text decoded
               assert= false $ :thinking? decoded
-          :schema $ :: 'Fn $ {}
-            :return 'app.comp.container/StreamChunk
+          :schema $ :: 'Fn $ {} (:return 'app.comp.container/StreamChunk)
             :args $ [] 'JsObject
             :features $ #{} :js-ffi
         'download-sessions! $ %{} 'CodeEntry (:doc |)
@@ -1336,20 +1169,17 @@
                   new js/Blob (js-array content)
                     js-object $ :type |application/edn;charset=utf-8
                   , 'Dynamic
-                url $ unsafe-coerce
-                  js/URL.createObjectURL blob
-                  , 'String
-                link $ unsafe-coerce
-                  js/document.createElement |a
-                  , 'Dynamic
-                filename $ str |sessions- (js/Date.now) |.cirru
-              do (.!setAttribute link |href url) (.!setAttribute link |download filename)
-                .!appendChild (unsafe-coerce js/document.body 'Dynamic) link
-                .!click link
-                .!remove link
-                js/setTimeout
-                  fn () $ js/URL.revokeObjectURL url
-                  , 0
+                url $ unsafe-coerce (js/URL.createObjectURL blob) 'String
+                link $ unsafe-coerce (js/document.createElement |a) 'Dynamic
+                filename $ str |sessions- (ffi/now-ms) |.cirru
+              .!setAttribute link |href url
+              .!setAttribute link |download filename
+              .!appendChild (unsafe-coerce js/document.body 'Dynamic) link
+              .!click link
+              .!remove link
+              js/setTimeout
+                fn () $ js/URL.revokeObjectURL url
+                , 0
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] $ :: 'List 'app.schema/ChatSession
@@ -1365,46 +1195,50 @@
                   .!select textarea
                 , 0
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Effect)
+            :args $ []
+            :features $ #{} :js-ffi
         'first-line $ %{} 'CodeEntry
           :doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now."
           :code $ quote $ defn first-line (tt)
             let
-                lines $ -> tt (.!split &newline)
-                  .!filter $ fn (line idx _a)
+                lines $ filter (split-lines tt)
+                  fn (line)
+                    hint-fn $ {}
+                      :args $ [] 'String
+                      :return 'Bool
                     not $ blank? line
-              if
-                > (.-length lines) 1
-                js/console.warn "|Droping some unexpected lines:" $ .!slice lines 1
-              .-0 lines
+              when
+                > (count lines) 1
+                eprintln "|Dropping some unexpected lines:" $ slice lines 1
+              option:unwrap-or (first lines) |
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'String
         'generate-session-id $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn generate-session-id ()
-            str $ js/Date.now
+            str $ ffi/now-ms
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ []
         'get-anthropic-key! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn get-anthropic-key! ()
-            required-key! |claude-key "|Required claude-key in localStorage"
+          :code $ quote $ defn get-anthropic-key! () (required-key! |claude-key "|Required claude-key in localStorage")
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ []
             :features $ #{} :js-ffi
         'get-deepinfra-key! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn get-deepinfra-key! ()
-            required-key! |deepinfra-key "|Required deepinfra-key in localStorage"
+          :code $ quote $ defn get-deepinfra-key! () (required-key! |deepinfra-key "|Required deepinfra-key in localStorage")
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'String)
+            :args $ []
+            :features $ #{} :js-ffi
         'get-deepseek-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-deepseek-key! ()
             let
                 key $ required-key! |deepseek-key "|Required deepseek-key in localStorage"
-              do
-                when chrome-extension? $ js/chrome.storage.local.set $ js-object (:deepseekKey key)
-                , key
+              when chrome-extension? $ js/chrome.storage.local.set $ js-object (:deepseekKey key)
+              , key
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ []
@@ -1413,16 +1247,14 @@
           :code $ quote $ defn get-gemini-key! ()
             let
                 key $ required-key! |gemini-key "|Required gemini-key in localStorage"
-              do
-                when chrome-extension? $ js/chrome.storage.local.set $ js-object (:geminiKey key)
-                , key
+              when chrome-extension? $ js/chrome.storage.local.set $ js-object (:geminiKey key)
+              , key
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ []
             :features $ #{} :js-ffi
         'get-openrouter-key! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn get-openrouter-key! ()
-            required-key! |openrouter-key "|Required openrouter-key in localStorage"
+          :code $ quote $ defn get-openrouter-key! () (required-key! |openrouter-key "|Required openrouter-key in localStorage")
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ []
@@ -1433,17 +1265,33 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Bool)
             :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
         'json-pattern? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn json-pattern? (text)
             or (starts-with? text |{) (starts-with? text |[)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Bool)
             :args $ [] 'String
+        'make-genai-tools $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn make-genai-tools (search? has-url?)
+            cond
+                and search? has-url?
+                js-array
+                  js-object $ :googleSearch $ js-object
+                  js-object $ :urlContext $ js-object
+              search? $ js-array $ js-object
+                :googleSearch $ js-object
+              has-url? $ js-array $ js-object
+                :urlContext $ js-object
+              true $ js-array
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'Bool 'Bool
+            :features $ #{} :js-ffi
         'messages->anthropic $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn messages->anthropic (messages)
             to-js-data $ map messages $ fn (m)
-              hint-fn $ {} $ :args
-                [] 'app.schema/ChatMessage
+              hint-fn $ {} $ :args ([] 'app.schema/ChatMessage)
               {}
                 :role $ if
                   = :assistant $ :role m
@@ -1456,8 +1304,7 @@
         'messages->gemini $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn messages->gemini (messages)
             to-js-data $ map messages $ fn (m)
-              hint-fn $ {} $ :args
-                [] 'app.schema/ChatMessage
+              hint-fn $ {} $ :args ([] 'app.schema/ChatMessage)
               {}
                 :role $ if
                   = :assistant $ :role m
@@ -1471,8 +1318,7 @@
         'messages->openai $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn messages->openai (messages)
             to-js-data $ map messages $ fn (m)
-              hint-fn $ {} $ :args
-                [] 'app.schema/ChatMessage
+              hint-fn $ {} $ :args ([] 'app.schema/ChatMessage)
               {}
                 :role $ if
                   = :assistant $ :role m
@@ -1484,12 +1330,7 @@
             :features $ #{} :js-ffi
         'model-storage-key $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn model-storage-key (model)
-            case-default model |gemini-key (:claude-3.7 |claude-key)
-              :openrouter/anthropic/claude-sonnet-4 |openrouter-key
-              :openrouter/anthropic/claude-sonnet-4.5 |openrouter-key
-              :openrouter/anthropic/claude-opus-4 |openrouter-key
-              :openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key
-              :openrouter/google/gemini-2.5-pro-preview |openrouter-key
+            case-default model |gemini-key (:claude-3.7 |claude-key) (:openrouter/anthropic/claude-sonnet-4 |openrouter-key) (:openrouter/anthropic/claude-sonnet-4.5 |openrouter-key) (:openrouter/anthropic/claude-opus-4 |openrouter-key) (:openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key) (:openrouter/google/gemini-2.5-pro-preview |openrouter-key)
               :openrouter/google/gemini-2.5-flash-preview-05-20 |openrouter-key
               :openrouter/openai/gpt-5 |openrouter-key
               :openrouter/deepseek/deepseek-chat-v3.1 |openrouter-key
@@ -1498,8 +1339,7 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
-          :tests $ [] $ %{} 'TestEntry
-            :name |maps-provider-keys
+          :tests $ [] $ %{} 'TestEntry (:name |maps-provider-keys)
             :code $ quote $ do
               assert= |gemini-key $ model-storage-key :gemini
               assert= |openrouter-key $ model-storage-key :openrouter/openai/gpt-5
@@ -1507,21 +1347,7 @@
               assert= |claude-key $ model-storage-key :claude-3.7
         'models-menu $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def models-menu
-            []
-              :: :item :gemini-3.5-flash-lite "|Gemini Flash Lite 3.5"
-              :: :item :gemini-3.6-flash "|Gemini Flash 3.6"
-              :: :item :gemini-3.7-flash "|Gemini Flash 3.7"
-              :: :item :gemini-3.8-flash "|Gemini Flash 3.8"
-              :: :item :gemini-flash "|Gemini Flash 3"
-              :: :item :gemini-3.5-flash "|Gemini Flash 3.5"
-              :: :item :gemini-pro "|Gemini Pro 3.1"
-              :: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1"
-              :: :item :flash-imagen "|Flash Imagen"
-              :: :item :imagen-4 "|Imagen 4"
-              :: :item :gemma "|Gemma 3 27b"
-              :: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5"
-              :: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4"
-              :: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview"
+            [] (:: :item :gemini-3.5-flash-lite "|Gemini Flash Lite 3.5") (:: :item :gemini-3.6-flash "|Gemini Flash 3.6") (:: :item :gemini-3.7-flash "|Gemini Flash 3.7") (:: :item :gemini-3.8-flash "|Gemini Flash 3.8") (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview")
               :: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview"
               :: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5"
               :: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1"
@@ -1532,69 +1358,59 @@
           :schema $ :: 'List
         'normalize-chat-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-state (raw)
-            hint-fn $ {}
-              :args $ [] 'T
-              :return 'app.schema/ChatState
-              :features $ #{} :js-ffi
-              :generics $ [] 'T
             if (struct? raw)
               let
                   state $ unsafe-coerce raw 'app.schema/ChatState
-                %{} app.schema/ChatState
-                  :answer $ stream-text $ :answer state
-                  :loading? $ :loading? state
-                  :done? $ :done? state
-                  :messages $ :messages state
-                  :model $ if
-                    tag? $ :model state
-                    :model state
-                    , :gemini
-                  :thinking $ stream-text $ :thinking state
+                app.schema/ChatState :answer
+                  stream-text $ :answer state
+                  , :loading? (:loading? state) :done? (:done? state) :messages (:messages state) :model
+                    if
+                      tag? $ :model state
+                      :model state
+                      , :gemini
+                    , :thinking $ stream-text $ :thinking state
               let
                   data $ unsafe-coerce raw $ :: 'Map 'Tag 'Dynamic
                   loading-value $ option:unwrap-or (get data :loading?) false
                   done-value $ option:unwrap-or (get data :done?) true
                   model-value $ option:unwrap-or (get data :model) :gemini
-                %{} app.schema/ChatState
-                  :answer $ stream-text $ option:unwrap-or (get data :answer) |
-                  :loading? $ case-default loading-value false (true true) (false false)
-                  :done? $ case-default done-value true (true true) (false false)
-                  :messages $ unsafe-coerce
-                    option:unwrap-or (get data :messages) ([])
-                    :: 'List 'app.schema/ChatMessage
-                  :model $ if (tag? model-value) model-value :gemini
-                  :thinking $ stream-text $ option:unwrap-or (get data :thinking) |
+                app.schema/ChatState :answer
+                  stream-text $ option:unwrap-or (get data :answer) |
+                  , :loading?
+                    case-default loading-value false (true true) (false false)
+                    , :done?
+                      case-default done-value true (true true) (false false)
+                      , :messages
+                        unsafe-coerce
+                          option:unwrap-or (get data :messages) ([])
+                          :: 'List 'app.schema/ChatMessage
+                        , :model
+                          if (tag? model-value) model-value :gemini
+                          , :thinking $ stream-text $ option:unwrap-or (get data :thinking) |
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :return 'app.schema/ChatState
+          :schema $ :: 'Fn $ {} (:return 'app.schema/ChatState)
             :args $ [] 'T
             :features $ #{} :js-ffi
             :generics $ [] 'T
-          :tests $ [] $ %{} 'TestEntry
-            :name |legacy-nil-fields
+          :tests $ [] $ %{} 'TestEntry (:name |legacy-nil-fields)
             :code $ quote $ let
-                legacy $ unsafe-coerce
-                  normalize-chat-state $ {} (:answer nil) (:loading? false) (:done? true)
-                    :messages $ []
-                    :model :gemini
-                    :thinking nil
-                  , 'app.schema/ChatState
-                missing-done $ unsafe-coerce
-                  normalize-chat-state $ {} (:answer |) (:loading? false)
-                    :messages $ []
-                    :model :gemini
-                    :thinking |
-                  , 'app.schema/ChatState
-                invalid-done $ unsafe-coerce
-                  normalize-chat-state $ {} (:answer |) (:loading? false) (:done? nil)
-                    :messages $ []
-                    :model :gemini
-                    :thinking |
-                  , 'app.schema/ChatState
+                legacy $ normalize-chat-state $ {} (:answer nil) (:loading? false) (:done? true)
+                  :messages $ []
+                  :model :gemini
+                  :thinking nil
+                missing-done $ normalize-chat-state $ {} (:answer |) (:loading? false)
+                  :messages $ []
+                  :model :gemini
+                  :thinking |
+                invalid-done $ normalize-chat-state $ {} (:answer |) (:loading? false) (:done? nil)
+                  :messages $ []
+                  :model :gemini
+                  :thinking |
               is $ = | $ :answer legacy
               is $ = | $ :thinking legacy
               is $ :done? missing-done
               is $ :done? invalid-done
+            :tags $ #{} :regression :unit
         'on-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-fill (cursor state on-submit)
             %{} respo.schema/RespoListener (:name :on-fill)
@@ -1604,41 +1420,24 @@
                   let
                       submit? $ option:unwrap-or (get info :submit?) true
                       text $ option:unwrap-or (get info :text) |
-                    do
-                      dispatch! (:: :states cursor) (assoc state :content text)
-                      if submit?
-                        on-submit text (:search? state) (:think? state) dispatch!
-                        , nil
+                    dispatch! (:: :states cursor) (assoc state :content text)
+                    if submit?
+                      on-submit text (:search? state) (:think? state) dispatch!
+                      , nil
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'Dynamic 'app.schema/MessageBoxState 'Dynamic
-        'pattern-spaced-code $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def pattern-spaced-code
-            noted "|temp fix of nested code block" $ &raw-code "|/\\n\\s+```/g"
-          :examples $ []
-          :schema $ :: 'Dynamic
         'pick-model $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn pick-model (variant)
-            case-default variant |gemini-3.5-flash
-              :gemini-3.5-flash-lite |gemini-3.1-flash-lite
-              :gemini-3.6-flash |gemini-3.5-flash
-              :gemini-3.7-flash |gemini-3.7-flash
-              :gemini-3.8-flash |gemini-3.8-flash
-              :gemini-3.5-flash-lite |gemini-3.1-flash-lite
-              :gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite
-              :gemini-pro |gemini-3.1-pro-preview
-              :gemma |gemma-3-27b-it
+            case-default variant |gemini-3.5-flash (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.6-flash |gemini-3.5-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
         'required-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn required-key! (storage-key prompt-text)
             let
-                stored $ js/localStorage.getItem storage-key
-                key $ if
-                  js-present-dynamic? stored
-                  unsafe-coerce stored 'String
-                  , |
+                stored $ browser/storage-get-or storage-key |
+                key stored
               if (blank? key)
                 raise $ new js/Error prompt-text
                 , key
@@ -1660,8 +1459,7 @@
                   assoc store :sessions $ append sessions updated-session
                 , store
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :return 'app.schema/Store
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
             :args $ [] 'app.schema/Store 'app.schema/ChatState
         'stream-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn stream-text (value)
@@ -1673,46 +1471,41 @@
             if (string? value) value |
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
-            :args $ [] 'T
+            :args $ [] 'Dynamic
             :features $ #{} :js-ffi
-            :generics $ [] 'T
           :tests $ []
             %{} 'TestEntry (:name |keeps-string)
               :code $ quote $ is
                 = |hello $ stream-text |hello
               :tags $ #{} :unit
-            %{} 'TestEntry
-              :name |ignores-non-string
+            %{} 'TestEntry (:name |ignores-non-string)
               :code $ quote $ is
                 = | $ stream-text nil
               :tags $ #{} :regression :unit
         'style-a-toggler $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-a-toggler
             {}
-              |& $ {} (:cursor :pointer)
-                :background-color :white
-                :color :black
+              |& $ {} (:cursor :pointer) (:background-color :white) (:color :black)
               "|.focus-within &" $ {} $ :color :black
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-abort-close $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-abort-close
             {} $ |& $ {} (:vertical-align :middle) (:font-size 10)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-app-global $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-app-global
             {}
                 str "|& ." style-code-block
                 {} $ :max-width |90vw
-              |& $ {} (:color |#999)
-                :transition-duration |300ms
+              |& $ {} (:color |#999) (:transition-duration |300ms)
                 :background-color $ hsl 0 0 98
                 :touch-action :none
               |&:hover $ {} (:color |#777)
                 :background-color $ hsl 0 0 100
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-archive-close $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-archive-close
             {}
@@ -1721,7 +1514,7 @@
                 :transition-duration |200ms
               |&:hover $ {} $ :color (hsl 0 0 20)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-archive-header $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-archive-header
             {} $ |& $ {} (:padding "|12px 16px")
@@ -1732,7 +1525,7 @@
               :align-items :center
               :justify-content :space-between
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-archive-row $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-archive-row
             {} $ |& $ {} (:padding |12px)
@@ -1741,22 +1534,22 @@
               :justify-content :space-between
               :align-items :center
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-checkbox $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-checkbox
             {} $ |& $ {} (:cursor :pointer) (:user-select :none) (:font-size 12) (:line-height |28px) (:vertical-align :middle)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-clear $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-clear
             {} $ |& $ {} (:opacity 0.4) (:padding "|4px 8px") (:display :inline-block) (:height |24px)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-code-content $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-code-content
             {} $ |& $ {} (:line-height |1.5) (:font-size 13)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-delete-button $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-delete-button
             {}
@@ -1771,25 +1564,23 @@
               |&:active $ {} (:opacity 1)
                 :color $ hsl 0 90 40
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-fill
             {}
-              |& $ {} (:cursor :pointer) (:user-select :none) (:display :inline-flex) (:align-items :center) (:justify-content :center)
-                :transition-duration |200ms
+              |& $ {} (:cursor :pointer) (:user-select :none) (:display :inline-flex) (:align-items :center) (:justify-content :center) (:transition-duration |200ms)
                 :color $ hsl 0 0 80
                 :margin "|0 4px 0 8px"
               |&:hover $ {}
                 :color $ hsl 0 0 40
                 :transform "|scale(1.06)"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-focus-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-focus-box
-            {} $ |& $ {} (:width |100%) (:border-radius 12) (:min-height 40) (:max-height 40) (:padding "|9px 12px") (:cursor :text) (:overflow :hidden) (:white-space :pre) (:text-overflow :ellipsis)
-              :background-color :transparent
+            {} $ |& $ {} (:width |100%) (:border-radius 12) (:min-height 40) (:max-height 40) (:padding "|9px 12px") (:cursor :text) (:overflow :hidden) (:white-space :pre) (:text-overflow :ellipsis) (:background-color :transparent)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-focus-link $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-focus-link
             {}
@@ -1799,12 +1590,12 @@
                 :padding "|4px 0"
               |&:hover $ {} $ :text-decoration :underline
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-gap12 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-gap12
             {} $ |& $ {} (:gap 12)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-history-button $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-history-button
             {} $ |& $ {} (:font-size |20px)
@@ -1816,7 +1607,7 @@
               :justify-content :center
               |&:hover $ {} $ :color (hsl 200 80 50)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-history-count $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-history-count
             {} $ |& $ {}
@@ -1824,44 +1615,40 @@
               :font-size |12px
               :display :inline-block
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-image $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-image
             {} $ |& $ {} (:max-width |100%) (:align-self :flex-start) (:border-radius |6px)
               :border $ str "|1px solid " $ hsl 0 0 90
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-md-content $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-md-content
             {} $ "|& .md-p" $ {} (:margin "|16px 0") (:line-height |1.6)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-actions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-actions
             {} $ |& $ {} (:margin-top 6) (:justify-content :flex-end) (:width |100%)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-area $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-area
             {} $ |& $ {} (:flex 2) (:overflow :scroll)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-assistant $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-assistant
             {} $ |& $ {} (:align-self :flex-start)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-box
             {}
-              |& $ {} (:width |100%) (:max-width 1200) (:right |50%) (:padding |8px) (:margin :auto)
-                :transition-duration |300ms
-                ; :transform "|translate(50%,0)"
-                :transition-property |height
-              |&:focus-within $ {} (:opacity 1)
-                ; :transform "|translate(50%,0)"
+              |& $ {} (:width |100%) (:max-width 1200) (:right |50%) (:padding |8px) (:margin :auto) (:transition-duration |300ms) (; :transform "|translate(50%,0)") (:transition-property |height)
+              |&:focus-within $ {} (:opacity 1) (; :transform "|translate(50%,0)")
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-box-panel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-box-panel
             {}
@@ -1872,22 +1659,17 @@
                 :background-color $ hsl 0 0 100 0.9
                 :box-shadow $ str "|0 0px 8px " $ hsl 0 0 0 0.3
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-item $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-item
             {} $ |& $ {} (:line-height |1.6)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-list $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-list
-            {} $ |& $ {} (:flex 2)
-              :padding "|40px 16px 20vh 16px"
-              :width |100%
-              :max-width 1200
-              :margin :auto
-              :position :relative
+            {} $ |& $ {} (:flex 2) (:padding "|40px 16px 20vh 16px") (:width |100%) (:max-width 1200) (:margin :auto) (:position :relative)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-role $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-role
             {} $ |& $ {} (:font-size 12)
@@ -1895,12 +1677,12 @@
               :margin-bottom 6
               :padding-right |16px
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-text
             {} $ |& $ {} (:white-space :pre-wrap) (:line-height |1.6) (:margin 0) (:padding-right |16px)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-message-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-user
             {}
@@ -1917,7 +1699,7 @@
                 :border-radius |2px
               |&::-webkit-scrollbar-track $ {} $ :background-color :transparent
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-more $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-more
             {}
@@ -1931,12 +1713,12 @@
               |&:hover $ {} $ :box-shadow
                 str "|1px 1px 4px " $ hsl 0 0 0 0.2
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-reply-actions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-reply-actions
             {} $ |& $ {} (:margin-top 6) (:justify-content :flex-start) (:width |100%)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-reply-button $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-reply-button
             {}
@@ -1950,7 +1732,7 @@
               |&:hover $ {} $ :box-shadow
                 str "|1px 1px 4px " $ hsl 0 0 0 0.2
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-session-item $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-session-item
             {} $ |& $ {} (:padding |12px)
@@ -1961,34 +1743,31 @@
               :gap |12px
               |:hover $ {} $ :background-color (hsl 0 0 96)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-sessions-list $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-sessions-list
             {} $ |& $ {} (:flex |1) (:overflow-y :auto) (:min-width |300px)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-submit
             {} $ |& $ {}
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-textbox $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-textbox
             {}
-              |& $ {} (:border-radius 12) (:height "|max(100px,15vh)") (:width |100%)
-                :transition-duration |320ms
-                :border :none
-                :background-color :transparent
+              |& $ {} (:border-radius 12) (:height "|max(100px,15vh)") (:width |100%) (:transition-duration |320ms) (:border :none) (:background-color :transparent)
               |&.focus-within $ {} (:height "|max(240px,32vh)") (:border :none) (:box-shadow :none)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-textbox-compact $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-textbox-compact
             {}
               |& $ {} (:height 40) (:min-height 40) (:max-height 40) (:overflow :hidden)
               |&.focus-within $ {} (:height "|max(240px,32vh)") (:min-height |unset) (:max-height |unset)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'style-thinking $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-thinking
             {}
@@ -2002,21 +1781,17 @@
                 :border $ str "|1px solid " $ hsl 0 0 90
               "|& .md-p" $ {} $ :margin "|4px 0"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Map 'Tag 'Dynamic
         'submit-message! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn submit-message! (cursor state prompt-text search? think? model d!)
-            hint-fn $ {} (:async true)
-              :args $ [] 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Tag 'Dynamic
             let
-                state1 $ unsafe-coerce
-                  assoc state :messages $ append-user-message (:messages state) prompt-text
-                  , 'app.schema/ChatState
+                state1 $ assoc state :messages $ append-user-message (:messages state) prompt-text
                 *text $ atom |
                 *thinking-text $ atom |
                 model $ :model state
               d! cursor state1
               try
-                do $ case-default model
+                case-default model
                   js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :gemini-3.1-flash-lite-preview $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :gemini-pro $ js-await $ call-genai-msg! model cursor state1 prompt-text search? true d! *text *thinking-text
@@ -2038,35 +1813,32 @@
                   :openrouter/deepseek/deepseek-chat-v3.1 $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek/deepseek-chat-v3.1 true d! *text
                   :deepseek-v4-pro $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-pro true d! *text
                   :deepseek-v4-flash $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-flash true d! *text
-                fn (e)
-                  do
-                    js/console.error :msg-buffer-request-failed e
-                    let
-                        err-text $ str |Failed-to-load: e
-                      d! cursor $ -> state1 (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
-                        assoc :messages $ upsert-assistant-message (:messages state1) err-text |
+                fn (e) (js/console.error :msg-buffer-request-failed e)
+                  let
+                      err-text $ str |Failed-to-load: e
+                    d! cursor $ -> state1 (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
+                      assoc :messages $ upsert-assistant-message (:messages state1) err-text |
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'List 'app.schema/ChatState 'String 'Bool 'Bool 'Tag 'Dynamic
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+            :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Bool 'Bool 'Tag 'Dynamic
             :features $ #{} :js-ffi
         'toggle-focus-within! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn toggle-focus-within! (respo-event active?)
             let
                 raw-event $ option:unwrap-or (get respo-event :event) js/undefined
-              when
-                js-present-dynamic? raw-event
+              when (js-present-dynamic? raw-event)
                 let
                     event $ unsafe-coerce raw-event FocusEventHost
                     target0 $ .-target event
-                  when (js-present? target0)
+                  when (js-present-dynamic? target0)
                     let
                         target $ unsafe-coerce target0 FocusTargetHost
                         parent0 $ .-parentElement target
-                      when (js-present? parent0)
+                      when (js-present-dynamic? parent0)
                         let
                             parent $ unsafe-coerce parent0 FocusTargetHost
                             box0 $ .-parentElement parent
-                          when (js-present? box0)
+                          when (js-present-dynamic? box0)
                             let
                                 box $ unsafe-coerce box0 FocusTargetHost
                                 class-list $ .-classList target
@@ -2091,21 +1863,23 @@
           :code $ quote $ defn upsert-assistant-message (messages content thinking)
             let
                 size $ count messages
-              option:fold (last messages)
-                fn () $ conj messages $ %{} ChatMessage (:role :assistant) (:content content) (:thinking thinking)
+              option:fold
+                assert-type (last messages) (:: 'Option 'app.schema/ChatMessage)
+                fn ()
+                  hint-fn $ {} $ :return (:: 'List 'app.schema/ChatMessage)
+                  conj messages $ ChatMessage :role :assistant :content content :thinking thinking
                 fn (last-msg)
-                  hint-fn $ {} $ :args
-                    [] 'app.schema/ChatMessage
+                  hint-fn $ {}
+                    :args $ [] 'app.schema/ChatMessage
+                    :return $ :: 'List 'app.schema/ChatMessage
                   if
                     = :assistant $ :role last-msg
                     assoc messages (dec size)
                       -> last-msg (assoc :content content) (assoc :thinking thinking)
-                    conj messages $ %{} ChatMessage (:role :assistant) (:content content) (:thinking thinking)
+                    conj messages $ ChatMessage :role :assistant :content content :thinking thinking
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ []
-              :: 'List 'app.schema/ChatMessage
-              , 'String 'String
+            :args $ [] (:: 'List 'app.schema/ChatMessage) 'String 'String
             :return $ :: 'List 'app.schema/ChatMessage
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
@@ -2126,6 +1900,8 @@
             respo-ui.util :refer $ tab-echo!
             app.schema :refer $ Store ChatState ChatSession ChatMessage MessageBoxState store
             calcit.test :refer $ [] is
+            js-ffi.browser :as browser
+            js-ffi.shared :as ffi
     'app.config $ %{} 'FileEntry
       :defs $ {}
         'Site $ %{} 'CodeEntry (:doc |)
@@ -2133,21 +1909,29 @@
           :examples $ []
           :schema $ :: 'StructDef
         'chrome-extension? $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def chrome-extension?
-            let
-                runtime $ .?-runtime js/window.chrome
-              and (js-present? runtime)
-                js-present? $ .?-id runtime
+          :code $ quote $ def chrome-extension? (detect-chrome-extension?)
           :examples $ []
           :schema $ :: 'Bool
+        'detect-chrome-extension? $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn detect-chrome-extension? ()
+            let
+                chrome $ unsafe-coerce js/window.chrome 'Dynamic
+                runtime $ .?-runtime chrome
+              and (js-present? runtime)
+                let
+                    typed-runtime $ unsafe-coerce runtime 'Dynamic
+                  js-present? $ .?-id typed-runtime
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Bool)
+            :args $ []
+            :features $ #{} :js-ffi
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
             = |dev $ option:unwrap-or (get-env |mode) |release
           :examples $ []
           :schema $ :: 'Bool
         'site $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ %{} Site (:storage-key |msg-buffer)
-            :archive-key |msg-buffer-archive
+          :code $ quote $ Site :storage-key |msg-buffer :archive-key |msg-buffer-archive
           :examples $ []
           :schema $ :: 'app.config/Site
       :ns $ %{} 'NsEntry (:doc |)
@@ -2159,6 +1943,22 @@
             -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
           :schema $ :: 'Ref
+        'ChromeDisconnectEventHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait ChromeDisconnectEventHost
+            .add-listener! $ :: 'Fn $ {} (:return 'Unit)
+              :args $ [] 'app.main/ChromeDisconnectEventHost $ :: 'Fn
+                {} (:return 'Unit)
+                  :args $ [] 'Dynamic
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :add-listener! |addListener
+          :schema $ :: 'Trait
+        'ChromePortHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait ChromePortHost
+            :onDisconnect $ :: 'JsNullish 'app.main/ChromeDisconnectEventHost
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
         'DocumentHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait DocumentHost
             :visibilityState $ :: 'JsNullish 'String
@@ -2177,25 +1977,28 @@
         'connect-to-worker! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn connect-to-worker! ()
             when config/chrome-extension? $ let
-                port $ js/chrome.runtime.connect $ js-object (:name |mySidepanel)
-              when (js-present? port)
-                let
-                    on-disconnect $ .?-onDisconnect port
-                  when (js-present? on-disconnect)
-                    .!addListener on-disconnect $ fn (event)
-                      do
-                        println |Worker-disconnected-retrying
-                        js/setTimeout connect-to-worker! 500
+                port $ unsafe-coerce
+                  js/chrome.runtime.connect $ js-object $ :name |mySidepanel
+                  , 'app.main/ChromePortHost
+              let
+                  on-disconnect $ .-onDisconnect port
+                when (js-present? on-disconnect)
+                  let
+                      listener $ assert-type on-disconnect 'app.main/ChromeDisconnectEventHost
+                    listener .add-listener! $ fn (event) (println |Worker-disconnected-retrying) (js/setTimeout connect-to-worker! 500) &unit
+            , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
-            when
-              and config/dev? $ not= op :states
-              js/console.log |Dispatch: op
+            when config/dev? $ js/console.log |Dispatch: op
             reset! *reel $ reel-updater updater @*reel op
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Enum
+            :features $ #{} :js-ffi
         'extension-action $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn extension-action (message)
             js-nullish->option $ .-action message
@@ -2203,7 +2006,7 @@
           :schema $ :: 'Fn $ {}
             :args $ [] 'app.main/ExtensionMessageHost
             :features $ #{} :js-ffi
-            :return $ :: 'Option 'String
+            :return $ :: 'calcit.core/Option 'String
         'hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn hydrate-storage-later! ()
             js/setTimeout
@@ -2211,15 +2014,16 @@
                   raw $ js/localStorage.getItem $ :storage-key config/site
                 when (js-present? raw)
                   let
-                      t-start $ unsafe-coerce (js/Date.now) 'Number
-                      serialized $ unsafe-coerce raw 'String
+                      t-start $ ffi/now-ms
+                      serialized $ assert-type raw 'String
                     dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
-                    println |Hydrated-in $ -
-                      unsafe-coerce (js/Date.now) 'Number
-                      , t-start
+                    println |Hydrated-in $ - (ffi/now-ms) t-start
               , 0
+            , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'listen-extension! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn listen-extension! ()
             js/chrome.runtime.onMessage.addListener $ fn (raw-message sender respond!)
@@ -2303,15 +2107,16 @@
             :args $ []
             :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def mount-target
-            js/document.querySelector |.app
+          :code $ quote $ def mount-target (js/document.querySelector |.app)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'JsNullish 'Dynamic
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
-            println "|Saved at" $ .!toISOString $ new js/Date
+            println "|Saved at" $ :iso $ ffi/date-now-snapshot
             js/localStorage.setItem (:storage-key config/site)
-              format-cirru-edn $ option:unwrap-or (get @*reel :store) schema/store
+              format-cirru-edn $ option:unwrap-or
+                assert-type (get @*reel :store) (:: 'Option 'app.schema/Store)
+                , schema/store
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ []
@@ -2320,10 +2125,7 @@
           :code $ quote $ defn reload! ()
             if
               = false $ unsafe-coerce (js/Boolean build-errors) 'Bool
-              do (remove-watch *reel :changes)
-                remove-watch *archived-sessions :changes
-                remove-watch *viewing-archive-session :changes
-                clear-cache!
+              do (remove-watch *reel :changes) (remove-watch *archived-sessions :changes) (remove-watch *viewing-archive-session :changes) (clear-cache!)
                 add-watch *reel :changes $ fn (reel prev) (render-app!)
                 add-watch *archived-sessions :changes $ fn (s prev) (render-app!)
                 add-watch *viewing-archive-session :changes $ fn (s prev) (render-app!)
@@ -2331,7 +2133,9 @@
                 hud! |ok~ |Ok
               hud! |error $ unsafe-coerce build-errors 'Dynamic
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             let
@@ -2360,9 +2164,7 @@
               let
                   deepseek-key $ js/localStorage.getItem |deepseek-key
                 when (js-present? deepseek-key)
-                  js/chrome.runtime.sendMessage $ js-object
-                    :action |sync-deepseek-key
-                    :key deepseek-key
+                  js/chrome.runtime.sendMessage $ js-object (:action |sync-deepseek-key) (:key deepseek-key)
                   js/chrome.storage.local.set $ js-object $ :deepseekKey deepseek-key
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
@@ -2382,6 +2184,7 @@
             |./calcit.build-errors :default build-errors
             |bottom-tip :default hud!
             respo.controller.client :refer $ send-to-component!
+            js-ffi.shared :as ffi
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'ChatMessage $ %{} 'CodeEntry (:doc |)
@@ -2391,7 +2194,7 @@
         'ChatSession $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct ChatSession (:id 'String) (:created-at 'Number)
             :messages $ :: 'List 'app.schema/ChatMessage
-            :model 'Dynamic
+            :model 'Tag
             :preview 'String
             :is-history? 'Bool
           :examples $ []
@@ -2422,45 +2225,30 @@
               :return 'app.schema/ChatSession
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw)
-              unsafe-coerce raw 'app.schema/ChatSession
-              decode-map-as raw 'app.schema/ChatSession
+            if (struct? raw) (assert-type raw 'app.schema/ChatSession) (decode-map-as raw 'app.schema/ChatSession)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :return 'app.schema/ChatSession
+          :schema $ :: 'Fn $ {} (:return 'app.schema/ChatSession)
             :args $ [] 'T
             :features $ #{} :js-ffi
             :generics $ [] 'T
-          :tests $ [] $ %{} 'TestEntry
-            :name |accepts-typed-and-map
+          :tests $ [] $ %{} 'TestEntry (:name |accepts-typed-and-map)
             :code $ quote $ let
-                typed $ %{} ChatSession (:id |typed) (:created-at 1)
+                typed $ ChatSession :id |typed :created-at 1 :messages ([]) :model :gemini :preview |Typed :is-history? true
+                typed-result $ normalize-chat-session typed
+                decoded $ normalize-chat-session $ {} (:id |decoded) (:created-at 2)
                   :messages $ []
-                  :model :gemini
-                  :preview |Typed
-                  :is-history? true
-                typed-result $ assert-type
-                  normalize-chat-session typed
-                  , 'app.schema/ChatSession
-                decoded $ assert-type
-                  normalize-chat-session $ {} (:id |decoded) (:created-at 2)
-                    :messages $ []
-                    :model :anthropic
-                    :preview |Decoded
-                    :is-history? false
-                  , 'app.schema/ChatSession
+                  :model :anthropic
+                  :preview |Decoded
+                  :is-history? false
               is $ = |typed $ :id typed-result
               is $ = |decoded $ :id decoded
               is $ = :anthropic $ :model decoded
             :tags $ #{} :regression :unit
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
-            %{} Store
-              :states $ {} $ :cursor ([])
-              :sessions $ []
-              :current-session-id nil
-              :model nil
-              :archived-count 0
+            Store :states
+              {} $ :cursor $ []
+              , :sessions ([]) :current-session-id nil :model nil :archived-count 0
           :examples $ []
           :schema $ :: 'app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
@@ -2475,27 +2263,28 @@
               match op
                 (:states cursor s)
                   assoc store :states $ assoc-in (:states store)
-                    concat cursor $ [] :data
+                    concat
+                      assert-type cursor $ :: 'List 'Tag
+                      [] :data
                     , s
                 (:states-merge cursor s changes)
                   let
-                      path $ concat cursor $ [] :data
+                      path $ concat
+                        assert-type cursor $ :: 'List 'Tag
+                        [] :data
                       state $ option:unwrap-or
                         get-in (:states store) path
                         , s
                       updated-states $ assoc-in (:states store) path $ if
                         or (map? state) (struct? state)
-                        noted |merge-base-latest-state $ merge state changes
-                        do
-                          js/console.warn |unknown-state-to-merge state
-                          , state
+                        noted |merge-base-latest-state $ merge-dynamic
+                          assert-type state $ :: 'Map 'Tag 'Dynamic
+                          assert-type changes $ :: 'Map 'Tag 'Dynamic
+                        do (eprintln |unknown-state-to-merge state) state
                     assoc store :states updated-states
                 (:hydrate-storage data)
-                  if (struct? data)
-                    unsafe-coerce data 'app.schema/Store
-                    decode-map-as
-                      dissoc data :current-chapter-id
-                      , 'app.schema/Store
+                  if (struct? data) (assert-type data 'app.schema/Store)
+                    decode-map-as (dissoc data :current-chapter-id) 'app.schema/Store
                 (:change-model)
                   if
                     = (:model store) :anthropic
@@ -2503,28 +2292,27 @@
                     assoc store :model :anthropic
                 (:save-session state)
                   let
-                      store1 $ save-current-session store state
+                      store1 $ save-current-session store $ assert-type state 'app.schema/ChatState
                     assoc store1 :current-session-id nil
-                (:session session-id id)
-                  assoc store :current-session-id id
+                (:session session-id id) (assoc store :current-session-id id)
                 (:load-session cursor state session)
                   let
-                      typed-session $ assert-type
-                        app.schema/normalize-chat-session session
-                        , 'app.schema/ChatSession
+                      typed-session $ assert-type (app.schema/normalize-chat-session session) 'app.schema/ChatSession
                       store1 $ assoc store :states $ assoc-in (:states store)
-                        concat cursor $ [] :data
+                        concat
+                          assert-type cursor $ :: 'List 'Tag
+                          [] :data
                         -> state
                           assoc :messages $ :messages typed-session
                           assoc :done? true
                     assoc store1 :current-session-id $ :id typed-session
                 (:remove-session id)
-                  assoc store :sessions $ filter
-                    or (:sessions store) ([])
+                  assoc store :sessions $ filter (:sessions store)
                     fn (s)
-                      hint-fn $ {} $ :args
-                        [] 'app.schema/ChatSession
-                      not $ = (:id s) id
+                      hint-fn $ {}
+                        :args $ [] 'app.schema/ChatSession
+                        :return 'Bool
+                      not $ = (:id s) (assert-type id 'String)
                 (:archive-sessions new-count)
                   -> store
                     assoc :sessions $ []
@@ -2538,8 +2326,7 @@
                     assoc :current-session-id nil
                 _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :return 'app.schema/Store
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
             :args $ [] 'app.schema/Store 'Enum 'String 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater

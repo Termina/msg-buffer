@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@calcit/procs": "0.14.16",
+    "@calcit/procs": "0.15.3",
     "@google/genai": "^2.20.0",
     "@tiye/main-fonts": "0.0.1",
     "axios": "^1.15.0",
@@ -14,8 +14,8 @@
     "vite": "8.2.2"
   },
   "scripts": {
-    "build": "rm -rfv dist && calcit calcit.cirru --compat-types js && yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
+    "build": "rm -rfv dist && calcit calcit.cirru js && yarn vite build --base ./ && rm -rfv extension/dist && cp -vr dist extension/"
   },
-  "version": "0.0.6",
+  "version": "0.0.7",
   "packageManager": "yarn@4.12.0"
 }
