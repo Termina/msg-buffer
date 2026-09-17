@@ -10,12 +10,12 @@
       :unresolved 1
       :unsafeCoerce 0
     |app.comp.container/*archived-sessions $ {} (:codeDynamic 0)
-      :codeNil 0
+      :codeNil 1
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
+      :schemaDynamic 0
       :typeNone 0
-      :typeNotFull 1
+      :typeNotFull 0
       :unresolved 1
       :unsafeCoerce 0
     |app.comp.container/*gen-ai-new $ {} (:codeDynamic 0)
@@ -46,14 +46,23 @@
       :unresolved 1
       :unsafeCoerce 0
     |app.comp.container/*viewing-archive-session $ {} (:codeDynamic 0)
+      :codeNil 1
+      :declaredOptional 0
+      :deprecatedCalls 0
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 1
+      :unsafeCoerce 0
+    |app.comp.container/abort-dynamic! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
+      :schemaDynamic 0
       :typeNone 0
       :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
+      :unresolved 0
+      :unsafeCoerce 1
     |app.comp.container/call-anthropic-msg! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -62,7 +71,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 5
+      :unsafeCoerce 4
     |app.comp.container/call-flash-imagen-msg! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -71,7 +80,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 16
+      :unsafeCoerce 15
     |app.comp.container/call-genai-msg! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -80,7 +89,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 7
+      :unsafeCoerce 5
     |app.comp.container/call-imagen-4-msg! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -89,7 +98,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 10
+      :unsafeCoerce 9
     |app.comp.container/call-openrouter! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -98,43 +107,34 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 9
+      :unsafeCoerce 8
     |app.comp.container/clear-image-cache! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 0
       :unsafeCoerce 1
     |app.comp.container/comp-abort $ {} (:codeDynamic 0)
       :codeNil 1
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 2
-      :unsafeCoerce 1
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 1
+      :unsafeCoerce 0
     |app.comp.container/comp-container $ {} (:codeDynamic 0)
-      :codeNil 9
+      :codeNil 12
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 0
       :typeNone 0
       :typeNotFull 1
-      :unresolved 9
-      :unsafeCoerce 7
-    |app.comp.container/comp-fill $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
+      :unresolved 12
+      :unsafeCoerce 5
     |app.comp.container/comp-message-box $ {} (:codeDynamic 0)
       :codeNil 3
       :declaredOptional 0
@@ -152,15 +152,6 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 1
-      :unsafeCoerce 2
-    |app.comp.container/create-session $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
       :unsafeCoerce 1
     |app.comp.container/decode-genai-chunk $ {} (:codeDynamic 0)
       :codeNil 0
@@ -184,29 +175,29 @@
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 0
       :unsafeCoerce 2
-    |app.comp.container/get-deepinfra-key! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
     |app.comp.container/js-present-dynamic? $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
+      :schemaDynamic 0
       :typeNone 0
       :typeNotFull 1
-      :unresolved 1
+      :unresolved 0
       :unsafeCoerce 1
+    |app.comp.container/make-genai-tools $ {} (:codeDynamic 0)
+      :codeNil 0
+      :declaredOptional 0
+      :deprecatedCalls 0
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 1
+      :unresolved 0
+      :unsafeCoerce 0
     |app.comp.container/messages->anthropic $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -261,30 +252,21 @@
       :typeNotFull 1
       :unresolved 4
       :unsafeCoerce 0
-    |app.comp.container/pattern-spaced-code $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
-    |app.comp.container/required-key! $ {} (:codeDynamic 0)
+    |app.comp.container/stream-text $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 0
       :typeNone 0
-      :typeNotFull 0
+      :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 1
+      :unsafeCoerce 0
     |app.comp.container/style-a-toggler $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -293,7 +275,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -302,7 +284,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -311,7 +293,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -320,7 +302,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -329,7 +311,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -338,7 +320,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -347,7 +329,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -356,7 +338,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -365,7 +347,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -374,7 +356,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -383,7 +365,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -392,7 +374,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -401,7 +383,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -410,7 +392,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -419,7 +401,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -428,7 +410,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -437,7 +419,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -446,7 +428,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -455,7 +437,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -464,7 +446,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -473,7 +455,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -482,7 +464,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -491,7 +473,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -500,7 +482,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -509,7 +491,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -518,7 +500,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -527,7 +509,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -536,7 +518,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -545,7 +527,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -554,7 +536,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -563,7 +545,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -572,7 +554,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -581,7 +563,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -590,7 +572,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -599,7 +581,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -608,7 +590,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -620,7 +602,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 1
+      :unsafeCoerce 0
     |app.comp.container/toggle-focus-within! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -630,6 +612,15 @@
       :typeNotFull 1
       :unresolved 0
       :unsafeCoerce 4
+    |app.config/detect-chrome-extension? $ {} (:codeDynamic 0)
+      :codeNil 0
+      :declaredOptional 0
+      :deprecatedCalls 0
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 0
+      :unsafeCoerce 2
     |app.main/*reel $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -643,29 +634,11 @@
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
-    |app.main/dispatch! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
-    |app.main/hydrate-storage-later! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 3
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 0
+      :unsafeCoerce 1
     |app.main/listen-extension! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -688,10 +661,10 @@
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
+      :schemaDynamic 0
+      :typeNone 0
       :typeNotFull 1
-      :unresolved 1
+      :unresolved 0
       :unsafeCoerce 0
     |app.main/persist-storage! $ {} (:codeDynamic 0)
       :codeNil 0
@@ -706,19 +679,19 @@
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 0
       :unsafeCoerce 2
     |app.main/render-app! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
+      :schemaDynamic 0
+      :typeNone 0
+      :typeNotFull 0
+      :unresolved 0
       :unsafeCoerce 2
     |app.main/sync-gemini-key! $ {} (:codeDynamic 0)
       :codeNil 0
@@ -729,15 +702,6 @@
       :typeNotFull 1
       :unresolved 0
       :unsafeCoerce 0
-    |app.schema/normalize-chat-session $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 1
     |app.schema/store $ {} (:codeDynamic 0)
       :codeNil 2
       :declaredOptional 0
@@ -755,16 +719,16 @@
       :typeNone 0
       :typeNotFull 0
       :unresolved 3
-      :unsafeCoerce 1
+      :unsafeCoerce 0
   :metrics $ {} (:codeDynamic 0)
-    :codeNil 20
+    :codeNil 25
     :declaredOptional 0
     :deprecatedCalls 0
-    :schemaDynamic 61
-    :typeNone 49
-    :typeNotFull 75
-    :unresolved 81
-    :unsafeCoerce 99
+    :schemaDynamic 46
+    :typeNone 0
+    :typeNotFull 65
+    :unresolved 71
+    :unsafeCoerce 85
   :scope $ {} (:includeDependencies false)
     :namespace nil
     :namespacePrefix nil
