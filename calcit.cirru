@@ -499,8 +499,7 @@
             let
                 app-store $ option:fold (get reel :store)
                   fn () store
-                  fn (raw-store)
-                    if (struct? raw-store) (unsafe-coerce raw-store 'app.schema/Store) (decode-map-as raw-store 'app.schema/Store)
+                  fn (raw-store) (app.schema/normalize-store raw-store)
                 sessions $ :sessions app-store
                 archived-count $ :archived-count app-store
                 current-session-id $ :current-session-id app-store
@@ -1381,9 +1380,12 @@
                     , :done?
                       case-default done-value true (true true) (false false)
                       , :messages
-                        unsafe-coerce
-                          option:unwrap-or (get data :messages) ([])
-                          :: 'List 'app.schema/ChatMessage
+                        let
+                            raw-message-value $ option:unwrap-or (get data :messages) ([])
+                            raw-messages $ if (list? raw-message-value)
+                              assert-type raw-message-value $ :: 'List 'Dynamic
+                              []
+                          map raw-messages $ fn (message) (app.schema/normalize-chat-message message)
                         , :model
                           if (tag? model-value) model-value :gemini
                           , :thinking $ stream-text $ option:unwrap-or (get data :thinking) |
@@ -1429,10 +1431,17 @@
             :args $ [] 'Dynamic 'app.schema/MessageBoxState 'Dynamic
         'pick-model $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn pick-model (variant)
-            case-default variant |gemini-3.5-flash (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.6-flash |gemini-3.5-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-3.5-flash-lite |gemini-3.1-flash-lite) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
+            case-default variant |gemini-3.5-flash-lite (:gemini-3.5-flash-lite |gemini-3.5-flash-lite) (:gemini-3.6-flash |gemini-3.6-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-flash |gemini-3-flash-preview) (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
+          :tests $ [] $ %{} 'TestEntry (:name |routes-current-gemini-models)
+            :code $ quote $ do
+              assert= |gemini-3.5-flash-lite $ pick-model :gemini
+              assert= |gemini-3.5-flash-lite $ pick-model :gemini-3.5-flash-lite
+              assert= |gemini-3.6-flash $ pick-model :gemini-3.6-flash
+              assert= |gemini-3-flash-preview $ pick-model :gemini-flash
+              assert= |gemini-3.1-pro-preview $ pick-model :gemini-pro
         'required-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn required-key! (storage-key prompt-text)
             let
@@ -2218,6 +2227,26 @@
             :archived-count 'Number
           :examples $ []
           :schema $ :: 'StructDef
+        'normalize-chat-message $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn normalize-chat-message (raw)
+            hint-fn $ {}
+              :args $ [] 'T
+              :return 'app.schema/ChatMessage
+              :features $ #{} :js-ffi
+              :generics $ [] 'T
+            if (struct? raw) (assert-type raw 'app.schema/ChatMessage)
+              if (map? raw)
+                let
+                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    thinking-value $ option:unwrap-or (get data :thinking) |
+                    normalized-thinking $ if (string? thinking-value) (assert-type thinking-value 'String) |
+                  decode-map-as (assoc data :thinking normalized-thinking) 'app.schema/ChatMessage
+                raise "|Expected chat message map"
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/ChatMessage)
+            :args $ [] 'T
+            :features $ #{} :js-ffi
+            :generics $ [] 'T
         'normalize-chat-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-session (raw)
             hint-fn $ {}
@@ -2225,7 +2254,20 @@
               :return 'app.schema/ChatSession
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw) (assert-type raw 'app.schema/ChatSession) (decode-map-as raw 'app.schema/ChatSession)
+            if (struct? raw) (assert-type raw 'app.schema/ChatSession)
+              if (map? raw)
+                let
+                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    raw-message-value $ option:unwrap-or (get data :messages) ([])
+                    raw-messages $ if (list? raw-message-value)
+                      assert-type raw-message-value $ :: 'List 'Dynamic
+                      []
+                    messages $ map raw-messages $ fn (message) (normalize-chat-message message)
+                    base $ decode-map-as
+                      assoc data :messages $ []
+                      , 'app.schema/ChatSession
+                  ChatSession :id (:id base) :created-at (:created-at base) :messages messages :model (:model base) :preview (:preview base) :is-history? $ :is-history? base
+                raise "|Expected chat session map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ChatSession)
             :args $ [] 'T
@@ -2243,6 +2285,58 @@
               is $ = |typed $ :id typed-result
               is $ = |decoded $ :id decoded
               is $ = :anthropic $ :model decoded
+            :tags $ #{} :regression :unit
+        'normalize-store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn normalize-store (raw)
+            hint-fn $ {}
+              :args $ [] 'T
+              :return 'app.schema/Store
+              :features $ #{} :js-ffi
+              :generics $ [] 'T
+            if (struct? raw) (assert-type raw 'app.schema/Store)
+              if (map? raw)
+                let
+                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    raw-session-value $ option:unwrap-or (get data :sessions) ([])
+                    raw-sessions $ if (list? raw-session-value)
+                      assert-type raw-session-value $ :: 'List 'Dynamic
+                      []
+                    sessions $ map raw-sessions $ fn (session) (normalize-chat-session session)
+                    patched $ dissoc data :current-chapter-id
+                    base $ decode-map-as
+                      assoc patched :sessions $ []
+                      , 'app.schema/Store
+                  Store :states (:states base) :sessions sessions :current-session-id (:current-session-id base) :model (:model base) :archived-count $ :archived-count base
+                raise "|Expected store map"
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
+            :args $ [] 'T
+            :features $ #{} :js-ffi
+            :generics $ [] 'T
+          :tests $ [] $ %{} 'TestEntry (:name |migrates-legacy-message-thinking)
+            :code $ quote $ let
+                legacy $ {}
+                  :states $ {} $ :cursor ([])
+                  :sessions $ [] $ {} (:id |legacy) (:created-at 1)
+                    :messages $ [] $ {} (:role :user) (:content |hello)
+                    :model :gemini
+                    :preview |hello
+                    :is-history? true
+                  :current-session-id nil
+                  :model nil
+                  :archived-count 0
+                normalized $ assert-type (normalize-store legacy) 'app.schema/Store
+                sessions $ assert-type (:sessions normalized) (:: 'List 'app.schema/ChatSession)
+                fallback-session $ ChatSession :id |fallback :created-at 0 :messages ([]) :model :gemini :preview | :is-history? false
+                session $ option:unwrap-or
+                  assert-type (first sessions) (:: 'Option 'app.schema/ChatSession)
+                  , fallback-session
+                messages $ assert-type (:messages session) (:: 'List 'app.schema/ChatMessage)
+                fallback-message $ ChatMessage :role :user :content | :thinking |fallback
+                message $ option:unwrap-or
+                  assert-type (first messages) (:: 'Option 'app.schema/ChatMessage)
+                  , fallback-message
+              is $ = | $ :thinking message
             :tags $ #{} :regression :unit
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
@@ -2282,9 +2376,7 @@
                           assert-type changes $ :: 'Map 'Tag 'Dynamic
                         do (eprintln |unknown-state-to-merge state) state
                     assoc store :states updated-states
-                (:hydrate-storage data)
-                  if (struct? data) (assert-type data 'app.schema/Store)
-                    decode-map-as (dissoc data :current-chapter-id) 'app.schema/Store
+                (:hydrate-storage data) (app.schema/normalize-store data)
                 (:change-model)
                   if
                     = (:model store) :anthropic
