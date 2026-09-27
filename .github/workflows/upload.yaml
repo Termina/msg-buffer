@@ -53,7 +53,7 @@ jobs:
       run: calcit calcit.cirru --check-only
 
     - name: Check application dynamic methods
-      run: calcit calcit.cirru analyze dynamic-methods --max 0 --format json
+      run: calcit calcit.cirru analyze dynamic-methods --format json
 
     - name: Check deprecated Calcit APIs
       run: calcit calcit.cirru analyze deprecated --summary-only

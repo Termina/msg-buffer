@@ -18,3 +18,5 @@ extension/dist
 .calcit/
 
 .copilot-tmp/
+.pnp.cjs
+.pnp.loader.mjs
