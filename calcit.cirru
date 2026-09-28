@@ -1071,7 +1071,7 @@
                         {} $ :class-name $ str-spaced css/row css/gap8
                         a $ {} (:class-name style-clear) (:inner-text |Data) (:role |button) (:aria-label |sessions-export-data)
                           :on-click $ fn (e d!)
-                            tab-echo! sessions $ %some :edn
+                            tab-echo! sessions $ Option :some :edn
                             , &unit
                         a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button) (:aria-label |sessions-download)
                           :on-click $ fn (e d!) (download-sessions! sessions) &unit
