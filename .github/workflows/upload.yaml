@@ -33,7 +33,9 @@ jobs:
         tools: calcit,caps
 
     - name: Resolve Calcit dependencies
-      run: caps --strict --ci
+      # Upstream Calcit modules publish prereleases at different cadences.
+      # caps reports their version skew while selecting the highest requested versions.
+      run: caps --ci
 
     - name: Install JavaScript dependencies
       run: yarn install --immutable
