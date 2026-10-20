@@ -34,6 +34,29 @@
           :code $ quote $ defref *viewing-archive-session nil
           :examples $ []
           :schema $ :: 'Ref $ :: 'JsNullish 'app.schema/ChatSession
+        'AxiosStreamResponseHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait AxiosStreamResponseHost (:data 'app.comp.container/ByteStreamHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'ByteStreamHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait ByteStreamHost
+            .pipe-through $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/ByteStreamHost 'JsObject
+              :return 'app.comp.container/DecodedTextStreamHost
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :pipe-through |pipeThrough
+          :schema $ :: 'Trait
+        'DecodedTextStreamHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait DecodedTextStreamHost
+            .get-reader $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/DecodedTextStreamHost
+              :return 'app.comp.container/TextReaderHost
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :get-reader |getReader
+          :schema $ :: 'Trait
         'DomTokenListHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait DomTokenListHost
             .contains? $ :: 'Fn $ {}
@@ -75,6 +98,20 @@
           :code $ quote $ defstruct StreamChunk (:text 'String) (:thinking? 'Bool)
           :examples $ []
           :schema $ :: 'StructDef
+        'TextReadResultHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait TextReadResultHost (:done 'Bool)
+            :value $ :: 'JsNullish 'String
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'TextReaderHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait TextReaderHost
+            .read $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/TextReaderHost
+              :return 'JsObject
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
         'abort-dynamic! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn abort-dynamic! (value)
             ffi/abort! $ unsafe-coerce value 'js-ffi.shared/AbortControllerHost
@@ -89,6 +126,14 @@
           :schema $ :: 'Fn $ {}
             :args $ [] (:: 'List 'app.schema/ChatMessage) 'String
             :return $ :: 'List 'app.schema/ChatMessage
+        'axios-post $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn axios-post (module url body config) (raise "|JavaScript Axios binding")
+          :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|(module, url, body, config) => module.default.post(url, body, config)"
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
+            :args $ [] 'JsObject 'String 'JsObject 'JsObject
+            :features $ #{} :js-ffi
         'call-anthropic-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
             let
@@ -97,16 +142,14 @@
                 do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             d! $ :: :change-model
             let
-                axios $ unsafe-coerce
-                  .-default $ js-await $ js/import |axios
-                  , 'Dynamic
+                axios-module $ js-await $ js/import |axios
                 selected $ let
                     selected0 $ js-await $ get-selected
                   if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到内容>"
                 content $ &str:replace prompt-text |{{selected}} selected
                 messages0 $ append-user-message (:messages state) content
                 messages1 $ upsert-assistant-message messages0 | |
-                result $ js-await $ .!post axios (str |https://sa.chenyong.life/v1/messages)
+                result $ js-await $ axios-post axios-module (str |https://sa.chenyong.life/v1/messages)
                   js-object
                     :model $ option:unwrap-or (get-env |claude-model) (or model |claude-3-5-sonnet-latest)
                     :max_tokens 1024
@@ -127,55 +170,64 @@
                         abort $ ffi/abort-controller-create
                       reset! *abort-control abort
                       ffi/abort-signal abort
-                stream $ unsafe-coerce (.-data result) 'Dynamic
-                reader $ unsafe-coerce
-                  .!getReader $ unsafe-coerce
-                    .!pipeThrough stream $ new js/TextDecoderStream
-                    , 'Dynamic
-                  , 'Dynamic
+                stream $ js-cast
+                  .-data $ js-cast result 'app.comp.container/AxiosStreamResponseHost
+                  , 'app.comp.container/ByteStreamHost
+                reader $ js-cast
+                  .get-reader $ js-cast
+                    .pipe-through stream $ new js/TextDecoderStream
+                    , 'app.comp.container/DecodedTextStreamHost
+                  , 'app.comp.container/TextReaderHost
                 *text $ ref $ str "|Claude AI:" &newline &newline
-              js/setTimeout $ fn () $ d!
-                :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
-              apply-args () $ fn ()
-                hint-fn $ {} $ :async true
+              browser/set-timeout!
+                fn ()
+                  d! $ :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+                  , &unit
+                , 0
+              loop
+                  pending |
+                hint-fn $ {} (:async true)
+                  :args $ [] 'String
+                  :return 'Unit
+                  :features $ #{} :js-ffi
                 let
-                    info $ js-await $ .!read reader
-                    value $ wo-js-log $ .-value info
+                    info $ js-cast
+                      js-await $ .read reader
+                      , 'app.comp.container/TextReadResultHost
+                    value $ .-value info
                     done? $ .-done info
-                  if (wo-log done?) (:: :unit)
-                    do
-                      let
-                          events $ -> (stream-text value) split-lines
-                            filter $ fn (s) (starts-with? s "|data: ")
-                            map $ fn (s)
-                              -> (strip-prefix s "|data: ") js/JSON.parse to-calcit-data
-                        apply-args (events)
-                          fn (xs)
-                            list-match xs
-                              () $ do (println "|no thing to handle in this Loop") &unit
-                              (x0 xss)
-                                let
-                                    stop? $ =
-                                      option:unwrap-or (get x0 |type) |
-                                      , |message_stop
-                                  wo-js-log x0
-                                  if stop?
-                                    d! $ :: :states-merge cursor state $ {} (:answer @*text) (:loading? false) (:done? true)
-                                      :messages $ upsert-assistant-message messages1 @*text |
-                                    let
-                                        content-opt $ get-in x0 $ [] |delta |text
-                                      if (option:none? content-opt)
-                                        do (println |content-is-nil) (recur xss)
-                                        let
-                                            content $ stream-text $ option:unwrap-or content-opt |
-                                          swap! *text str content
-                                          d! (:: :states-merge cursor state)
-                                            {} (:answer @*text) (:loading? false) (:done? false)
-                                              :messages $ upsert-assistant-message messages1 @*text |
-                                          recur xss
-                      recur
+                    buffer $ str pending $ stream-text value
+                    lines $ split-lines buffer
+                    complete-lines $ if done? lines $ butlast lines
+                    remainder $ if done? | $ .unwrap-or (last lines) |
+                    events $ -> complete-lines
+                      filter $ fn (line) (starts-with? line "|data: ")
+                      map $ fn (line)
+                        decode-map-as
+                          to-calcit-data $ js/JSON.parse $ strip-prefix line "|data: "
+                          :: 'Map 'String 'Dynamic
+                  loop
+                      xs events
+                    match (destruct-list xs)
+                      (:none) &unit
+                      (:some event rest-events)
+                        if
+                          = |message_stop $ stream-text $ .unwrap-or (get event |type) |
+                          d! $ :: :states-merge cursor state $ {} (:answer @*text) (:loading? false) (:done? true)
+                            :messages $ upsert-assistant-message messages1 @*text |
+                          match
+                            get-in event $ [] |delta |text
+                            (:none) (recur rest-events)
+                            (:some fragment)
+                              let
+                                  text $ stream-text fragment
+                                swap! *text str text
+                                d! $ :: :states-merge cursor state $ {} (:answer @*text) (:loading? false) (:done? false)
+                                  :messages $ upsert-assistant-message messages1 @*text |
+                                recur rest-events
+                  if done? &unit $ recur remainder
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
             :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'String 'Bool 'Dynamic
             :features $ #{} :js-ffi
         'call-flash-imagen-msg! $ %{} 'CodeEntry (:doc |)
