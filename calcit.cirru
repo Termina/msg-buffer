@@ -3,7 +3,7 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {} $ :default
-    {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!)
+    {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
       :type-slots $ {}
@@ -48,6 +48,15 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:add! |add) (:contains? |contains) (:remove! |remove)
+          :schema $ :: 'Trait
+        'DownloadLinkHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait DownloadLinkHost
+            .click! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/DownloadLinkHost
+              :return 'Unit
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :click! |click
           :schema $ :: 'Trait
         'FocusEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait FocusEventHost
@@ -829,9 +838,9 @@
                       =< nil 200
                     comp-message-box (>> states :message-box)
                       a $ {}
-                        :inner-text $ or (turn-str model) |-
+                        :inner-text $ or (to-string model) |-
                         :role |button
-                        :aria-label $ str |model-picker: $ turn-string model
+                        :aria-label $ str |model-picker: $ to-string model
                         :class-name $ str-spaced style-a-toggler
                         :style $ {} $ :opacity
                           if (= model :anthropic) 1 0.3
@@ -887,9 +896,10 @@
                 :width $ str size |px
                 :height $ str size |px
                 :line-height |0
-              :innerHTML $ case-default icon |
+              :innerHTML $ match icon
                 :clock "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><polyline points=\"12 6 12 12 16 14\"></polyline></svg>"
                 :send "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"22\" y1=\"2\" x2=\"11\" y2=\"13\"></line><polygon points=\"22 2 15 22 11 13 2 9 22 2\"></polygon></svg>"
+                _ |
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
             :args $ [] 'Tag 'Number
@@ -1028,7 +1038,9 @@
                   list->
                     {} $ :class-name css/column
                     -> sessions reverse $ map $ fn (session)
-                      hint-fn $ {} $ :args ([] 'app.schema/ChatSession)
+                      hint-fn $ {}
+                        :args $ [] 'app.schema/ChatSession
+                        :return $ :: 'List 'Dynamic
                       let
                           session-id $ :id session
                           created-at $ :created-at session
@@ -1165,35 +1177,39 @@
           :code $ quote $ defn download-sessions! (sessions)
             let
                 content $ format-cirru-edn sessions
-                blob $ unsafe-coerce
+                blob $ js-cast
                   new js/Blob (js-array content)
                     js-object $ :type |application/edn;charset=utf-8
-                  , 'Dynamic
-                url $ unsafe-coerce (js/URL.createObjectURL blob) 'String
-                link $ unsafe-coerce (js/document.createElement |a) 'Dynamic
+                  , 'js-ffi.browser/BlobHost
+                url $ browser/object-url-create blob
+                link $ browser/create-element |a
+                clickable $ js-cast link 'app.comp.container/DownloadLinkHost
                 filename $ str |sessions- (ffi/now-ms) |.cirru
-              .!setAttribute link |href url
-              .!setAttribute link |download filename
-              .!appendChild (unsafe-coerce js/document.body 'Dynamic) link
-              .!click link
-              .!remove link
-              js/setTimeout
-                fn () $ js/URL.revokeObjectURL url
+              browser/element-set-attribute! link |href url
+              browser/element-set-attribute! link |download filename
+              browser/document-append-body! link
+              .click! clickable
+              browser/element-remove! link
+              browser/set-timeout!
+                fn () $ browser/object-url-revoke! url
                 , 0
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] $ :: 'List 'app.schema/ChatSession
             :features $ #{} :js-ffi
         'effect-focus $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defeffect effect-focus () (action el at?)
             when (= action :mount)
-              js/setTimeout
+              browser/set-timeout!
                 fn () $ let
-                    textarea $ unsafe-coerce
-                      .!querySelector (unsafe-coerce el 'Dynamic) |textarea
-                      , 'Dynamic
-                  .!select textarea
+                    root $ js-cast el 'js-ffi.browser/DomElementHost
+                  match (browser/element-query-selector root |textarea)
+                    (:none) &unit
+                    (:some textarea)
+                      browser/element-select! $ js-cast textarea 'js-ffi.browser/DomSelectableHost
                 , 0
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Effect)
             :args $ []
@@ -1261,7 +1277,7 @@
             :features $ #{} :js-ffi
         'js-present-dynamic? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn js-present-dynamic? (value)
-            unsafe-coerce (js/Boolean value) 'Bool
+            if (js/Boolean value) true false
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Bool)
             :args $ [] 'Dynamic
@@ -1330,12 +1346,13 @@
             :features $ #{} :js-ffi
         'model-storage-key $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn model-storage-key (model)
-            case-default model |gemini-key (:claude-3.7 |claude-key) (:openrouter/anthropic/claude-sonnet-4 |openrouter-key) (:openrouter/anthropic/claude-sonnet-4.5 |openrouter-key) (:openrouter/anthropic/claude-opus-4 |openrouter-key) (:openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key) (:openrouter/google/gemini-2.5-pro-preview |openrouter-key)
+            match model (:claude-3.7 |claude-key) (:openrouter/anthropic/claude-sonnet-4 |openrouter-key) (:openrouter/anthropic/claude-sonnet-4.5 |openrouter-key) (:openrouter/anthropic/claude-opus-4 |openrouter-key) (:openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key) (:openrouter/google/gemini-2.5-pro-preview |openrouter-key)
               :openrouter/google/gemini-2.5-flash-preview-05-20 |openrouter-key
               :openrouter/openai/gpt-5 |openrouter-key
               :openrouter/deepseek/deepseek-chat-v3.1 |openrouter-key
               :deepseek-v4-pro |deepseek-key
               :deepseek-v4-flash |deepseek-key
+              _ |gemini-key
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
@@ -1359,32 +1376,32 @@
         'normalize-chat-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-state (raw)
             if (struct? raw)
-              let
-                  state $ unsafe-coerce raw 'app.schema/ChatState
-                app.schema/ChatState :answer
+              struct-match raw
+                ChatState state $ app.schema/ChatState :answer
                   stream-text $ :answer state
                   , :loading? (:loading? state) :done? (:done? state) :messages (:messages state) :model
                     if
                       tag? $ :model state
                       :model state
                       , :gemini
-                    , :thinking $ stream-text $ :thinking state
+                    , :thinking $ stream-text (:thinking state)
+                _ other $ raise "|Expected ChatState nominal value"
               let
-                  data $ unsafe-coerce raw $ :: 'Map 'Tag 'Dynamic
+                  data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                   loading-value $ option:unwrap-or (get data :loading?) false
                   done-value $ option:unwrap-or (get data :done?) true
                   model-value $ option:unwrap-or (get data :model) :gemini
                 app.schema/ChatState :answer
                   stream-text $ option:unwrap-or (get data :answer) |
                   , :loading?
-                    case-default loading-value false (true true) (false false)
+                    match loading-value (true true) (false false) (_ false)
                     , :done?
-                      case-default done-value true (true true) (false false)
+                      match done-value (true true) (false false) (_ true)
                       , :messages
                         let
                             raw-message-value $ option:unwrap-or (get data :messages) ([])
                             raw-messages $ if (list? raw-message-value)
-                              assert-type raw-message-value $ :: 'List 'Dynamic
+                              decode-map-as raw-message-value $ :: 'List 'Dynamic
                               []
                           map raw-messages $ fn (message) (app.schema/normalize-chat-message message)
                         , :model
@@ -1421,8 +1438,13 @@
                 match event $
                   :fill-text info
                   let
-                      submit? $ option:unwrap-or (get info :submit?) true
-                      text $ option:unwrap-or (get info :text) |
+                      info-data $ decode-map-as info $ :: 'Map 'Tag 'Dynamic
+                      submit? $ decode-map-as
+                        option:unwrap-or (get info-data :submit?) true
+                        , 'Bool
+                      text $ decode-map-as
+                        option:unwrap-or (get info-data :text) |
+                        , 'String
                     dispatch! (:: :states cursor) (assoc state :content text)
                     if submit?
                       on-submit text (:search? state) (:think? state) dispatch!
@@ -1432,7 +1454,7 @@
             :args $ [] 'Dynamic 'app.schema/MessageBoxState 'Dynamic
         'pick-model $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn pick-model (variant)
-            case-default variant |gemini-3.5-flash-lite (:gemini-3.5-flash-lite |gemini-3.5-flash-lite) (:gemini-3.6-flash |gemini-3.6-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-flash |gemini-3-flash-preview) (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
+            match variant (:gemini-3.5-flash-lite |gemini-3.5-flash-lite) (:gemini-3.6-flash |gemini-3.6-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-flash |gemini-3-flash-preview) (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it) (_ |gemini-3.5-flash-lite)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
@@ -1801,8 +1823,7 @@
                 model $ :model state
               d! cursor state1
               try
-                case-default model
-                  js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
+                match model
                   :gemini-3.1-flash-lite-preview $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :gemini-pro $ js-await $ call-genai-msg! model cursor state1 prompt-text search? true d! *text *thinking-text
                   :flash-imagen $ js-await $ call-flash-imagen-msg! model cursor state1 prompt-text d!
@@ -1823,6 +1844,7 @@
                   :openrouter/deepseek/deepseek-chat-v3.1 $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek/deepseek-chat-v3.1 true d! *text
                   :deepseek-v4-pro $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-pro true d! *text
                   :deepseek-v4-flash $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-flash true d! *text
+                  _ $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                 fn (e) (js/console.error :msg-buffer-request-failed e)
                   let
                       err-text $ str |Failed-to-load: e
@@ -1923,15 +1945,10 @@
           :examples $ []
           :schema $ :: 'Bool
         'detect-chrome-extension? $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn detect-chrome-extension? ()
-            let
-                chrome $ unsafe-coerce js/window.chrome 'Dynamic
-                runtime $ .?-runtime chrome
-              and (js-present? runtime)
-                let
-                    typed-runtime $ unsafe-coerce runtime 'Dynamic
-                  js-present? $ .?-id typed-runtime
+          :code $ quote $ defn detect-chrome-extension? () (raise "|Browser-only Chrome runtime detection")
           :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|() => window.chrome?.runtime?.id != null"
           :schema $ :: 'Fn $ {} (:return 'Bool)
             :args $ []
             :features $ #{} :js-ffi
@@ -2146,7 +2163,7 @@
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
-              = false $ unsafe-coerce (js/Boolean build-errors) 'Bool
+              not $ if (js/Boolean build-errors) true false
               do (remove-watch! *reel :changes) (remove-watch! *archived-sessions :changes) (remove-watch! *viewing-archive-session :changes) (clear-cache!)
                 add-watch! *reel :changes $ fn (reel prev) (render-app!)
                 add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
@@ -2389,7 +2406,7 @@
                         , s
                       updated-states $ assoc-in (:states store) path $ if
                         or (map? state) (struct? state)
-                        noted |merge-base-latest-state $ merge-dynamic
+                        noted |merge-base-latest-state $ merge
                           assert-type state $ :: 'Map 'Tag 'Dynamic
                           assert-type changes $ :: 'Map 'Tag 'Dynamic
                         do (eprintln |unknown-state-to-merge state) state
