@@ -1541,17 +1541,22 @@
           :code $ quote $ defn normalize-chat-state (raw)
             if (struct? raw)
               struct-match raw
-                ChatState state $ app.schema/ChatState :answer
-                  stream-text $ :answer state
-                  , :loading? (:loading? state) :done? (:done? state) :messages
-                    map (:messages state)
-                      fn (message) (app.schema/normalize-chat-message message)
-                    , :model
-                      if
-                        tag? $ :model state
-                        :model state
-                        , :gemini
-                      , :thinking $ stream-text (:thinking state)
+                ChatState state $ if
+                  match (struct-definition state)
+                    (:none) false
+                    (:some definition) (identical? definition ChatState)
+                  , state $ app.schema/ChatState :answer
+                    stream-text $ :answer state
+                    , :loading? (:loading? state) :done? (:done? state) :messages
+                      map (:messages state)
+                        fn (message) (app.schema/normalize-chat-message message)
+                      , :model
+                        if
+                          tag? $ :model state
+                          :model state
+                          , :gemini
+                        , :thinking
+                          stream-text $ :thinking state
                 _ other $ raise "|Expected ChatState nominal value"
               let
                   data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
@@ -2451,7 +2456,11 @@
               :generics $ [] 'T
             if (struct? raw)
               struct-match raw
-                ChatMessage typed $ ChatMessage :content (:content typed) :role (:role typed) :thinking $ :thinking typed
+                ChatMessage typed $ if
+                  match (struct-definition typed)
+                    (:none) false
+                    (:some definition) (identical? definition ChatMessage)
+                  , typed $ ChatMessage :content (:content typed) :role (:role typed) :thinking (:thinking typed)
                 _ other $ raise "|Unexpected nominal value for ChatMessage"
               if (map? raw)
                 let
@@ -2474,10 +2483,14 @@
               :generics $ [] 'T
             if (struct? raw)
               struct-match raw
-                ChatSession typed $ ChatSession :id (:id typed) :created-at (:created-at typed) :messages
-                  map (:messages typed)
-                    fn (message) (normalize-chat-message message)
-                  , :model (:model typed) :preview (:preview typed) :is-history? $ :is-history? typed
+                ChatSession typed $ if
+                  match (struct-definition typed)
+                    (:none) false
+                    (:some definition) (identical? definition ChatSession)
+                  , typed $ ChatSession :id (:id typed) :created-at (:created-at typed) :messages
+                    map (:messages typed)
+                      fn (message) (normalize-chat-message message)
+                    , :model (:model typed) :preview (:preview typed) :is-history? (:is-history? typed)
                 _ other $ raise "|Unexpected nominal value for ChatSession"
               if (map? raw)
                 let
@@ -2519,10 +2532,14 @@
               :generics $ [] 'T
             if (struct? raw)
               struct-match raw
-                Store typed $ Store :states (:states typed) :sessions
-                  map (:sessions typed)
-                    fn (session) (normalize-chat-session session)
-                  , :current-session-id (:current-session-id typed) :model (:model typed) :archived-count $ :archived-count typed
+                Store typed $ if
+                  match (struct-definition typed)
+                    (:none) false
+                    (:some definition) (identical? definition Store)
+                  , typed $ Store :states (:states typed) :sessions
+                    map (:sessions typed)
+                      fn (session) (normalize-chat-session session)
+                    , :current-session-id (:current-session-id typed) :model (:model typed) :archived-count (:archived-count typed)
                 _ other $ raise "|Unexpected nominal value for Store"
               if (map? raw)
                 let
@@ -2716,6 +2733,9 @@
               assert= |after-restore $ :answer restored-again
               assert= |thought $ :thinking restored-again
               assert= ([] message) (:messages restored-again)
+              assert= true $ identical? changed $ app.schema/normalize-store changed
+              assert= true $ identical? message $ app.schema/normalize-chat-message message
+              assert= true $ identical? restored-again $ app.comp.container/normalize-chat-state restored-again
               assert= true $ try
                 do
                   updater changed
