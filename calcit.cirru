@@ -26,10 +26,11 @@
           :code $ quote $ defref *image-cache (Option :none)
           :examples $ []
           :schema $ :: 'Ref $ :: 'Option 'String
-        '*openai $ %{} 'CodeEntry (:doc "|called openai sdk, but actually for openrouter")
-          :code $ quote $ defref *openai false
+        '*openai $ %{} 'CodeEntry
+          :doc "|OpenAI-compatible SDK cache; reused only when provider base URL and current in-memory API key match. Never serialized."
+          :code $ quote $ defref *openai (Option :none)
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'Option 'app.comp.container/OpenAIClientHost
         '*viewing-archive-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *viewing-archive-session nil
           :examples $ []
@@ -125,6 +126,25 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} $ :for-each! |forEach
+          :schema $ :: 'Trait
+        'OpenAIChatHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait OpenAIChatHost (:completions 'app.comp.container/OpenAICompletionsHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'OpenAIClientHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait OpenAIClientHost (:base-url 'String) (:api-key 'String) (:chat 'app.comp.container/OpenAIChatHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} (:api-key |apiKey) (:base-url |baseURL)
+          :schema $ :: 'Trait
+        'OpenAICompletionsHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait OpenAICompletionsHost
+            .create $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/OpenAICompletionsHost 'JsObject 'JsObject
+              :return 'JsObject
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
           :schema $ :: 'Trait
         'StreamChunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct StreamChunk (:text 'String) (:thinking? 'Bool)
@@ -450,18 +470,8 @@
             :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Dynamic
             :features $ #{} :js-ffi
         'call-openrouter! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
-            if (= false @*openai)
-              let
-                  mod $ js-await $ js/import |openai
-                  OpenAI $ .-default mod
-                  deepseek? $ includes? variant |deepseek
-                  base-url $ if deepseek? |https://api.deepseek.com |https://openrouter.ai/api/v1
-                  key-fn $ if deepseek? get-deepseek-key! get-openrouter-key!
-                reset! *openai $ new OpenAI $ js-object (:baseURL base-url)
-                  :apiKey $ key-fn
-                  :defaultHeaders $ js-object
-                  :dangerouslyAllowBrowser true
+          :code $ quote $ defn call-openrouter! (cursor state prompt-text provider variant thinking? d! *text)
+            js-await $ ensure-openai! provider
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -470,19 +480,15 @@
                 selected $ let
                     selected0 $ js-await $ get-selected
                   if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
-                openai $ let
-                    ai @*openai
-                  , ai
+                openai $ .unwrap @*openai
                 content $ &str:replace prompt-text |{{selected}} selected
                 json? $ or (includes? prompt-text |{{json}}) (includes? prompt-text |{{JSON}})
                 messages0 $ :messages state
                 messages1 $ upsert-assistant-message messages0 | |
-                sdk-result $ js-await $ .!create
-                  unsafe-coerce
-                    .-completions $ unsafe-coerce
-                      .-chat $ unsafe-coerce openai 'Dynamic
-                      , 'Dynamic
-                    , 'Dynamic
+                sdk-result $ js-await $ .create
+                  js-cast
+                    .-completions $ js-cast (.-chat openai) 'app.comp.container/OpenAIChatHost
+                    , 'app.comp.container/OpenAICompletionsHost
                   js-object (:model variant)
                     :messages $ messages->openai messages0
                     :stream true
@@ -491,21 +497,24 @@
                       abort $ ffi/abort-controller-create
                     reset! *abort-control abort
                     ffi/abort-signal abort
-              js/setTimeout $ fn () $ d!
-                :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+              browser/set-timeout!
+                fn ()
+                  d! $ :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+                  , &unit
+                , 0
               let
                   *thinking-text $ ref |
                   *char-buf $ ref 0
                 js-await $ js-for-await sdk-result $ fn (chunk)
                   if (js-present-dynamic? chunk)
                     let
-                        chunk-data $ unsafe-coerce chunk 'Dynamic
-                        choices $ unsafe-coerce (.-choices chunk-data) 'Dynamic
-                        choice0 $ unsafe-coerce (.-0 choices) 'Dynamic
-                        choice $ unsafe-coerce (.-delta choice0) 'Dynamic
-                        reason0 $ .-reasoning_content choice
+                        chunk-data $ contract/expect-object "|OpenAI chunk" chunk
+                        choices $ contract/object-field "|OpenAI stream" chunk-data |choices
+                        choice0 $ if (js-present? choices) (contract/object-field "|OpenAI stream" choices |0) js/undefined
+                        choice $ if (js-present? choice0) (contract/object-field "|OpenAI stream" choice0 |delta) js/undefined
+                        reason0 $ if (js-present? choice) (contract/object-field "|OpenAI stream" choice |reasoning_content) js/undefined
                         reason $ if (js-present-dynamic? reason0) (stream-text reason0) |
-                        text0 $ .-content choice
+                        text0 $ if (js-present? choice) (contract/object-field "|OpenAI stream" choice |content) js/undefined
                         text $ if (js-present-dynamic? text0) (stream-text text0) |
                       if
                         not $ blank? reason
@@ -523,9 +532,10 @@
                     :messages $ upsert-assistant-message messages1 @*text @*thinking-text
                 d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                   :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
-            :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'String 'Bool 'Dynamic $ :: 'Ref 'String
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
+            :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Tag 'String 'Bool 'Dynamic $ :: 'Ref 'String
             :features $ #{} :js-ffi
         'clear-image-cache! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn clear-image-cache! ()
@@ -1275,6 +1285,27 @@
           :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
+        'ensure-openai! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn ensure-openai! (provider)
+            let
+                base-url $ match provider (:deepseek |https://api.deepseek.com) (:openrouter |https://openrouter.ai/api/v1)
+                  _ $ raise |Unknown-OpenAI-compatible-provider
+                api-key $ if (= provider :deepseek) (get-deepseek-key!) (get-openrouter-key!)
+                replace? $ match @*openai
+                  (:none) true
+                  (:some client)
+                    or
+                      not= base-url $ .-base-url client
+                      not= api-key $ .-api-key client
+              when replace? $ let
+                  module $ contract/expect-object |OpenAI.module $ js-await (js/import |openai)
+                  client $ js-cast (openai-new module base-url api-key) 'app.comp.container/OpenAIClientHost
+                reset! *openai $ Option :some client
+              , &unit
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
+            :args $ [] 'Tag
+            :features $ #{} :js-ffi
         'first-line $ %{} 'CodeEntry
           :doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now."
           :code $ quote $ defn first-line (tt)
@@ -1521,6 +1552,14 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'Dynamic 'app.schema/MessageBoxState 'Dynamic
+        'openai-new $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn openai-new (module base-url api-key) (raise "|JavaScript OpenAI constructor")
+          :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|(module, baseURL, apiKey) => new module.default({baseURL, apiKey, defaultHeaders:{}, dangerouslyAllowBrowser:true})"
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
+            :args $ [] 'JsObject 'String 'String
+            :features $ #{} :js-ffi
         'pick-model $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn pick-model (variant)
             match variant (:gemini-3.5-flash-lite |gemini-3.5-flash-lite) (:gemini-3.6-flash |gemini-3.6-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-flash |gemini-3-flash-preview) (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it) (_ |gemini-3.5-flash-lite)
@@ -1903,16 +1942,16 @@
                   :gemini-flash $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :gemini-learnlm $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :claude-3.7 $ js-await $ call-anthropic-msg! cursor state1 prompt-text |claude-3-7-sonnet-20250219 false d!
-                  :openrouter/anthropic/claude-sonnet-4 $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-sonnet-4 true d! *text
-                  :openrouter/anthropic/claude-sonnet-4.5 $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-sonnet-4.5 true d! *text
-                  :openrouter/anthropic/claude-opus-4 $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-opus-4 true d! *text
-                  :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-3.7-sonnet:thinking true d! *text
-                  :openrouter/google/gemini-2.5-pro-preview $ js-await $ call-openrouter! cursor state1 prompt-text |google/gemini-2.5-pro-preview true d! *text
-                  :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await $ call-openrouter! cursor state1 prompt-text |google/gemini-2.5-flash-preview-05-20 true d! *text
-                  :openrouter/openai/gpt-5 $ js-await $ call-openrouter! cursor state1 prompt-text |openai/gpt-5 true d! *text
-                  :openrouter/deepseek/deepseek-chat-v3.1 $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek/deepseek-chat-v3.1 true d! *text
-                  :deepseek-v4-pro $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-pro true d! *text
-                  :deepseek-v4-flash $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-flash true d! *text
+                  :openrouter/anthropic/claude-sonnet-4 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-sonnet-4 true d! *text
+                  :openrouter/anthropic/claude-sonnet-4.5 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-sonnet-4.5 true d! *text
+                  :openrouter/anthropic/claude-opus-4 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-opus-4 true d! *text
+                  :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-3.7-sonnet:thinking true d! *text
+                  :openrouter/google/gemini-2.5-pro-preview $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |google/gemini-2.5-pro-preview true d! *text
+                  :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |google/gemini-2.5-flash-preview-05-20 true d! *text
+                  :openrouter/openai/gpt-5 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |openai/gpt-5 true d! *text
+                  :openrouter/deepseek/deepseek-chat-v3.1 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |deepseek/deepseek-chat-v3.1 true d! *text
+                  :deepseek-v4-pro $ js-await $ call-openrouter! cursor state1 prompt-text :deepseek |deepseek-v4-pro true d! *text
+                  :deepseek-v4-flash $ js-await $ call-openrouter! cursor state1 prompt-text :deepseek |deepseek-v4-flash true d! *text
                   _ $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                 fn (e) (js/console.error :msg-buffer-request-failed e)
                   let
