@@ -705,7 +705,9 @@
                                   , | $ contract/expect-string "|Archive storage value" host-value
                             if (blank? raw) (js/alert "|No archives found!")
                               let
-                                  parsed $ parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
+                                  parsed $ map
+                                    decode-map-as (parse-cirru-edn raw) (:: 'List 'Dynamic)
+                                    fn (session) (app.schema/normalize-chat-session session)
                                 reset! *archived-sessions parsed
               div
                 {} $ :class-name $ str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global
@@ -1224,7 +1226,9 @@
                                         = (js/typeof host-value) |undefined
                                       , | $ contract/expect-string "|Archive storage value" host-value
                                   old-archives $ if (blank? raw) (take sessions 0)
-                                    parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
+                                    map
+                                      decode-map-as (parse-cirru-edn raw) (:: 'List 'Dynamic)
+                                      fn (session) (app.schema/normalize-chat-session session)
                                   new-archives $ concat old-archives sessions
                                 js-await $ db-set archive-key $ format-cirru-edn new-archives
                                 d! $ :: :archive-sessions $ count new-archives
@@ -1318,11 +1322,11 @@
             when (= action :mount)
               browser/set-timeout!
                 fn () $ let
-                    root $ js-cast el 'js-ffi.browser/DomElementHost
+                    root $ browser/element-host el
                   match (browser/element-query-selector root |textarea)
                     (:none) &unit
                     (:some textarea)
-                      browser/element-select! $ js-cast textarea 'js-ffi.browser/DomSelectableHost
+                      browser/element-select! $ browser/selectable-element-host textarea
                 , 0
             , &unit
           :examples $ []
@@ -1539,12 +1543,15 @@
               struct-match raw
                 ChatState state $ app.schema/ChatState :answer
                   stream-text $ :answer state
-                  , :loading? (:loading? state) :done? (:done? state) :messages (:messages state) :model
-                    if
-                      tag? $ :model state
-                      :model state
-                      , :gemini
-                    , :thinking $ stream-text (:thinking state)
+                  , :loading? (:loading? state) :done? (:done? state) :messages
+                    map (:messages state)
+                      fn (message) (app.schema/normalize-chat-message message)
+                    , :model
+                      if
+                        tag? $ :model state
+                        :model state
+                        , :gemini
+                      , :thinking $ stream-text (:thinking state)
                 _ other $ raise "|Expected ChatState nominal value"
               let
                   data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
@@ -2331,7 +2338,7 @@
                 storage $ browser/window-local-storage
                 store $ match (get @*reel :store)
                   (:none) schema/store
-                  (:some value) (decode-map-as value 'app.schema/Store)
+                  (:some value) (schema/normalize-store value)
               storage .set-item! (:storage-key config/site) (format-cirru-edn store)
             , &unit
           :examples $ []
@@ -2443,7 +2450,8 @@
               :features $ #{} :js-ffi
               :generics $ [] 'T
             if (struct? raw)
-              struct-match raw (ChatMessage typed typed)
+              struct-match raw
+                ChatMessage typed $ ChatMessage :content (:content typed) :role (:role typed) :thinking $ :thinking typed
                 _ other $ raise "|Unexpected nominal value for ChatMessage"
               if (map? raw)
                 let
@@ -2465,7 +2473,11 @@
               :features $ #{} :js-ffi
               :generics $ [] 'T
             if (struct? raw)
-              struct-match raw (ChatSession typed typed)
+              struct-match raw
+                ChatSession typed $ ChatSession :id (:id typed) :created-at (:created-at typed) :messages
+                  map (:messages typed)
+                    fn (message) (normalize-chat-message message)
+                  , :model (:model typed) :preview (:preview typed) :is-history? $ :is-history? typed
                 _ other $ raise "|Unexpected nominal value for ChatSession"
               if (map? raw)
                 let
@@ -2506,7 +2518,11 @@
               :features $ #{} :js-ffi
               :generics $ [] 'T
             if (struct? raw)
-              struct-match raw (Store typed typed)
+              struct-match raw
+                Store typed $ Store :states (:states typed) :sessions
+                  map (:sessions typed)
+                    fn (session) (normalize-chat-session session)
+                  , :current-session-id (:current-session-id typed) :model (:model typed) :archived-count $ :archived-count typed
                 _ other $ raise "|Unexpected nominal value for Store"
               if (map? raw)
                 let
@@ -2591,7 +2607,8 @@
                           decode-map-as changes $ :: 'Map 'Tag 'Dynamic
                         if (struct? state)
                           struct-match state
-                            ChatState base $ let
+                            ChatState raw-base $ let
+                                base $ app.comp.container/normalize-chat-state raw-base
                                 typed-changes $ decode-map-as changes $ :: 'Map 'Tag 'Dynamic
                               ChatState :answer
                                 match (get typed-changes :answer)
@@ -2671,6 +2688,42 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
             :args $ [] 'app.schema/Store 'Enum 'String 'Number
+          :tests $ [] $ %{} 'TestEntry (:name |mixed-cursor-latest-state-merge)
+            :code $ quote $ let
+                cursor $ [] :panel |draft 7
+                stale $ app.comp.container/normalize-chat-state $ {}
+                message $ app.schema/normalize-chat-message $ {} (:role :user) (:content |synthetic) (:thinking |)
+                latest $ -> stale (assoc :answer |latest)
+                  assoc :messages $ [] message
+                initial $ updater app.schema/store (:: :states cursor latest) |synthetic 0
+                changed $ updater initial
+                  :: :states-merge cursor stale $ {} $ :thinking |thought
+                  , |synthetic 1
+                restored $ app.comp.container/normalize-chat-state $ .unwrap
+                  get-in (:states changed)
+                    concat cursor $ [] :data
+                roundtrip $ app.schema/normalize-store $ parse-cirru-edn (format-cirru-edn changed)
+                updated-again $ updater roundtrip
+                  :: :states-merge cursor stale $ {} $ :answer |after-restore
+                  , |synthetic 3
+                restored-again $ app.comp.container/normalize-chat-state $ .unwrap
+                  get-in (:states updated-again)
+                    concat cursor $ [] :data
+              assert= |latest $ :answer restored
+              assert= |thought $ :thinking restored
+              assert= (:messages latest) (:messages restored)
+              assert= (:done? latest) (:done? restored)
+              assert= |after-restore $ :answer restored-again
+              assert= |thought $ :thinking restored-again
+              assert= ([] message) (:messages restored-again)
+              assert= true $ try
+                do
+                  updater changed
+                    :: :states-merge cursor stale $ {} $ :done? |not-a-bool
+                    , |synthetic 2
+                  , false
+                fn (error) true
+            :tags $ #{} :regression :unit
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require
