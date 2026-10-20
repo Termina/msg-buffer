@@ -19,9 +19,9 @@
           :examples $ []
           :schema $ :: 'Ref $ :: 'JsNullish (:: 'List 'app.schema/ChatSession)
         '*gen-ai-new $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *gen-ai-new false
+          :code $ quote $ defref *gen-ai-new (Option :none)
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'Option 'app.comp.container/GenAIClientHost
         '*image-cache $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *image-cache false
           :examples $ []
@@ -93,6 +93,26 @@
             :classList 'app.comp.container/DomTokenListHost
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'GenAIClientHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait GenAIClientHost (:models 'app.comp.container/GenAIModelsHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'GenAIModelsHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait GenAIModelsHost
+            .generate-content $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIModelsHost 'JsObject
+              :return 'JsObject
+            .generate-content-stream $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIModelsHost 'JsObject
+              :return 'JsObject
+            .generate-images $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIModelsHost 'JsObject
+              :return 'JsObject
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} (:generate-content |generateContent) (:generate-content-stream |generateContentStream) (:generate-images |generateImages)
           :schema $ :: 'Trait
         'StreamChunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct StreamChunk (:text 'String) (:thinking? 'Bool)
@@ -232,12 +252,7 @@
             :features $ #{} :js-ffi
         'call-flash-imagen-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
-            if (= false @*gen-ai-new)
-              let
-                  mod $ js-await $ js/import |@google/genai
-                  GoogleGenAI $ .-GoogleGenAI mod
-                reset! *gen-ai-new $ new GoogleGenAI $ js-object
-                  :apiKey $ get-gemini-key!
+            js-await $ ensure-genai!
             let
                 target0 $ js/document.querySelector |.show-image
               when (js-present-dynamic? target0)
@@ -253,17 +268,15 @@
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
-                  if (js-present-dynamic? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
-                gen-ai @*gen-ai-new
+                  if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
+                gen-ai $ .unwrap @*gen-ai-new
                 content $ &str:replace prompt-text |{{selected}} selected
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
                   reset! *abort-control abort
                   ffi/abort-signal abort
-                sdk-result $ js-await $ .!generateContent
-                  unsafe-coerce
-                    .-models $ unsafe-coerce gen-ai 'Dynamic
-                    , 'Dynamic
+                sdk-result $ js-await $ .generate-content
+                  js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
                   js-object (:model |gemini-2.5-flash-image) (:contents content)
                     :config $ js-object (:abortSignal abort-signal)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
@@ -316,12 +329,7 @@
         'call-genai-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-genai-msg!
             variant cursor state prompt-text search? think? d! *text *thinking-text
-            if (= false @*gen-ai-new)
-              let
-                  mod $ js-await $ js/import |@google/genai
-                  GoogleGenAI $ .-GoogleGenAI mod
-                reset! *gen-ai-new $ new GoogleGenAI $ js-object
-                  :apiKey $ get-gemini-key!
+            js-await $ ensure-genai!
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -332,7 +340,7 @@
                       js-await $ get-selected
                       , js/undefined
                   if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
-                gen-ai @*gen-ai-new
+                gen-ai $ .unwrap @*gen-ai-new
                 model $ pick-model variant
                 content $ &str:replace prompt-text |{{selected}} selected
                 json? $ or (includes? prompt-text |{{json}}) (includes? prompt-text |{{JSON}})
@@ -345,10 +353,8 @@
                   reset! *abort-control abort
                   ffi/abort-signal abort
                 tools $ make-genai-tools search? has-url?
-                sdk-result $ js-await $ .!generateContentStream
-                  unsafe-coerce
-                    .-models $ unsafe-coerce gen-ai 'Dynamic
-                    , 'Dynamic
+                sdk-result $ js-await $ .generate-content-stream
+                  js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
                   js-object (:model model)
                     :contents $ messages->gemini messages0
                     :config $ js-object
@@ -359,13 +365,7 @@
                             contains? (#{} |gemini-3.7-flash |gemini-3.8-flash) model
                             , |low |minimal
                           :includeThoughts false
-                      :tools $ if
-                        >
-                          unsafe-coerce
-                            .-length $ unsafe-coerce tools 'Dynamic
-                            , 'Number
-                          , 0
-                        , tools js/undefined
+                      :tools $ if (or search? has-url?) tools js/undefined
                       :abortSignal abort-signal
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :responseMimeType $ if json? |application/json js/undefined
@@ -374,7 +374,7 @@
               js-await $ js-for-await sdk-result $ fn (chunk)
                 if (js-present-dynamic? chunk)
                   let
-                      stream-chunk $ unsafe-coerce (decode-genai-chunk chunk) 'app.comp.container/StreamChunk
+                      stream-chunk $ decode-genai-chunk chunk
                       is-thinking? $ :thinking? stream-chunk
                       text $ :text stream-chunk
                     if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
@@ -390,12 +390,7 @@
             :features $ #{} :js-ffi
         'call-imagen-4-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-imagen-4-msg! (variant cursor state prompt-text d!)
-            if (= false @*gen-ai-new)
-              let
-                  mod $ js-await $ js/import |@google/genai
-                  GoogleGenAI $ .-GoogleGenAI mod
-                reset! *gen-ai-new $ new GoogleGenAI $ js-object
-                  :apiKey $ get-gemini-key!
+            js-await $ ensure-genai!
             let
                 target0 $ js/document.querySelector |.show-image
               when (js-present-dynamic? target0)
@@ -409,15 +404,13 @@
             clear-image-cache!
             d! $ :: :states cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
-                gen-ai @*gen-ai-new
+                gen-ai $ .unwrap @*gen-ai-new
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
                   reset! *abort-control abort
                   ffi/abort-signal abort
-                response $ js-await $ .!generateImages
-                  unsafe-coerce
-                    .-models $ unsafe-coerce gen-ai 'Dynamic
-                    , 'Dynamic
+                response $ js-await $ .generate-images
+                  js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
                   js-object (:model |imagen-4.0-generate-001) (:prompt prompt-text)
                     :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
@@ -465,7 +458,7 @@
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
-                  if (js-present-dynamic? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
+                  if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
                 openai $ let
                     ai @*openai
                   , ai
@@ -1188,30 +1181,19 @@
         'decode-genai-chunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-genai-chunk (chunk)
             let
-                chunk-data $ unsafe-coerce chunk 'Dynamic
-                candidates0 $ .?-candidates chunk-data
-                candidate0 $ if (js-present-dynamic? candidates0)
-                  .?-0 $ unsafe-coerce candidates0 'Dynamic
-                  , js/undefined
-                content0 $ if (js-present-dynamic? candidate0)
-                  .?-content $ unsafe-coerce candidate0 'Dynamic
-                  , js/undefined
-                parts0 $ if (js-present-dynamic? content0)
-                  .?-parts $ unsafe-coerce content0 'Dynamic
-                  , js/undefined
-                part0 $ if (js-present-dynamic? parts0)
-                  .?-0 $ unsafe-coerce parts0 'Dynamic
-                  , js/undefined
-                part $ unsafe-coerce part0 'Dynamic
-                thought0 $ if (js-present-dynamic? part0) (.?-thought part) js/undefined
-                thinking? $ if (bool? thought0) (unsafe-coerce thought0 'Bool) false
-                part-text $ if (js-present-dynamic? part0) (.?-text part) js/undefined
-                chunk-text $ .?-text chunk-data
+                chunk-data $ contract/expect-object "|GenAI chunk" chunk
+                candidates0 $ contract/object-field "|GenAI stream" chunk-data |candidates
+                candidate0 $ if (js-present-dynamic? candidates0) (contract/object-field "|GenAI stream" candidates0 |0) js/undefined
+                content0 $ if (js-present-dynamic? candidate0) (contract/object-field "|GenAI stream" candidate0 |content) js/undefined
+                parts0 $ if (js-present-dynamic? content0) (contract/object-field "|GenAI stream" content0 |parts) js/undefined
+                part0 $ if (js-present-dynamic? parts0) (contract/object-field "|GenAI stream" parts0 |0) js/undefined
+                thought0 $ if (js-present-dynamic? part0) (contract/object-field "|GenAI stream" part0 |thought) js/undefined
+                thinking? $ if (bool? thought0) (contract/expect-bool "|GenAI thought" thought0) false
+                part-text $ if (js-present-dynamic? part0) (contract/object-field "|GenAI stream" part0 |text) js/undefined
+                chunk-text $ contract/object-field "|GenAI stream" chunk-data |text
                 primary-text $ if (js-present-dynamic? part-text) part-text chunk-text
-                prompt-feedback $ .?-promptFeedback chunk-data
-                fallback-text $ if (js-present-dynamic? prompt-feedback)
-                  .?-blockReason $ unsafe-coerce prompt-feedback 'Dynamic
-                  , js/undefined
+                prompt-feedback $ contract/object-field "|GenAI stream" chunk-data |promptFeedback
+                fallback-text $ if (js-present-dynamic? prompt-feedback) (contract/object-field "|GenAI stream" prompt-feedback |blockReason) js/undefined
                 text0 $ if (js-present-dynamic? primary-text) primary-text fallback-text
                 text $ stream-text text0
               StreamChunk :text text :thinking? thinking?
@@ -1223,8 +1205,9 @@
               assert= |blocked $ :text decoded
               assert= false $ :thinking? decoded
           :schema $ :: 'Fn $ {} (:return 'app.comp.container/StreamChunk)
-            :args $ [] 'JsObject
+            :args $ [] 'T
             :features $ #{} :js-ffi
+            :generics $ [] 'T
         'download-sessions! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn download-sessions! (sessions)
             let
@@ -1266,6 +1249,22 @@
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Effect)
             :args $ []
             :features $ #{} :js-ffi
+        'ensure-genai! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn ensure-genai! ()
+            match @*gen-ai-new
+              (:some client) &unit
+              (:none)
+                let
+                    module $ contract/expect-object |GenAI.module $ js-await (js/import |@google/genai)
+                    client $ js-cast
+                      genai-new module $ get-gemini-key!
+                      , 'app.comp.container/GenAIClientHost
+                  reset! *gen-ai-new $ Option :some client
+                  , &unit
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'first-line $ %{} 'CodeEntry
           :doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now."
           :code $ quote $ defn first-line (tt)
@@ -1283,6 +1282,14 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'String
+        'genai-new $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn genai-new (module api-key) (raise "|JavaScript GenAI constructor")
+          :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|(module, apiKey) => new module.GoogleGenAI({apiKey})"
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
+            :args $ [] 'JsObject 'String
+            :features $ #{} :js-ffi
         'generate-session-id $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn generate-session-id ()
             str $ ffi/now-ms
@@ -1353,7 +1360,7 @@
                 :urlContext $ js-object
               true $ js-array
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
             :args $ [] 'Bool 'Bool
             :features $ #{} :js-ffi
         'messages->anthropic $ %{} 'CodeEntry (:doc |)
