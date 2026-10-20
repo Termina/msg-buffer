@@ -142,7 +142,7 @@
                 do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             d! $ :: :change-model
             let
-                axios-module $ js-await $ js/import |axios
+                axios-module $ contract/expect-object "|Axios module" $ js-await (js/import |axios)
                 selected $ let
                     selected0 $ js-await $ get-selected
                   if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到内容>"
@@ -1986,6 +1986,7 @@
             calcit.test :refer $ is
             js-ffi.browser :as browser
             js-ffi.shared :as ffi
+            js-ffi.contract :as contract
     'app.config $ %{} 'FileEntry
       :defs $ {}
         'Site $ %{} 'CodeEntry (:doc |)
