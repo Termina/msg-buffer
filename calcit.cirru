@@ -23,9 +23,9 @@
           :examples $ []
           :schema $ :: 'Ref $ :: 'Option 'app.comp.container/GenAIClientHost
         '*image-cache $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *image-cache false
+          :code $ quote $ defref *image-cache (Option :none)
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'Option 'String
         '*openai $ %{} 'CodeEntry (:doc "|called openai sdk, but actually for openrouter")
           :code $ quote $ defref *openai false
           :examples $ []
@@ -113,6 +113,18 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:generate-content |generateContent) (:generate-content-stream |generateContentStream) (:generate-images |generateImages)
+          :schema $ :: 'Trait
+        'GenAIPartsHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait GenAIPartsHost
+            .for-each! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIPartsHost $ :: 'Fn
+                {}
+                  :args $ [] (:: 'JsNullish 'JsObject) 'Number 'app.comp.container/GenAIPartsHost
+                  :return 'Unit
+              :return 'Unit
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :for-each! |forEach
           :schema $ :: 'Trait
         'StreamChunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct StreamChunk (:text 'String) (:thinking? 'Bool)
@@ -253,12 +265,9 @@
         'call-flash-imagen-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
             js-await $ ensure-genai!
-            let
-                target0 $ js/document.querySelector |.show-image
-              when (js-present-dynamic? target0)
-                let
-                    target $ unsafe-coerce target0 'Dynamic
-                  .!setAttribute target |src |
+            match (browser/query-selector |.show-image)
+              (:none) &unit
+              (:some preview) (browser/element-set-attribute! preview |src |)
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -281,49 +290,51 @@
                     :config $ js-object (:abortSignal abort-signal)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :responseModalities $ js-array |TEXT |IMAGE
-                parts $ unsafe-coerce
-                  unsafe-coerce
-                    .-parts $ unsafe-coerce
-                      .-content $ unsafe-coerce
-                        .-0 $ unsafe-coerce
-                          .-candidates $ unsafe-coerce sdk-result 'Dynamic
-                          , 'Dynamic
-                        , 'Dynamic
-                      , 'Dynamic
-                    , 'Dynamic
-                  , 'Dynamic
+                parts $ js-cast
+                  contract/object-field "|GenAI image response"
+                    contract/object-field "|GenAI image response"
+                      contract/object-field "|GenAI image response" (contract/object-field "|GenAI image response" sdk-result |candidates) |0
+                      , |content
+                    , |parts
+                  , 'app.comp.container/GenAIPartsHost
                 *text $ ref |
-              js-await $ .!forEach parts $ fn (chunk _a _b)
+              .for-each! parts $ fn (chunk _a _b)
+                hint-fn $ {}
+                  :args $ [] (:: 'JsNullish 'JsObject) 'Number 'app.comp.container/GenAIPartsHost
+                  :return 'Unit
+                  :features $ #{} :js-ffi
                 if (js-present-dynamic? chunk)
                   let
-                      chunk-data $ unsafe-coerce chunk 'Dynamic
-                      text0 $ .-text chunk-data
+                      chunk-data $ contract/expect-object "|GenAI image part" chunk
+                      text0 $ contract/object-field "|GenAI image response" chunk-data |text
                     if (js-present-dynamic? text0)
                       let
-                          text $ unsafe-coerce text0 'String
+                          text $ contract/expect-string "|GenAI image text" text0
                         swap! *text str text
-                        d! (:: :states cursor)
-                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                        d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                       let
-                          image-data0 $ .-inlineData chunk-data
+                          image-data0 $ contract/object-field "|GenAI image response" chunk-data |inlineData
                         when (js-present-dynamic? image-data0)
                           let
-                              image-data $ unsafe-coerce image-data0 'Dynamic
-                              data $ unsafe-coerce (.-data image-data) 'String
-                              image-blob $ base64ToBlob data
-                              url $ js/URL.createObjectURL image-blob
-                              target $ unsafe-coerce (js/document.querySelector |.show-image) 'Dynamic
-                            .!setAttribute target |src url
-                            reset! *image-cache url
+                              image-data $ contract/expect-object "|GenAI inlineData" image-data0
+                              data $ contract/expect-string "|GenAI inlineData.data" $ contract/object-field "|GenAI image response" image-data |data
+                              image-blob $ js-cast (base64ToBlob data) 'js-ffi.browser/BlobHost
+                              url $ browser/object-url-create image-blob
+                              target $ browser/query-selector |.show-image
+                            match target
+                              (:none) &unit
+                              (:some preview) (browser/element-set-attribute! preview |src url)
+                            do (clear-image-cache!)
+                              reset! *image-cache $ Option :some url
                             swap! *text str | "|(image ready)"
-                            d! (:: :states cursor)
-                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                  d! (:: :states cursor)
-                    -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                            d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                  d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                , &unit
               d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
             :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Dynamic
             :features $ #{} :js-ffi
         'call-genai-msg! $ %{} 'CodeEntry (:doc |)
@@ -391,12 +402,9 @@
         'call-imagen-4-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-imagen-4-msg! (variant cursor state prompt-text d!)
             js-await $ ensure-genai!
-            let
-                target0 $ js/document.querySelector |.show-image
-              when (js-present-dynamic? target0)
-                let
-                    target $ unsafe-coerce target0 'Dynamic
-                  .!removeAttribute target |src
+            match (browser/query-selector |.show-image)
+              (:none) &unit
+              (:some preview) (browser/element-remove-attribute! preview |src)
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -414,28 +422,31 @@
                   js-object (:model |imagen-4.0-generate-001) (:prompt prompt-text)
                     :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
-                      :signal abort-signal
+                      :abortSignal abort-signal
                 *text $ ref |
               let
-                  response-data $ unsafe-coerce response 'Dynamic
-                  generated-images $ unsafe-coerce (.-generatedImages response-data) 'Dynamic
-                  generated-image $ unsafe-coerce (.-0 generated-images) 'Dynamic
-                  image $ unsafe-coerce (.-image generated-image) 'Dynamic
-                  image-data0 $ .-imageBytes image
+                  response-data $ contract/expect-object "|GenAI image response" response
+                  generated-images $ contract/object-field "|GenAI image response" response-data |generatedImages
+                  generated-image $ contract/object-field "|GenAI image response" generated-images |0
+                  image $ contract/object-field "|GenAI image response" generated-image |image
+                  image-data0 $ contract/object-field "|GenAI image response" image |imageBytes
                 when (js-present-dynamic? image-data0)
                   let
-                      image-data $ unsafe-coerce image-data0 'String
-                      image-blob $ base64ToBlob image-data
-                      url $ js/URL.createObjectURL image-blob
-                      target $ unsafe-coerce (js/document.querySelector |.show-image) 'Dynamic
-                    reset! *image-cache url
-                    .!setAttribute target |src url
+                      image-data $ contract/expect-string "|GenAI imageBytes" image-data0
+                      image-blob $ js-cast (base64ToBlob image-data) 'js-ffi.browser/BlobHost
+                      url $ browser/object-url-create image-blob
+                      target $ browser/query-selector |.show-image
+                    do (clear-image-cache!)
+                      reset! *image-cache $ Option :some url
+                    match target
+                      (:none) &unit
+                      (:some preview) (browser/element-set-attribute! preview |src url)
                     swap! *text str | "|(image ready)"
-                    d! (:: :states cursor)
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
               d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
             :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Dynamic
             :features $ #{} :js-ffi
         'call-openrouter! $ %{} 'CodeEntry (:doc |)
@@ -518,13 +529,12 @@
             :features $ #{} :js-ffi
         'clear-image-cache! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn clear-image-cache! ()
-            let
-                url @*image-cache
-              when (not= false url)
-                do
-                  js/URL.revokeObjectURL $ unsafe-coerce url 'String
-                  reset! *image-cache false
-            , &unit
+            match @*image-cache
+              (:none) &unit
+              (:some url)
+                do (browser/object-url-revoke! url)
+                  reset! *image-cache $ Option :none
+                  , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
