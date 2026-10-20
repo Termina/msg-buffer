@@ -11,27 +11,27 @@
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
         '*abort-control $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *abort-control false
+          :code $ quote $ defref *abort-control false
           :examples $ []
           :schema $ :: 'Ref
         '*archived-sessions $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *archived-sessions nil
+          :code $ quote $ defref *archived-sessions nil
           :examples $ []
           :schema $ :: 'Ref $ :: 'JsNullish (:: 'List 'app.schema/ChatSession)
         '*gen-ai-new $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *gen-ai-new false
+          :code $ quote $ defref *gen-ai-new false
           :examples $ []
           :schema $ :: 'Ref
         '*image-cache $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *image-cache false
+          :code $ quote $ defref *image-cache false
           :examples $ []
           :schema $ :: 'Ref
         '*openai $ %{} 'CodeEntry (:doc "|called openai sdk, but actually for openrouter")
-          :code $ quote $ defatom *openai false
+          :code $ quote $ defref *openai false
           :examples $ []
           :schema $ :: 'Ref
         '*viewing-archive-session $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *viewing-archive-session nil
+          :code $ quote $ defref *viewing-archive-session nil
           :examples $ []
           :schema $ :: 'Ref $ :: 'JsNullish 'app.schema/ChatSession
         'DomTokenListHost $ %{} 'CodeEntry (:doc |)
@@ -124,7 +124,7 @@
                     .!pipeThrough stream $ new js/TextDecoderStream
                     , 'Dynamic
                   , 'Dynamic
-                *text $ atom $ str "|Claude AI:" &newline &newline
+                *text $ ref $ str "|Claude AI:" &newline &newline
               js/setTimeout $ fn () $ d!
                 :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
               apply-args () $ fn ()
@@ -218,7 +218,7 @@
                       , 'Dynamic
                     , 'Dynamic
                   , 'Dynamic
-                *text $ atom |
+                *text $ ref |
               js-await $ .!forEach parts $ fn (chunk _a _b)
                 if (js-present-dynamic? chunk)
                   let
@@ -361,7 +361,7 @@
                     :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :signal abort-signal
-                *text $ atom |
+                *text $ ref |
               let
                   response-data $ unsafe-coerce response 'Dynamic
                   generated-images $ unsafe-coerce (.-generatedImages response-data) 'Dynamic
@@ -429,8 +429,8 @@
               js/setTimeout $ fn () $ d!
                 :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
               let
-                  *thinking-text $ atom |
-                  *char-buf $ atom 0
+                  *thinking-text $ ref |
+                  *char-buf $ ref 0
                 js-await $ js-for-await sdk-result $ fn (chunk)
                   if (js-present-dynamic? chunk)
                     let
@@ -1796,8 +1796,8 @@
           :code $ quote $ defn submit-message! (cursor state prompt-text search? think? model d!)
             let
                 state1 $ assoc state :messages $ append-user-message (:messages state) prompt-text
-                *text $ atom |
-                *thinking-text $ atom |
+                *text $ ref |
+                *thinking-text $ ref |
                 model $ :model state
               d! cursor state1
               try
@@ -1949,7 +1949,7 @@
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reel
+          :code $ quote $ defref *reel
             -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
           :schema $ :: 'Ref
