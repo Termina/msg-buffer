@@ -3,7 +3,7 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {} $ :default
-    {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!)
+    {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
       :type-slots $ {}
@@ -11,29 +11,53 @@
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
         '*abort-control $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *abort-control false
+          :code $ quote $ defref *abort-control false
           :examples $ []
           :schema $ :: 'Ref
         '*archived-sessions $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *archived-sessions nil
+          :code $ quote $ defref *archived-sessions nil
           :examples $ []
           :schema $ :: 'Ref $ :: 'JsNullish (:: 'List 'app.schema/ChatSession)
         '*gen-ai-new $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *gen-ai-new false
+          :code $ quote $ defref *gen-ai-new (Option :none)
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'Option 'app.comp.container/GenAIClientHost
         '*image-cache $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *image-cache false
+          :code $ quote $ defref *image-cache (Option :none)
           :examples $ []
-          :schema $ :: 'Ref
-        '*openai $ %{} 'CodeEntry (:doc "|called openai sdk, but actually for openrouter")
-          :code $ quote $ defatom *openai false
+          :schema $ :: 'Ref $ :: 'Option 'String
+        '*openai $ %{} 'CodeEntry
+          :doc "|OpenAI-compatible SDK cache; reused only when provider base URL and current in-memory API key match. Never serialized."
+          :code $ quote $ defref *openai (Option :none)
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'Option 'app.comp.container/OpenAIClientHost
         '*viewing-archive-session $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *viewing-archive-session nil
+          :code $ quote $ defref *viewing-archive-session nil
           :examples $ []
           :schema $ :: 'Ref $ :: 'JsNullish 'app.schema/ChatSession
+        'AxiosStreamResponseHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait AxiosStreamResponseHost (:data 'app.comp.container/ByteStreamHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'ByteStreamHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait ByteStreamHost
+            .pipe-through $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/ByteStreamHost 'JsObject
+              :return 'app.comp.container/DecodedTextStreamHost
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :pipe-through |pipeThrough
+          :schema $ :: 'Trait
+        'DecodedTextStreamHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait DecodedTextStreamHost
+            .get-reader $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/DecodedTextStreamHost
+              :return 'app.comp.container/TextReaderHost
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :get-reader |getReader
+          :schema $ :: 'Trait
         'DomTokenListHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait DomTokenListHost
             .contains? $ :: 'Fn $ {}
@@ -49,6 +73,15 @@
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:add! |add) (:contains? |contains) (:remove! |remove)
           :schema $ :: 'Trait
+        'DownloadLinkHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait DownloadLinkHost
+            .click! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/DownloadLinkHost
+              :return 'Unit
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :click! |click
+          :schema $ :: 'Trait
         'FocusEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait FocusEventHost
             :target $ :: 'JsNullish 'app.comp.container/FocusTargetHost
@@ -62,10 +95,75 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
           :schema $ :: 'Trait
+        'GenAIClientHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait GenAIClientHost (:models 'app.comp.container/GenAIModelsHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'GenAIModelsHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait GenAIModelsHost
+            .generate-content $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIModelsHost 'JsObject
+              :return 'JsObject
+            .generate-content-stream $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIModelsHost 'JsObject
+              :return 'JsObject
+            .generate-images $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIModelsHost 'JsObject
+              :return 'JsObject
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} (:generate-content |generateContent) (:generate-content-stream |generateContentStream) (:generate-images |generateImages)
+          :schema $ :: 'Trait
+        'GenAIPartsHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait GenAIPartsHost
+            .for-each! $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/GenAIPartsHost $ :: 'Fn
+                {}
+                  :args $ [] (:: 'JsNullish 'JsObject) 'Number 'app.comp.container/GenAIPartsHost
+                  :return 'Unit
+              :return 'Unit
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} $ :for-each! |forEach
+          :schema $ :: 'Trait
+        'OpenAIChatHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait OpenAIChatHost (:completions 'app.comp.container/OpenAICompletionsHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'OpenAIClientHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait OpenAIClientHost (:base-url 'String) (:api-key 'String) (:chat 'app.comp.container/OpenAIChatHost)
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+            :names $ {} (:api-key |apiKey) (:base-url |baseURL)
+          :schema $ :: 'Trait
+        'OpenAICompletionsHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait OpenAICompletionsHost
+            .create $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/OpenAICompletionsHost 'JsObject 'JsObject
+              :return 'JsObject
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
         'StreamChunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct StreamChunk (:text 'String) (:thinking? 'Bool)
           :examples $ []
           :schema $ :: 'StructDef
+        'TextReadResultHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait TextReadResultHost (:done 'Bool)
+            :value $ :: 'JsNullish 'String
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
+        'TextReaderHost $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ deftrait TextReaderHost
+            .read $ :: 'Fn $ {}
+              :args $ [] 'app.comp.container/TextReaderHost
+              :return 'JsObject
+          :examples $ []
+          :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
+          :schema $ :: 'Trait
         'abort-dynamic! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn abort-dynamic! (value)
             ffi/abort! $ unsafe-coerce value 'js-ffi.shared/AbortControllerHost
@@ -80,6 +178,14 @@
           :schema $ :: 'Fn $ {}
             :args $ [] (:: 'List 'app.schema/ChatMessage) 'String
             :return $ :: 'List 'app.schema/ChatMessage
+        'axios-post $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn axios-post (module url body config) (raise "|JavaScript Axios binding")
+          :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|(module, url, body, config) => module.default.post(url, body, config)"
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
+            :args $ [] 'JsObject 'String 'JsObject 'JsObject
+            :features $ #{} :js-ffi
         'call-anthropic-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
             let
@@ -88,16 +194,14 @@
                 do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
             d! $ :: :change-model
             let
-                axios $ unsafe-coerce
-                  .-default $ js-await $ js/import |axios
-                  , 'Dynamic
+                axios-module $ contract/expect-object "|Axios module" $ js-await (js/import |axios)
                 selected $ let
                     selected0 $ js-await $ get-selected
                   if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到内容>"
                 content $ &str:replace prompt-text |{{selected}} selected
                 messages0 $ append-user-message (:messages state) content
                 messages1 $ upsert-assistant-message messages0 | |
-                result $ js-await $ .!post axios (str |https://sa.chenyong.life/v1/messages)
+                result $ js-await $ axios-post axios-module (str |https://sa.chenyong.life/v1/messages)
                   js-object
                     :model $ option:unwrap-or (get-env |claude-model) (or model |claude-3-5-sonnet-latest)
                     :max_tokens 1024
@@ -118,71 +222,72 @@
                         abort $ ffi/abort-controller-create
                       reset! *abort-control abort
                       ffi/abort-signal abort
-                stream $ unsafe-coerce (.-data result) 'Dynamic
-                reader $ unsafe-coerce
-                  .!getReader $ unsafe-coerce
-                    .!pipeThrough stream $ new js/TextDecoderStream
-                    , 'Dynamic
-                  , 'Dynamic
-                *text $ atom $ str "|Claude AI:" &newline &newline
-              js/setTimeout $ fn () $ d!
-                :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
-              apply-args () $ fn ()
-                hint-fn $ {} $ :async true
+                stream $ js-cast
+                  .-data $ js-cast result 'app.comp.container/AxiosStreamResponseHost
+                  , 'app.comp.container/ByteStreamHost
+                reader $ js-cast
+                  .get-reader $ js-cast
+                    .pipe-through stream $ new js/TextDecoderStream
+                    , 'app.comp.container/DecodedTextStreamHost
+                  , 'app.comp.container/TextReaderHost
+                *text $ ref $ str "|Claude AI:" &newline &newline
+              browser/set-timeout!
+                fn ()
+                  d! $ :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+                  , &unit
+                , 0
+              loop
+                  pending |
+                hint-fn $ {} (:async true)
+                  :args $ [] 'String
+                  :return 'Unit
+                  :features $ #{} :js-ffi
                 let
-                    info $ js-await $ .!read reader
-                    value $ wo-js-log $ .-value info
+                    info $ js-cast
+                      js-await $ .read reader
+                      , 'app.comp.container/TextReadResultHost
+                    value $ .-value info
                     done? $ .-done info
-                  if (wo-log done?) (:: :unit)
-                    do
-                      let
-                          events $ -> (stream-text value) split-lines
-                            filter $ fn (s) (starts-with? s "|data: ")
-                            map $ fn (s)
-                              -> (strip-prefix s "|data: ") js/JSON.parse to-calcit-data
-                        apply-args (events)
-                          fn (xs)
-                            list-match xs
-                              () $ do (println "|no thing to handle in this Loop") &unit
-                              (x0 xss)
-                                let
-                                    stop? $ =
-                                      option:unwrap-or (get x0 |type) |
-                                      , |message_stop
-                                  wo-js-log x0
-                                  if stop?
-                                    d! $ :: :states-merge cursor state $ {} (:answer @*text) (:loading? false) (:done? true)
-                                      :messages $ upsert-assistant-message messages1 @*text |
-                                    let
-                                        content-opt $ get-in x0 $ [] |delta |text
-                                      if (option:none? content-opt)
-                                        do (println |content-is-nil) (recur xss)
-                                        let
-                                            content $ stream-text $ option:unwrap-or content-opt |
-                                          swap! *text str content
-                                          d! (:: :states-merge cursor state)
-                                            {} (:answer @*text) (:loading? false) (:done? false)
-                                              :messages $ upsert-assistant-message messages1 @*text |
-                                          recur xss
-                      recur
+                    buffer $ str pending $ stream-text value
+                    lines $ split-lines buffer
+                    complete-lines $ if done? lines $ butlast lines
+                    remainder $ if done? | $ .unwrap-or (last lines) |
+                    events $ -> complete-lines
+                      filter $ fn (line) (starts-with? line "|data: ")
+                      map $ fn (line)
+                        decode-map-as
+                          to-calcit-data $ js/JSON.parse $ strip-prefix line "|data: "
+                          :: 'Map 'String 'Dynamic
+                  loop
+                      xs events
+                    match (destruct-list xs)
+                      (:none) &unit
+                      (:some event rest-events)
+                        if
+                          = |message_stop $ stream-text $ .unwrap-or (get event |type) |
+                          d! $ :: :states-merge cursor state $ {} (:answer @*text) (:loading? false) (:done? true)
+                            :messages $ upsert-assistant-message messages1 @*text |
+                          match
+                            get-in event $ [] |delta |text
+                            (:none) (recur rest-events)
+                            (:some fragment)
+                              let
+                                  text $ stream-text fragment
+                                swap! *text str text
+                                d! $ :: :states-merge cursor state $ {} (:answer @*text) (:loading? false) (:done? false)
+                                  :messages $ upsert-assistant-message messages1 @*text |
+                                recur rest-events
+                  if done? &unit $ recur remainder
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
             :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'String 'Bool 'Dynamic
             :features $ #{} :js-ffi
         'call-flash-imagen-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
-            if (= false @*gen-ai-new)
-              let
-                  mod $ js-await $ js/import |@google/genai
-                  GoogleGenAI $ .-GoogleGenAI mod
-                reset! *gen-ai-new $ new GoogleGenAI $ js-object
-                  :apiKey $ get-gemini-key!
-            let
-                target0 $ js/document.querySelector |.show-image
-              when (js-present-dynamic? target0)
-                let
-                    target $ unsafe-coerce target0 'Dynamic
-                  .!setAttribute target |src |
+            js-await $ ensure-genai!
+            match (browser/query-selector |.show-image)
+              (:none) &unit
+              (:some preview) (browser/element-set-attribute! preview |src |)
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -192,75 +297,70 @@
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
-                  if (js-present-dynamic? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
-                gen-ai @*gen-ai-new
+                  if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
+                gen-ai $ .unwrap @*gen-ai-new
                 content $ &str:replace prompt-text |{{selected}} selected
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
                   reset! *abort-control abort
                   ffi/abort-signal abort
-                sdk-result $ js-await $ .!generateContent
-                  unsafe-coerce
-                    .-models $ unsafe-coerce gen-ai 'Dynamic
-                    , 'Dynamic
+                sdk-result $ js-await $ .generate-content
+                  js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
                   js-object (:model |gemini-2.5-flash-image) (:contents content)
                     :config $ js-object (:abortSignal abort-signal)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :responseModalities $ js-array |TEXT |IMAGE
-                parts $ unsafe-coerce
-                  unsafe-coerce
-                    .-parts $ unsafe-coerce
-                      .-content $ unsafe-coerce
-                        .-0 $ unsafe-coerce
-                          .-candidates $ unsafe-coerce sdk-result 'Dynamic
-                          , 'Dynamic
-                        , 'Dynamic
-                      , 'Dynamic
-                    , 'Dynamic
-                  , 'Dynamic
-                *text $ atom |
-              js-await $ .!forEach parts $ fn (chunk _a _b)
+                parts $ js-cast
+                  contract/object-field "|GenAI image response"
+                    contract/object-field "|GenAI image response"
+                      contract/object-field "|GenAI image response" (contract/object-field "|GenAI image response" sdk-result |candidates) |0
+                      , |content
+                    , |parts
+                  , 'app.comp.container/GenAIPartsHost
+                *text $ ref |
+              .for-each! parts $ fn (chunk _a _b)
+                hint-fn $ {}
+                  :args $ [] (:: 'JsNullish 'JsObject) 'Number 'app.comp.container/GenAIPartsHost
+                  :return 'Unit
+                  :features $ #{} :js-ffi
                 if (js-present-dynamic? chunk)
                   let
-                      chunk-data $ unsafe-coerce chunk 'Dynamic
-                      text0 $ .-text chunk-data
+                      chunk-data $ contract/expect-object "|GenAI image part" chunk
+                      text0 $ contract/object-field "|GenAI image response" chunk-data |text
                     if (js-present-dynamic? text0)
                       let
-                          text $ unsafe-coerce text0 'String
+                          text $ contract/expect-string "|GenAI image text" text0
                         swap! *text str text
-                        d! (:: :states cursor)
-                          -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                        d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                       let
-                          image-data0 $ .-inlineData chunk-data
+                          image-data0 $ contract/object-field "|GenAI image response" chunk-data |inlineData
                         when (js-present-dynamic? image-data0)
                           let
-                              image-data $ unsafe-coerce image-data0 'Dynamic
-                              data $ unsafe-coerce (.-data image-data) 'String
-                              image-blob $ base64ToBlob data
-                              url $ js/URL.createObjectURL image-blob
-                              target $ unsafe-coerce (js/document.querySelector |.show-image) 'Dynamic
-                            .!setAttribute target |src url
-                            reset! *image-cache url
+                              image-data $ contract/expect-object "|GenAI inlineData" image-data0
+                              data $ contract/expect-string "|GenAI inlineData.data" $ contract/object-field "|GenAI image response" image-data |data
+                              image-blob $ js-cast (base64ToBlob data) 'js-ffi.browser/BlobHost
+                              url $ browser/object-url-create image-blob
+                              target $ browser/query-selector |.show-image
+                            match target
+                              (:none) &unit
+                              (:some preview) (browser/element-set-attribute! preview |src url)
+                            clear-image-cache!
+                            reset! *image-cache $ Option :some url
                             swap! *text str | "|(image ready)"
-                            d! (:: :states cursor)
-                              -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
-                  d! (:: :states cursor)
-                    -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                            d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                  d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                 d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                , &unit
               d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
             :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Dynamic
             :features $ #{} :js-ffi
         'call-genai-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-genai-msg!
             variant cursor state prompt-text search? think? d! *text *thinking-text
-            if (= false @*gen-ai-new)
-              let
-                  mod $ js-await $ js/import |@google/genai
-                  GoogleGenAI $ .-GoogleGenAI mod
-                reset! *gen-ai-new $ new GoogleGenAI $ js-object
-                  :apiKey $ get-gemini-key!
+            js-await $ ensure-genai!
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -271,7 +371,7 @@
                       js-await $ get-selected
                       , js/undefined
                   if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
-                gen-ai @*gen-ai-new
+                gen-ai $ .unwrap @*gen-ai-new
                 model $ pick-model variant
                 content $ &str:replace prompt-text |{{selected}} selected
                 json? $ or (includes? prompt-text |{{json}}) (includes? prompt-text |{{JSON}})
@@ -284,10 +384,8 @@
                   reset! *abort-control abort
                   ffi/abort-signal abort
                 tools $ make-genai-tools search? has-url?
-                sdk-result $ js-await $ .!generateContentStream
-                  unsafe-coerce
-                    .-models $ unsafe-coerce gen-ai 'Dynamic
-                    , 'Dynamic
+                sdk-result $ js-await $ .generate-content-stream
+                  js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
                   js-object (:model model)
                     :contents $ messages->gemini messages0
                     :config $ js-object
@@ -298,13 +396,7 @@
                             contains? (#{} |gemini-3.7-flash |gemini-3.8-flash) model
                             , |low |minimal
                           :includeThoughts false
-                      :tools $ if
-                        >
-                          unsafe-coerce
-                            .-length $ unsafe-coerce tools 'Dynamic
-                            , 'Number
-                          , 0
-                        , tools js/undefined
+                      :tools $ if (or search? has-url?) tools js/undefined
                       :abortSignal abort-signal
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
                       :responseMimeType $ if json? |application/json js/undefined
@@ -313,7 +405,7 @@
               js-await $ js-for-await sdk-result $ fn (chunk)
                 if (js-present-dynamic? chunk)
                   let
-                      stream-chunk $ unsafe-coerce (decode-genai-chunk chunk) 'app.comp.container/StreamChunk
+                      stream-chunk $ decode-genai-chunk chunk
                       is-thinking? $ :thinking? stream-chunk
                       text $ :text stream-chunk
                     if is-thinking? (swap! *thinking-text str text) (swap! *text str text)
@@ -329,18 +421,10 @@
             :features $ #{} :js-ffi
         'call-imagen-4-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-imagen-4-msg! (variant cursor state prompt-text d!)
-            if (= false @*gen-ai-new)
-              let
-                  mod $ js-await $ js/import |@google/genai
-                  GoogleGenAI $ .-GoogleGenAI mod
-                reset! *gen-ai-new $ new GoogleGenAI $ js-object
-                  :apiKey $ get-gemini-key!
-            let
-                target0 $ js/document.querySelector |.show-image
-              when (js-present-dynamic? target0)
-                let
-                    target $ unsafe-coerce target0 'Dynamic
-                  .!removeAttribute target |src
+            js-await $ ensure-genai!
+            match (browser/query-selector |.show-image)
+              (:none) &unit
+              (:some preview) (browser/element-remove-attribute! preview |src)
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -348,55 +432,46 @@
             clear-image-cache!
             d! $ :: :states cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
-                gen-ai @*gen-ai-new
+                gen-ai $ .unwrap @*gen-ai-new
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
                   reset! *abort-control abort
                   ffi/abort-signal abort
-                response $ js-await $ .!generateImages
-                  unsafe-coerce
-                    .-models $ unsafe-coerce gen-ai 'Dynamic
-                    , 'Dynamic
+                response $ js-await $ .generate-images
+                  js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
                   js-object (:model |imagen-4.0-generate-001) (:prompt prompt-text)
                     :config $ js-object (:numberOfImages 1) (:includeRaiReason true)
                       :httpOptions $ js-object $ :baseUrl |https://ja.chenyong.life
-                      :signal abort-signal
-                *text $ atom |
+                      :abortSignal abort-signal
+                *text $ ref |
               let
-                  response-data $ unsafe-coerce response 'Dynamic
-                  generated-images $ unsafe-coerce (.-generatedImages response-data) 'Dynamic
-                  generated-image $ unsafe-coerce (.-0 generated-images) 'Dynamic
-                  image $ unsafe-coerce (.-image generated-image) 'Dynamic
-                  image-data0 $ .-imageBytes image
+                  response-data $ contract/expect-object "|GenAI image response" response
+                  generated-images $ contract/object-field "|GenAI image response" response-data |generatedImages
+                  generated-image $ contract/object-field "|GenAI image response" generated-images |0
+                  image $ contract/object-field "|GenAI image response" generated-image |image
+                  image-data0 $ contract/object-field "|GenAI image response" image |imageBytes
                 when (js-present-dynamic? image-data0)
                   let
-                      image-data $ unsafe-coerce image-data0 'String
-                      image-blob $ base64ToBlob image-data
-                      url $ js/URL.createObjectURL image-blob
-                      target $ unsafe-coerce (js/document.querySelector |.show-image) 'Dynamic
-                    reset! *image-cache url
-                    .!setAttribute target |src url
+                      image-data $ contract/expect-string "|GenAI imageBytes" image-data0
+                      image-blob $ js-cast (base64ToBlob image-data) 'js-ffi.browser/BlobHost
+                      url $ browser/object-url-create image-blob
+                      target $ browser/query-selector |.show-image
+                    clear-image-cache!
+                    reset! *image-cache $ Option :some url
+                    match target
+                      (:none) &unit
+                      (:some preview) (browser/element-set-attribute! preview |src url)
                     swap! *text str | "|(image ready)"
-                    d! (:: :states cursor)
-                      -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
+                    d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
               d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
             :args $ [] 'Tag (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Dynamic
             :features $ #{} :js-ffi
         'call-openrouter! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn call-openrouter! (cursor state prompt-text variant thinking? d! *text)
-            if (= false @*openai)
-              let
-                  mod $ js-await $ js/import |openai
-                  OpenAI $ .-default mod
-                  deepseek? $ includes? variant |deepseek
-                  base-url $ if deepseek? |https://api.deepseek.com |https://openrouter.ai/api/v1
-                  key-fn $ if deepseek? get-deepseek-key! get-openrouter-key!
-                reset! *openai $ new OpenAI $ js-object (:baseURL base-url)
-                  :apiKey $ key-fn
-                  :defaultHeaders $ js-object
-                  :dangerouslyAllowBrowser true
+          :code $ quote $ defn call-openrouter! (cursor state prompt-text provider variant thinking? d! *text)
+            js-await $ ensure-openai! provider
             let
                 abort $ deref *abort-control
               when (js-present-dynamic? abort)
@@ -404,20 +479,16 @@
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
-                  if (js-present-dynamic? selected0) (unsafe-coerce selected0 'String) "|<未找到选中内容>"
-                openai $ let
-                    ai @*openai
-                  , ai
+                  if (js-present-dynamic? selected0) (stream-text selected0) "|<未找到选中内容>"
+                openai $ .unwrap @*openai
                 content $ &str:replace prompt-text |{{selected}} selected
                 json? $ or (includes? prompt-text |{{json}}) (includes? prompt-text |{{JSON}})
                 messages0 $ :messages state
                 messages1 $ upsert-assistant-message messages0 | |
-                sdk-result $ js-await $ .!create
-                  unsafe-coerce
-                    .-completions $ unsafe-coerce
-                      .-chat $ unsafe-coerce openai 'Dynamic
-                      , 'Dynamic
-                    , 'Dynamic
+                sdk-result $ js-await $ .create
+                  js-cast
+                    .-completions $ js-cast (.-chat openai) 'app.comp.container/OpenAIChatHost
+                    , 'app.comp.container/OpenAICompletionsHost
                   js-object (:model variant)
                     :messages $ messages->openai messages0
                     :stream true
@@ -426,21 +497,24 @@
                       abort $ ffi/abort-controller-create
                     reset! *abort-control abort
                     ffi/abort-signal abort
-              js/setTimeout $ fn () $ d!
-                :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+              browser/set-timeout!
+                fn ()
+                  d! $ :: :states-merge cursor state $ {} (:answer |) (:thinking |) (:loading? true) (:done? false) (:messages messages1)
+                  , &unit
+                , 0
               let
-                  *thinking-text $ atom |
-                  *char-buf $ atom 0
+                  *thinking-text $ ref |
+                  *char-buf $ ref 0
                 js-await $ js-for-await sdk-result $ fn (chunk)
                   if (js-present-dynamic? chunk)
                     let
-                        chunk-data $ unsafe-coerce chunk 'Dynamic
-                        choices $ unsafe-coerce (.-choices chunk-data) 'Dynamic
-                        choice0 $ unsafe-coerce (.-0 choices) 'Dynamic
-                        choice $ unsafe-coerce (.-delta choice0) 'Dynamic
-                        reason0 $ .-reasoning_content choice
+                        chunk-data $ contract/expect-object "|OpenAI chunk" chunk
+                        choices $ contract/object-field "|OpenAI stream" chunk-data |choices
+                        choice0 $ if (js-present? choices) (contract/object-field "|OpenAI stream" choices |0) js/undefined
+                        choice $ if (js-present? choice0) (contract/object-field "|OpenAI stream" choice0 |delta) js/undefined
+                        reason0 $ if (js-present? choice) (contract/object-field "|OpenAI stream" choice |reasoning_content) js/undefined
                         reason $ if (js-present-dynamic? reason0) (stream-text reason0) |
-                        text0 $ .-content choice
+                        text0 $ if (js-present? choice) (contract/object-field "|OpenAI stream" choice |content) js/undefined
                         text $ if (js-present-dynamic? text0) (stream-text text0) |
                       if
                         not $ blank? reason
@@ -458,18 +532,19 @@
                     :messages $ upsert-assistant-message messages1 @*text @*thinking-text
                 d! $ :: :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                   :messages $ upsert-assistant-message messages1 @*text @*thinking-text
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
-            :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'String 'Bool 'Dynamic $ :: 'Ref 'String
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
+            :args $ [] (:: 'List 'Dynamic) 'app.schema/ChatState 'String 'Tag 'String 'Bool 'Dynamic $ :: 'Ref 'String
             :features $ #{} :js-ffi
         'clear-image-cache! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn clear-image-cache! ()
-            let
-                url @*image-cache
-              when (not= false url)
-                do
-                  js/URL.revokeObjectURL $ unsafe-coerce url 'String
-                  reset! *image-cache false
+            match @*image-cache
+              (:none) &unit
+              (:some url)
+                do (browser/object-url-revoke! url)
+                  reset! *image-cache $ Option :none
+                  , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
@@ -504,14 +579,16 @@
                 archived-count $ :archived-count app-store
                 current-session-id $ :current-session-id app-store
                 states $ :states app-store
-                cursor $ option:unwrap-or (get states :cursor) ([])
+                cursor $ decode-map-as
+                  option:unwrap-or (get states :cursor) ([])
+                  :: 'List 'Dynamic
                 state $ let
                     raw-chat-state $ option:unwrap-or (get states :data)
                       {} (:answer |) (:loading? false) (:done? true)
                         :messages $ []
                         :model :gemini
                         :thinking |
-                  unsafe-coerce (normalize-chat-state raw-chat-state) 'app.schema/ChatState
+                  normalize-chat-state raw-chat-state
                 done? $ :done? state
                 messages $ :messages state
                 model $ if
@@ -525,7 +602,7 @@
                         hint-fn $ {}
                           :args $ [] 'app.schema/ChatSession
                           :return 'Bool
-                        = (:id s) (assert-type current-session-id 'String)
+                        = (:id s) (decode-map-as current-session-id 'String)
                       :: 'Option 'app.schema/ChatSession
                     fn ()
                       hint-fn $ {} $ :return 'Bool
@@ -557,15 +634,21 @@
                     ; :confirm-class style-confirm
                     :items models-menu
                     :on-result $ fn (result d!)
-                      d! cursor $ assoc state :model $ option:unwrap-or (nth result 1) :gemini
+                      d! cursor $ assoc state :model $ decode-map-as
+                        option:unwrap-or (nth result 1) :gemini
+                        , 'Tag
                 reply-plugin $ use-prompt (>> states :reply-prompt)
                   {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
-                    :validator $ fn (text)
-                      if (blank? text) "|Please enter text" |
+                    :validator $ fn (raw-text)
+                      let
+                          text $ decode-map-as raw-text 'String
+                        if (blank? text) "|Please enter text" |
                 api-key-plugin $ use-prompt (>> states :api-key-prompt)
                   {} (:text "|API key required") (:placeholder "|Enter API key") (:button-text |Save)
-                    :validator $ fn (text)
-                      if (blank? text) "|Please enter API key" |
+                    :validator $ fn (raw-text)
+                      let
+                          text $ decode-map-as raw-text 'String
+                        if (blank? text) "|Please enter API key" |
                 text-alert-plugin $ use-alert (>> states :empty-message-alert)
                   {} $ :text "|Please enter text"
                 submit-with-key! $ fn (submit-state text search? think? d!)
@@ -577,13 +660,18 @@
                         storage-key $ model-storage-key model
                         stored $ browser/storage-get-or storage-key |
                       if (blank? stored)
-                        .show api-key-plugin d! $ fn (key) (browser/storage-set! storage-key key) (submit-message! cursor submit-state text search? think? model d!)
+                        .show api-key-plugin d! $ fn (key)
+                          browser/storage-set! storage-key $ decode-map-as key 'String
+                          submit-message! cursor submit-state text search? think? model d!
                         submit-message! cursor submit-state text search? think? model d!
                 message-box-state $ let
                     raw-message-box-state $ option:unwrap-or
                       get (>> states :message-box) :data
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
+                  if (struct? raw-message-box-state)
+                    struct-match raw-message-box-state (MessageBoxState typed typed)
+                      _ other $ raise "|Expected MessageBoxState"
+                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
                 sessions-plugin $ use-drawer (>> states :sessions-modal)
                   {} (:title "|History Sessions")
                     :style $ {} (:min-width "||max(320px,30vw)\"") (:max-width |80vw)
@@ -609,10 +697,17 @@
                           hint-fn $ {} $ :async true
                           let
                               archive-key $ :archive-key site
-                              raw $ js-await $ db-get archive-key
+                              raw $ let
+                                  host-value $ js-await $ db-get archive-key
+                                if
+                                  or (nil? host-value)
+                                    = (js/typeof host-value) |undefined
+                                  , | $ contract/expect-string "|Archive storage value" host-value
                             if (blank? raw) (js/alert "|No archives found!")
                               let
-                                  parsed $ parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
+                                  parsed $ map
+                                    decode-map-as (parse-cirru-edn raw) (:: 'List 'Dynamic)
+                                    fn (session) (app.schema/normalize-chat-session session)
                                 reset! *archived-sessions parsed
               div
                 {} $ :class-name $ str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global
@@ -639,7 +734,9 @@
                           ->
                             :messages $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
                             map-indexed $ fn (idx msg)
-                              hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatMessage)
+                              hint-fn $ {}
+                                :args $ [] 'Number 'app.schema/ChatMessage
+                                :return $ :: 'List 'Dynamic
                               [] idx $ let
                                   role $ :role msg
                                   content $ stream-text $ :content msg
@@ -678,14 +775,18 @@
                         list->
                           {} $ :class-name css/column
                           let
-                              current-archives $ assert-type @*archived-sessions $ :: 'List 'app.schema/ChatSession
+                              current-archives $ let
+                                  cached @*archived-sessions
+                                if (js-nullish? cached) ([]) cached
                             if (empty? current-archives)
-                              [] :empty $ div
+                              [] $ [] :empty $ div
                                 {} $ :style $ {} (:padding |12px)
                                   :color $ hsl 0 0 60
                                 <> "|No archived sessions left."
                               -> current-archives reverse $ map $ fn (session)
-                                hint-fn $ {} $ :args ([] 'app.schema/ChatSession)
+                                hint-fn $ {}
+                                  :args $ [] 'app.schema/ChatSession
+                                  :return $ :: 'List 'Dynamic
                                 let
                                     session-id $ :id session
                                     created-at $ :created-at session
@@ -712,7 +813,9 @@
                                               proceed? $ js/confirm "|Delete this archived session?"
                                             when proceed? $ let
                                                 new-archives $ filter
-                                                  assert-type @*archived-sessions $ :: 'List 'app.schema/ChatSession
+                                                  let
+                                                      cached @*archived-sessions
+                                                    if (js-nullish? cached) ([]) cached
                                                   fn (s)
                                                     hint-fn $ {}
                                                       :args $ [] 'app.schema/ChatSession
@@ -757,7 +860,9 @@
                         list->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           -> messages $ map-indexed $ fn (idx msg)
-                            hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatMessage)
+                            hint-fn $ {}
+                              :args $ [] 'Number 'app.schema/ChatMessage
+                              :return $ :: 'List 'Dynamic
                             [] idx $ let
                                 role $ :role msg
                                 content $ stream-text $ :content msg
@@ -804,9 +909,10 @@
                             if (:focus-mode? message-box-state) nil $ a $ {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
                               :on-click $ fn (e d!)
                                 let
-                                    focused $ .-activeElement $ unsafe-coerce js/document 'Dynamic
-                                  when (js-present-dynamic? focused)
-                                    .!blur $ unsafe-coerce focused 'Dynamic
+                                    focused $ browser/document-active-element
+                                  match focused
+                                    (:none) &unit
+                                    (:some element) (element .blur!)
                                   d!
                                     option:unwrap-or
                                       get (>> states :message-box) :cursor
@@ -826,11 +932,12 @@
                           if (:done? state)
                             div $ {} $ :class-name (str-spaced css/row-middle css/gap8)
                       =< nil 200
-                    comp-message-box (>> states :message-box)
+                    comp-message-box
+                      decode-map-as (>> states :message-box) (:: 'Map 'Tag 'Dynamic)
                       a $ {}
-                        :inner-text $ or (turn-str model) |-
+                        :inner-text $ or (to-string model) |-
                         :role |button
-                        :aria-label $ str |model-picker: $ turn-string model
+                        :aria-label $ str |model-picker: $ to-string model
                         :class-name $ str-spaced style-a-toggler
                         :style $ {} $ :opacity
                           if (= model :anthropic) 1 0.3
@@ -855,6 +962,7 @@
                                 assoc :thinking |
                                 assoc :done? false
                               , text search? think? d!
+                        , &unit
                       , model
                 model-plugin.render
                 reply-plugin.render
@@ -886,20 +994,26 @@
                 :width $ str size |px
                 :height $ str size |px
                 :line-height |0
-              :innerHTML $ case-default icon |
+              :innerHTML $ match icon
                 :clock "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><polyline points=\"12 6 12 12 16 14\"></polyline></svg>"
                 :send "|<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"22\" y1=\"2\" x2=\"11\" y2=\"13\"></line><polygon points=\"22 2 15 22 11 13 2 9 22 2\"></polygon></svg>"
+                _ |
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
             :args $ [] 'Tag 'Number
         'comp-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-message-box (states picker-el on-submit model)
             let
-                cursor $ option:unwrap-or (get states :cursor) ([])
+                cursor $ decode-map-as
+                  option:unwrap-or (get states :cursor) ([])
+                  :: 'List 'Dynamic
                 state $ let
                     raw-message-box-state $ option:unwrap-or (get states :data)
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
+                  if (struct? raw-message-box-state)
+                    struct-match raw-message-box-state (MessageBoxState typed typed)
+                      _ other $ raise "|Expected MessageBoxState"
+                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
               [] (effect-focus) (on-fill cursor state on-submit)
                 div
                   {} $ :class-name $ str-spaced css/center style-message-box-panel
@@ -912,7 +1026,9 @@
                           :on-click $ fn (e d!)
                             d! cursor $ assoc state :focus-mode? false
                             js/setTimeout
-                              fn () $ .!focus $ unsafe-coerce (js/document.querySelector |#message) 'Dynamic
+                              fn () $ match (browser/query-selector |#message)
+                                (:none) &unit
+                                (:some input) (input .focus!)
                               , 0
                             , &unit
                         <> $ if
@@ -926,20 +1042,35 @@
                         :aria-label |prompt-input
                         :class-name $ str-spaced css/textarea css/font-code! style-textbox
                         :on-input $ fn (e d!)
-                          d! cursor $ assoc state :content $ str
+                          d! cursor $ assoc state :content $ decode-map-as
                             option:unwrap-or (get e :value) |
+                            , 'String
                           , &unit
                         :on-keydown $ fn (e d!)
                           if
                             and
-                              = 13 $ option:unwrap-or (get e :keycode) 0
+                              = 13 $ decode-map-as
+                                option:unwrap-or (get e :keycode) 0
+                                , 'Number
                               or
-                                option:unwrap-or (get e :meta?) false
-                                option:unwrap-or (get e :ctrl?) false
+                                decode-map-as
+                                  option:unwrap-or (get e :meta?) false
+                                  , 'Bool
+                                decode-map-as
+                                  option:unwrap-or (get e :ctrl?) false
+                                  , 'Bool
                             on-submit (:content state) (:search? state) (:think? state) d!
                           , &unit
-                        :on-focus $ fn (e d!) (toggle-focus-within! e true) &unit
-                        :on-blur $ fn (e d!) (toggle-focus-within! e false) &unit
+                        :on-focus $ fn (e d!)
+                          toggle-focus-within!
+                            decode-map-as e $ :: 'Map 'Tag 'Dynamic
+                            , true
+                          , &unit
+                        :on-blur $ fn (e d!)
+                          toggle-focus-within!
+                            decode-map-as e $ :: 'Map 'Tag 'Dynamic
+                            , false
+                          , &unit
                     if
                       not $ :focus-mode? state
                       do (=< nil 4)
@@ -953,7 +1084,9 @@
                               :aria-label |clear-prompt
                               :on-click $ fn (e d!)
                                 d! cursor $ assoc state :content |
-                                .!focus $ unsafe-coerce (js/document.querySelector |#message) 'Dynamic
+                                match (browser/query-selector |#message)
+                                  (:none) &unit
+                                  (:some input) (input .focus!)
                                 , &unit
                             span $ {} $ :class-name style-clear
                           div
@@ -1027,7 +1160,9 @@
                   list->
                     {} $ :class-name css/column
                     -> sessions reverse $ map $ fn (session)
-                      hint-fn $ {} $ :args ([] 'app.schema/ChatSession)
+                      hint-fn $ {}
+                        :args $ [] 'app.schema/ChatSession
+                        :return $ :: 'List 'Dynamic
                       let
                           session-id $ :id session
                           created-at $ :created-at session
@@ -1052,10 +1187,10 @@
                               :aria-label $ str |session-delete: session-id
                               :on-click $ fn (e d!)
                                 let
-                                    event $ unsafe-coerce
+                                    event $ js-cast
                                       option:unwrap-or (get e :event) js/undefined
-                                      , 'Dynamic
-                                  .!stopPropagation event
+                                      , 'js-ffi.browser/EventHost
+                                  browser/event-stop-propagation! event
                                 d! $ :: :remove-session session-id
                                 , &unit
                             <> "|✕"
@@ -1084,9 +1219,16 @@
                                 proceed? $ js/confirm $ str "|Archive " (count sessions) "| sessions and clear active view?"
                               when proceed? $ let
                                   archive-key $ :archive-key site
-                                  raw $ js-await $ db-get archive-key
+                                  raw $ let
+                                      host-value $ js-await $ db-get archive-key
+                                    if
+                                      or (nil? host-value)
+                                        = (js/typeof host-value) |undefined
+                                      , | $ contract/expect-string "|Archive storage value" host-value
                                   old-archives $ if (blank? raw) (take sessions 0)
-                                    parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
+                                    map
+                                      decode-map-as (parse-cirru-edn raw) (:: 'List 'Dynamic)
+                                      fn (session) (app.schema/normalize-chat-session session)
                                   new-archives $ concat old-archives sessions
                                 js-await $ db-set archive-key $ format-cirru-edn new-archives
                                 d! $ :: :archive-sessions $ count new-archives
@@ -1123,30 +1265,19 @@
         'decode-genai-chunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-genai-chunk (chunk)
             let
-                chunk-data $ unsafe-coerce chunk 'Dynamic
-                candidates0 $ .?-candidates chunk-data
-                candidate0 $ if (js-present-dynamic? candidates0)
-                  .?-0 $ unsafe-coerce candidates0 'Dynamic
-                  , js/undefined
-                content0 $ if (js-present-dynamic? candidate0)
-                  .?-content $ unsafe-coerce candidate0 'Dynamic
-                  , js/undefined
-                parts0 $ if (js-present-dynamic? content0)
-                  .?-parts $ unsafe-coerce content0 'Dynamic
-                  , js/undefined
-                part0 $ if (js-present-dynamic? parts0)
-                  .?-0 $ unsafe-coerce parts0 'Dynamic
-                  , js/undefined
-                part $ unsafe-coerce part0 'Dynamic
-                thought0 $ if (js-present-dynamic? part0) (.?-thought part) js/undefined
-                thinking? $ if (bool? thought0) (unsafe-coerce thought0 'Bool) false
-                part-text $ if (js-present-dynamic? part0) (.?-text part) js/undefined
-                chunk-text $ .?-text chunk-data
+                chunk-data $ contract/expect-object "|GenAI chunk" chunk
+                candidates0 $ contract/object-field "|GenAI stream" chunk-data |candidates
+                candidate0 $ if (js-present-dynamic? candidates0) (contract/object-field "|GenAI stream" candidates0 |0) js/undefined
+                content0 $ if (js-present-dynamic? candidate0) (contract/object-field "|GenAI stream" candidate0 |content) js/undefined
+                parts0 $ if (js-present-dynamic? content0) (contract/object-field "|GenAI stream" content0 |parts) js/undefined
+                part0 $ if (js-present-dynamic? parts0) (contract/object-field "|GenAI stream" parts0 |0) js/undefined
+                thought0 $ if (js-present-dynamic? part0) (contract/object-field "|GenAI stream" part0 |thought) js/undefined
+                thinking? $ if (bool? thought0) (contract/expect-bool "|GenAI thought" thought0) false
+                part-text $ if (js-present-dynamic? part0) (contract/object-field "|GenAI stream" part0 |text) js/undefined
+                chunk-text $ contract/object-field "|GenAI stream" chunk-data |text
                 primary-text $ if (js-present-dynamic? part-text) part-text chunk-text
-                prompt-feedback $ .?-promptFeedback chunk-data
-                fallback-text $ if (js-present-dynamic? prompt-feedback)
-                  .?-blockReason $ unsafe-coerce prompt-feedback 'Dynamic
-                  , js/undefined
+                prompt-feedback $ contract/object-field "|GenAI stream" chunk-data |promptFeedback
+                fallback-text $ if (js-present-dynamic? prompt-feedback) (contract/object-field "|GenAI stream" prompt-feedback |blockReason) js/undefined
                 text0 $ if (js-present-dynamic? primary-text) primary-text fallback-text
                 text $ stream-text text0
               StreamChunk :text text :thinking? thinking?
@@ -1158,44 +1289,86 @@
               assert= |blocked $ :text decoded
               assert= false $ :thinking? decoded
           :schema $ :: 'Fn $ {} (:return 'app.comp.container/StreamChunk)
-            :args $ [] 'JsObject
+            :args $ [] 'T
             :features $ #{} :js-ffi
+            :generics $ [] 'T
         'download-sessions! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn download-sessions! (sessions)
             let
                 content $ format-cirru-edn sessions
-                blob $ unsafe-coerce
+                blob $ js-cast
                   new js/Blob (js-array content)
                     js-object $ :type |application/edn;charset=utf-8
-                  , 'Dynamic
-                url $ unsafe-coerce (js/URL.createObjectURL blob) 'String
-                link $ unsafe-coerce (js/document.createElement |a) 'Dynamic
+                  , 'js-ffi.browser/BlobHost
+                url $ browser/object-url-create blob
+                link $ browser/create-element |a
+                clickable $ js-cast link 'app.comp.container/DownloadLinkHost
                 filename $ str |sessions- (ffi/now-ms) |.cirru
-              .!setAttribute link |href url
-              .!setAttribute link |download filename
-              .!appendChild (unsafe-coerce js/document.body 'Dynamic) link
-              .!click link
-              .!remove link
-              js/setTimeout
-                fn () $ js/URL.revokeObjectURL url
+              browser/element-set-attribute! link |href url
+              browser/element-set-attribute! link |download filename
+              browser/document-append-body! link
+              .click! clickable
+              browser/element-remove! link
+              browser/set-timeout!
+                fn () $ browser/object-url-revoke! url
                 , 0
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] $ :: 'List 'app.schema/ChatSession
             :features $ #{} :js-ffi
         'effect-focus $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defeffect effect-focus () (action el at?)
             when (= action :mount)
-              js/setTimeout
+              browser/set-timeout!
                 fn () $ let
-                    textarea $ unsafe-coerce
-                      .!querySelector (unsafe-coerce el 'Dynamic) |textarea
-                      , 'Dynamic
-                  .!select textarea
+                    root $ browser/element-host el
+                  match (browser/element-query-selector root |textarea)
+                    (:none) &unit
+                    (:some textarea)
+                      browser/element-select! $ browser/selectable-element-host textarea
                 , 0
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Effect)
             :args $ []
+            :features $ #{} :js-ffi
+        'ensure-genai! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn ensure-genai! ()
+            match @*gen-ai-new
+              (:some client) &unit
+              (:none)
+                let
+                    module $ contract/expect-object |GenAI.module $ js-await (js/import |@google/genai)
+                    client $ js-cast
+                      genai-new module $ get-gemini-key!
+                      , 'app.comp.container/GenAIClientHost
+                  reset! *gen-ai-new $ Option :some client
+                  , &unit
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
+        'ensure-openai! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn ensure-openai! (provider)
+            let
+                base-url $ match provider (:deepseek |https://api.deepseek.com) (:openrouter |https://openrouter.ai/api/v1)
+                  _ $ raise |Unknown-OpenAI-compatible-provider
+                api-key $ if (= provider :deepseek) (get-deepseek-key!) (get-openrouter-key!)
+                replace? $ match @*openai
+                  (:none) true
+                  (:some client)
+                    or
+                      not= base-url $ .-base-url client
+                      not= api-key $ .-api-key client
+              when replace? $ let
+                  module $ contract/expect-object |OpenAI.module $ js-await (js/import |openai)
+                  client $ js-cast (openai-new module base-url api-key) 'app.comp.container/OpenAIClientHost
+                reset! *openai $ Option :some client
+              , &unit
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:async true) (:return 'Unit)
+            :args $ [] 'Tag
             :features $ #{} :js-ffi
         'first-line $ %{} 'CodeEntry
           :doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now."
@@ -1214,6 +1387,14 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'String
+        'genai-new $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn genai-new (module api-key) (raise "|JavaScript GenAI constructor")
+          :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|(module, apiKey) => new module.GoogleGenAI({apiKey})"
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
+            :args $ [] 'JsObject 'String
+            :features $ #{} :js-ffi
         'generate-session-id $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn generate-session-id ()
             str $ ffi/now-ms
@@ -1260,7 +1441,7 @@
             :features $ #{} :js-ffi
         'js-present-dynamic? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn js-present-dynamic? (value)
-            unsafe-coerce (js/Boolean value) 'Bool
+            if (js/Boolean value) true false
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Bool)
             :args $ [] 'Dynamic
@@ -1284,7 +1465,7 @@
                 :urlContext $ js-object
               true $ js-array
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
             :args $ [] 'Bool 'Bool
             :features $ #{} :js-ffi
         'messages->anthropic $ %{} 'CodeEntry (:doc |)
@@ -1329,12 +1510,13 @@
             :features $ #{} :js-ffi
         'model-storage-key $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn model-storage-key (model)
-            case-default model |gemini-key (:claude-3.7 |claude-key) (:openrouter/anthropic/claude-sonnet-4 |openrouter-key) (:openrouter/anthropic/claude-sonnet-4.5 |openrouter-key) (:openrouter/anthropic/claude-opus-4 |openrouter-key) (:openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key) (:openrouter/google/gemini-2.5-pro-preview |openrouter-key)
+            match model (:claude-3.7 |claude-key) (:openrouter/anthropic/claude-sonnet-4 |openrouter-key) (:openrouter/anthropic/claude-sonnet-4.5 |openrouter-key) (:openrouter/anthropic/claude-opus-4 |openrouter-key) (:openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key) (:openrouter/google/gemini-2.5-pro-preview |openrouter-key)
               :openrouter/google/gemini-2.5-flash-preview-05-20 |openrouter-key
               :openrouter/openai/gpt-5 |openrouter-key
               :openrouter/deepseek/deepseek-chat-v3.1 |openrouter-key
               :deepseek-v4-pro |deepseek-key
               :deepseek-v4-flash |deepseek-key
+              _ |gemini-key
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
@@ -1358,32 +1540,40 @@
         'normalize-chat-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-state (raw)
             if (struct? raw)
+              struct-match raw
+                ChatState state $ if
+                  match (struct-definition state)
+                    (:none) false
+                    (:some definition) (identical? definition ChatState)
+                  , state $ app.schema/ChatState :answer
+                    stream-text $ :answer state
+                    , :loading? (:loading? state) :done? (:done? state) :messages
+                      map (:messages state)
+                        fn (message) (app.schema/normalize-chat-message message)
+                      , :model
+                        if
+                          tag? $ :model state
+                          :model state
+                          , :gemini
+                        , :thinking
+                          stream-text $ :thinking state
+                _ other $ raise "|Expected ChatState nominal value"
               let
-                  state $ unsafe-coerce raw 'app.schema/ChatState
-                app.schema/ChatState :answer
-                  stream-text $ :answer state
-                  , :loading? (:loading? state) :done? (:done? state) :messages (:messages state) :model
-                    if
-                      tag? $ :model state
-                      :model state
-                      , :gemini
-                    , :thinking $ stream-text $ :thinking state
-              let
-                  data $ unsafe-coerce raw $ :: 'Map 'Tag 'Dynamic
+                  data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                   loading-value $ option:unwrap-or (get data :loading?) false
                   done-value $ option:unwrap-or (get data :done?) true
                   model-value $ option:unwrap-or (get data :model) :gemini
                 app.schema/ChatState :answer
                   stream-text $ option:unwrap-or (get data :answer) |
                   , :loading?
-                    case-default loading-value false (true true) (false false)
+                    match loading-value (true true) (false false) (_ false)
                     , :done?
-                      case-default done-value true (true true) (false false)
+                      match done-value (true true) (false false) (_ true)
                       , :messages
                         let
                             raw-message-value $ option:unwrap-or (get data :messages) ([])
                             raw-messages $ if (list? raw-message-value)
-                              assert-type raw-message-value $ :: 'List 'Dynamic
+                              decode-map-as raw-message-value $ :: 'List 'Dynamic
                               []
                           map raw-messages $ fn (message) (app.schema/normalize-chat-message message)
                         , :model
@@ -1420,8 +1610,13 @@
                 match event $
                   :fill-text info
                   let
-                      submit? $ option:unwrap-or (get info :submit?) true
-                      text $ option:unwrap-or (get info :text) |
+                      info-data $ decode-map-as info $ :: 'Map 'Tag 'Dynamic
+                      submit? $ decode-map-as
+                        option:unwrap-or (get info-data :submit?) true
+                        , 'Bool
+                      text $ decode-map-as
+                        option:unwrap-or (get info-data :text) |
+                        , 'String
                     dispatch! (:: :states cursor) (assoc state :content text)
                     if submit?
                       on-submit text (:search? state) (:think? state) dispatch!
@@ -1429,9 +1624,17 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'Dynamic 'app.schema/MessageBoxState 'Dynamic
+        'openai-new $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn openai-new (module base-url api-key) (raise "|JavaScript OpenAI constructor")
+          :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|(module, baseURL, apiKey) => new module.default({baseURL, apiKey, defaultHeaders:{}, dangerouslyAllowBrowser:true})"
+          :schema $ :: 'Fn $ {} (:return 'JsObject)
+            :args $ [] 'JsObject 'String 'String
+            :features $ #{} :js-ffi
         'pick-model $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn pick-model (variant)
-            case-default variant |gemini-3.5-flash-lite (:gemini-3.5-flash-lite |gemini-3.5-flash-lite) (:gemini-3.6-flash |gemini-3.6-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-flash |gemini-3-flash-preview) (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it)
+            match variant (:gemini-3.5-flash-lite |gemini-3.5-flash-lite) (:gemini-3.6-flash |gemini-3.6-flash) (:gemini-3.7-flash |gemini-3.7-flash) (:gemini-3.8-flash |gemini-3.8-flash) (:gemini-flash |gemini-3-flash-preview) (:gemini-3.5-flash |gemini-3.5-flash) (:gemini-3.1-flash-lite-preview |gemini-3.1-flash-lite) (:gemini-pro |gemini-3.1-pro-preview) (:gemma |gemma-3-27b-it) (_ |gemini-3.5-flash-lite)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Tag
@@ -1795,13 +1998,12 @@
           :code $ quote $ defn submit-message! (cursor state prompt-text search? think? model d!)
             let
                 state1 $ assoc state :messages $ append-user-message (:messages state) prompt-text
-                *text $ atom |
-                *thinking-text $ atom |
+                *text $ ref |
+                *thinking-text $ ref |
                 model $ :model state
               d! cursor state1
               try
-                case-default model
-                  js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
+                match model
                   :gemini-3.1-flash-lite-preview $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :gemini-pro $ js-await $ call-genai-msg! model cursor state1 prompt-text search? true d! *text *thinking-text
                   :flash-imagen $ js-await $ call-flash-imagen-msg! model cursor state1 prompt-text d!
@@ -1812,16 +2014,17 @@
                   :gemini-flash $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :gemini-learnlm $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                   :claude-3.7 $ js-await $ call-anthropic-msg! cursor state1 prompt-text |claude-3-7-sonnet-20250219 false d!
-                  :openrouter/anthropic/claude-sonnet-4 $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-sonnet-4 true d! *text
-                  :openrouter/anthropic/claude-sonnet-4.5 $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-sonnet-4.5 true d! *text
-                  :openrouter/anthropic/claude-opus-4 $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-opus-4 true d! *text
-                  :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await $ call-openrouter! cursor state1 prompt-text |anthropic/claude-3.7-sonnet:thinking true d! *text
-                  :openrouter/google/gemini-2.5-pro-preview $ js-await $ call-openrouter! cursor state1 prompt-text |google/gemini-2.5-pro-preview true d! *text
-                  :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await $ call-openrouter! cursor state1 prompt-text |google/gemini-2.5-flash-preview-05-20 true d! *text
-                  :openrouter/openai/gpt-5 $ js-await $ call-openrouter! cursor state1 prompt-text |openai/gpt-5 true d! *text
-                  :openrouter/deepseek/deepseek-chat-v3.1 $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek/deepseek-chat-v3.1 true d! *text
-                  :deepseek-v4-pro $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-pro true d! *text
-                  :deepseek-v4-flash $ js-await $ call-openrouter! cursor state1 prompt-text |deepseek-v4-flash true d! *text
+                  :openrouter/anthropic/claude-sonnet-4 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-sonnet-4 true d! *text
+                  :openrouter/anthropic/claude-sonnet-4.5 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-sonnet-4.5 true d! *text
+                  :openrouter/anthropic/claude-opus-4 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-opus-4 true d! *text
+                  :openrouter/anthropic/claude-3.7-sonnet:thinking $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |anthropic/claude-3.7-sonnet:thinking true d! *text
+                  :openrouter/google/gemini-2.5-pro-preview $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |google/gemini-2.5-pro-preview true d! *text
+                  :openrouter/google/gemini-2.5-flash-preview-05-20 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |google/gemini-2.5-flash-preview-05-20 true d! *text
+                  :openrouter/openai/gpt-5 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |openai/gpt-5 true d! *text
+                  :openrouter/deepseek/deepseek-chat-v3.1 $ js-await $ call-openrouter! cursor state1 prompt-text :openrouter |deepseek/deepseek-chat-v3.1 true d! *text
+                  :deepseek-v4-pro $ js-await $ call-openrouter! cursor state1 prompt-text :deepseek |deepseek-v4-pro true d! *text
+                  :deepseek-v4-flash $ js-await $ call-openrouter! cursor state1 prompt-text :deepseek |deepseek-v4-flash true d! *text
+                  _ $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
                 fn (e) (js/console.error :msg-buffer-request-failed e)
                   let
                       err-text $ str |Failed-to-load: e
@@ -1905,12 +2108,13 @@
             |../extension/get-selected :refer $ get-selected
             |../lib/db :refer $ db-get db-set
             |../lib/image :refer $ base64ToBlob
-            respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer use-alert
+            respo-alerts.core :refer $ use-modal-menu use-prompt use-drawer use-alert
             respo-ui.util :refer $ tab-echo!
             app.schema :refer $ Store ChatState ChatSession ChatMessage MessageBoxState store
-            calcit.test :refer $ [] is
+            calcit.test :refer $ is
             js-ffi.browser :as browser
             js-ffi.shared :as ffi
+            js-ffi.contract :as contract
     'app.config $ %{} 'FileEntry
       :defs $ {}
         'Site $ %{} 'CodeEntry (:doc |)
@@ -1922,15 +2126,10 @@
           :examples $ []
           :schema $ :: 'Bool
         'detect-chrome-extension? $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn detect-chrome-extension? ()
-            let
-                chrome $ unsafe-coerce js/window.chrome 'Dynamic
-                runtime $ .?-runtime chrome
-              and (js-present? runtime)
-                let
-                    typed-runtime $ unsafe-coerce runtime 'Dynamic
-                  js-present? $ .?-id typed-runtime
+          :code $ quote $ defn detect-chrome-extension? () (raise "|Browser-only Chrome runtime detection")
           :examples $ []
+          :ffi $ {} (:target :browser)
+            :js $ {} $ :inline "|() => window.chrome?.runtime?.id != null"
           :schema $ :: 'Fn $ {} (:return 'Bool)
             :args $ []
             :features $ #{} :js-ffi
@@ -1948,10 +2147,10 @@
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reel
+          :code $ quote $ defref *reel
             -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
         'ChromeDisconnectEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ChromeDisconnectEventHost
             .add-listener! $ :: 'Fn $ {} (:return 'Unit)
@@ -2001,13 +2200,23 @@
             :args $ []
             :features $ #{} :js-ffi
         'dispatch! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch! (op)
-            when config/dev? $ js/console.log |Dispatch: op
-            reset! *reel $ reel-updater updater @*reel op
+          :code $ quote $ defn dispatch! (raw-op)
+            let
+                op $ if (enum? raw-op) raw-op $ raise "|Expected operation Enum"
+              when config/dev? $ js/console.log |Dispatch: op
+              reset! *reel $ reel-updater
+                fn (raw-store raw-op raw-id raw-time)
+                  updater (schema/normalize-store raw-store)
+                    if (enum? raw-op) raw-op $ raise "|Expected operation Enum"
+                    decode-map-as raw-id 'String
+                    decode-map-as raw-time 'Number
+                , @*reel op
+              , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Enum
+            :args $ [] 'T
             :features $ #{} :js-ffi
+            :generics $ [] 'T
         'extension-action $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn extension-action (message)
             js-nullish->option $ .-action message
@@ -2018,15 +2227,17 @@
             :return $ :: 'calcit.core/Option 'String
         'hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn hydrate-storage-later! ()
-            js/setTimeout
+            browser/set-timeout!
               fn () $ let
-                  raw $ js/localStorage.getItem $ :storage-key config/site
-                when (js-present? raw)
-                  let
-                      t-start $ ffi/now-ms
-                      serialized $ assert-type raw 'String
-                    dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
-                    println |Hydrated-in $ - (ffi/now-ms) t-start
+                  storage $ browser/window-local-storage
+                match
+                  js-nullish->option $ storage .get-item $ :storage-key config/site
+                  (:none) &unit
+                  (:some serialized)
+                    let
+                        t-start $ ffi/now-ms
+                      dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
+                      println |Hydrated-in $ - (ffi/now-ms) t-start
               , 0
             , &unit
           :examples $ []
@@ -2082,14 +2293,14 @@
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             let
-                t0 $ unsafe-coerce (js/Date.now) 'Number
+                t0 $ unsafe-coerce (ffi/now-ms) 'Number
               println "|Starting main! at" t0
               println "|Running mode:" $ if config/dev? |dev |release
               if config/dev? $ load-console-formatter!
               render-app!
-              add-watch *reel :changes $ fn (reel prev) (render-app!)
-              add-watch *archived-sessions :changes $ fn (s prev) (render-app!)
-              add-watch *viewing-archive-session :changes $ fn (s prev) (render-app!)
+              add-watch! *reel :changes $ fn (reel prev) (render-app!)
+              add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
+              add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
               listen-devtools! |k dispatch!
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
@@ -2108,7 +2319,7 @@
               if config/chrome-extension? $ listen-extension!
               sync-gemini-key!
               let
-                  t1 $ unsafe-coerce (js/Date.now) 'Number
+                  t1 $ unsafe-coerce (ffi/now-ms) 'Number
                 println "|App started at" t1 |cost (- t1 t0) |ms
               , &unit
           :examples $ []
@@ -2116,31 +2327,41 @@
             :args $ []
             :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def mount-target (js/document.querySelector |.app)
+          :code $ quote $ defn mount-target ()
+            let
+                document $ js-cast js/document 'respo.dom/DomDocument
+              document .query-selector |.app
           :examples $ []
-          :schema $ :: 'JsNullish 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ []
+            :features $ #{} :js-ffi
+            :return $ :: 'JsNullish 'respo.dom/DomElement
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ ffi/date-now-snapshot
-            js/localStorage.setItem (:storage-key config/site)
-              format-cirru-edn $ option:unwrap-or
-                assert-type (get @*reel :store) (:: 'Option 'app.schema/Store)
-                , schema/store
+            let
+                storage $ browser/window-local-storage
+                store $ match (get @*reel :store)
+                  (:none) schema/store
+                  (:some value) (schema/normalize-store value)
+              storage .set-item! (:storage-key config/site) (format-cirru-edn store)
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
-              = false $ unsafe-coerce (js/Boolean build-errors) 'Bool
-              do (remove-watch *reel :changes) (remove-watch *archived-sessions :changes) (remove-watch *viewing-archive-session :changes) (clear-cache!)
-                add-watch *reel :changes $ fn (reel prev) (render-app!)
-                add-watch *archived-sessions :changes $ fn (s prev) (render-app!)
-                add-watch *viewing-archive-session :changes $ fn (s prev) (render-app!)
-                reset! *reel $ refresh-reel @*reel schema/store updater
+              not $ if (js/Boolean build-errors) true false
+              do (remove-watch! *reel :changes) (remove-watch! *archived-sessions :changes) (remove-watch! *viewing-archive-session :changes) (clear-cache!)
+                add-watch! *reel :changes $ fn (reel prev) (render-app!)
+                add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
+                add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
+                reset! *reel $ decode-map-as (refresh-reel @*reel schema/store updater) (:: 'Map 'Tag 'Dynamic)
                 hud! |ok~ |Ok
               hud! |error $ unsafe-coerce build-errors 'Dynamic
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
@@ -2148,15 +2369,13 @@
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             let
-                t_start $ unsafe-coerce (js/Date.now) 'Number
+                t_start $ ffi/now-ms
               println "|Rendering app..."
-              render-with! mount-target
+              render-with! (mount-target)
                 fn () $ comp-container @*reel
                 , dispatch!
               println "|Rendered in"
-                -
-                  unsafe-coerce (js/Date.now) 'Number
-                  , t_start
+                - (ffi/now-ms) t_start
                 , |ms
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
@@ -2194,6 +2413,7 @@
             |bottom-tip :default hud!
             respo.controller.client :refer $ send-to-component!
             js-ffi.shared :as ffi
+            js-ffi.browser :as browser
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'ChatMessage $ %{} 'CodeEntry (:doc |)
@@ -2234,10 +2454,17 @@
               :return 'app.schema/ChatMessage
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw) (assert-type raw 'app.schema/ChatMessage)
+            if (struct? raw)
+              struct-match raw
+                ChatMessage typed $ if
+                  match (struct-definition typed)
+                    (:none) false
+                    (:some definition) (identical? definition ChatMessage)
+                  , typed $ ChatMessage :content (:content typed) :role (:role typed) :thinking (:thinking typed)
+                _ other $ raise "|Unexpected nominal value for ChatMessage"
               if (map? raw)
                 let
-                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                     thinking-value $ option:unwrap-or (get data :thinking) |
                     normalized-thinking $ if (string? thinking-value) (assert-type thinking-value 'String) |
                   decode-map-as (assoc data :thinking normalized-thinking) 'app.schema/ChatMessage
@@ -2254,10 +2481,20 @@
               :return 'app.schema/ChatSession
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw) (assert-type raw 'app.schema/ChatSession)
+            if (struct? raw)
+              struct-match raw
+                ChatSession typed $ if
+                  match (struct-definition typed)
+                    (:none) false
+                    (:some definition) (identical? definition ChatSession)
+                  , typed $ ChatSession :id (:id typed) :created-at (:created-at typed) :messages
+                    map (:messages typed)
+                      fn (message) (normalize-chat-message message)
+                    , :model (:model typed) :preview (:preview typed) :is-history? (:is-history? typed)
+                _ other $ raise "|Unexpected nominal value for ChatSession"
               if (map? raw)
                 let
-                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                     raw-message-value $ option:unwrap-or (get data :messages) ([])
                     raw-messages $ if (list? raw-message-value)
                       assert-type raw-message-value $ :: 'List 'Dynamic
@@ -2293,10 +2530,20 @@
               :return 'app.schema/Store
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw) (assert-type raw 'app.schema/Store)
+            if (struct? raw)
+              struct-match raw
+                Store typed $ if
+                  match (struct-definition typed)
+                    (:none) false
+                    (:some definition) (identical? definition Store)
+                  , typed $ Store :states (:states typed) :sessions
+                    map (:sessions typed)
+                      fn (session) (normalize-chat-session session)
+                    , :current-session-id (:current-session-id typed) :model (:model typed) :archived-count (:archived-count typed)
+                _ other $ raise "|Unexpected nominal value for Store"
               if (map? raw)
                 let
-                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                     raw-session-value $ option:unwrap-or (get data :sessions) ([])
                     raw-sessions $ if (list? raw-session-value)
                       assert-type raw-session-value $ :: 'List 'Dynamic
@@ -2347,7 +2594,7 @@
           :schema $ :: 'app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
-          :require $ calcit.test :refer $ [] is
+          :require $ calcit.test :refer $ is
     'app.updater $ %{} 'FileEntry
       :defs $ {} $ 'updater
         %{} 'CodeEntry (:doc |)
@@ -2356,47 +2603,85 @@
                 store raw-store
               match op
                 (:states cursor s)
-                  assoc store :states $ assoc-in (:states store)
-                    concat
-                      assert-type cursor $ :: 'List 'Tag
-                      [] :data
-                    , s
+                  assoc store :states $ decode-map-as
+                    assoc-in (:states store)
+                      concat
+                        decode-map-as cursor $ :: 'List 'Dynamic
+                        [] :data
+                      , s
+                    :: 'Map 'Dynamic 'Dynamic
                 (:states-merge cursor s changes)
                   let
                       path $ concat
-                        assert-type cursor $ :: 'List 'Tag
+                        decode-map-as cursor $ :: 'List 'Dynamic
                         [] :data
                       state $ option:unwrap-or
                         get-in (:states store) path
                         , s
-                      updated-states $ assoc-in (:states store) path $ if
-                        or (map? state) (struct? state)
-                        noted |merge-base-latest-state $ merge-dynamic
-                          assert-type state $ :: 'Map 'Tag 'Dynamic
-                          assert-type changes $ :: 'Map 'Tag 'Dynamic
-                        do (eprintln |unknown-state-to-merge state) state
-                    assoc store :states updated-states
+                      updated-states $ assoc-in (:states store) path $ if (map? state)
+                        merge
+                          decode-map-as state $ :: 'Map 'Tag 'Dynamic
+                          decode-map-as changes $ :: 'Map 'Tag 'Dynamic
+                        if (struct? state)
+                          struct-match state
+                            ChatState raw-base $ let
+                                base $ app.comp.container/normalize-chat-state raw-base
+                                typed-changes $ decode-map-as changes $ :: 'Map 'Tag 'Dynamic
+                              ChatState :answer
+                                match (get typed-changes :answer)
+                                  (:none) (:answer base)
+                                  (:some value) (decode-map-as value 'String)
+                                , :loading?
+                                  match (get typed-changes :loading?)
+                                    (:none) (:loading? base)
+                                    (:some value) (decode-map-as value 'Bool)
+                                  , :done?
+                                    match (get typed-changes :done?)
+                                      (:none) (:done? base)
+                                      (:some value) (decode-map-as value 'Bool)
+                                    , :messages
+                                      match (get typed-changes :messages)
+                                        (:none) (:messages base)
+                                        (:some value)
+                                          map
+                                            decode-map-as value $ :: 'List 'Dynamic
+                                            fn (message) (app.schema/normalize-chat-message message)
+                                      , :model
+                                        match (get typed-changes :model)
+                                          (:none) (:model base)
+                                          (:some value) (decode-map-as value 'Tag)
+                                        , :thinking $ match (get typed-changes :thinking)
+                                          (:none) (:thinking base)
+                                          (:some value) (decode-map-as value 'String)
+                            _ other $ raise "|Unsupported state Struct in states-merge"
+                          do (eprintln |unknown-state-to-merge state) state
+                    assoc store :states $ decode-map-as updated-states $ :: 'Map 'Dynamic 'Dynamic
                 (:hydrate-storage data) (app.schema/normalize-store data)
                 (:change-model)
                   if
-                    = (:model store) :anthropic
+                    let
+                        model $ :model store
+                      if (tag? model) (= model :anthropic) false
                     assoc store :model :gemini
                     assoc store :model :anthropic
                 (:save-session state)
                   let
-                      store1 $ save-current-session store $ assert-type state 'app.schema/ChatState
+                      store1 $ save-current-session store $ app.comp.container/normalize-chat-state state
                     assoc store1 :current-session-id nil
-                (:session session-id id) (assoc store :current-session-id id)
+                (:session session-id id)
+                  assoc store :current-session-id $ if (nil? id) id $ decode-map-as id 'String
                 (:load-session cursor state session)
                   let
-                      typed-session $ assert-type (app.schema/normalize-chat-session session) 'app.schema/ChatSession
-                      store1 $ assoc store :states $ assoc-in (:states store)
-                        concat
-                          assert-type cursor $ :: 'List 'Tag
-                          [] :data
-                        -> state
-                          assoc :messages $ :messages typed-session
-                          assoc :done? true
+                      typed-session $ app.schema/normalize-chat-session session
+                      store1 $ assoc store :states $ decode-map-as
+                        assoc-in (:states store)
+                          concat
+                            decode-map-as cursor $ :: 'List 'Dynamic
+                            [] :data
+                          -> (app.comp.container/normalize-chat-state state)
+                            assoc :messages $ :messages typed-session
+                            assoc :done? true
+                        :: 'Map 'Dynamic 'Dynamic
                     assoc store1 :current-session-id $ :id typed-session
                 (:remove-session id)
                   assoc store :sessions $ filter (:sessions store)
@@ -2404,14 +2689,14 @@
                       hint-fn $ {}
                         :args $ [] 'app.schema/ChatSession
                         :return 'Bool
-                      not $ = (:id s) (assert-type id 'String)
+                      not $ = (:id s) (decode-map-as id 'String)
                 (:archive-sessions new-count)
                   -> store
                     assoc :sessions $ []
-                    assoc :archived-count new-count
+                    assoc :archived-count $ decode-map-as new-count 'Number
                     assoc :current-session-id nil
                 (:update-archived-count new-count)
-                  -> store $ assoc :archived-count new-count
+                  -> store $ assoc :archived-count $ decode-map-as new-count 'Number
                 (:clear-sessions)
                   -> store
                     assoc :sessions $ []
@@ -2420,6 +2705,45 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
             :args $ [] 'app.schema/Store 'Enum 'String 'Number
+          :tests $ [] $ %{} 'TestEntry (:name |mixed-cursor-latest-state-merge)
+            :code $ quote $ let
+                cursor $ [] :panel |draft 7
+                stale $ app.comp.container/normalize-chat-state $ {}
+                message $ app.schema/normalize-chat-message $ {} (:role :user) (:content |synthetic) (:thinking |)
+                latest $ -> stale (assoc :answer |latest)
+                  assoc :messages $ [] message
+                initial $ updater app.schema/store (:: :states cursor latest) |synthetic 0
+                changed $ updater initial
+                  :: :states-merge cursor stale $ {} $ :thinking |thought
+                  , |synthetic 1
+                restored $ app.comp.container/normalize-chat-state $ .unwrap
+                  get-in (:states changed)
+                    concat cursor $ [] :data
+                roundtrip $ app.schema/normalize-store $ parse-cirru-edn (format-cirru-edn changed)
+                updated-again $ updater roundtrip
+                  :: :states-merge cursor stale $ {} $ :answer |after-restore
+                  , |synthetic 3
+                restored-again $ app.comp.container/normalize-chat-state $ .unwrap
+                  get-in (:states updated-again)
+                    concat cursor $ [] :data
+              assert= |latest $ :answer restored
+              assert= |thought $ :thinking restored
+              assert= (:messages latest) (:messages restored)
+              assert= (:done? latest) (:done? restored)
+              assert= |after-restore $ :answer restored-again
+              assert= |thought $ :thinking restored-again
+              assert= ([] message) (:messages restored-again)
+              assert= true $ identical? changed $ app.schema/normalize-store changed
+              assert= true $ identical? message $ app.schema/normalize-chat-message message
+              assert= true $ identical? restored-again $ app.comp.container/normalize-chat-state restored-again
+              assert= true $ try
+                do
+                  updater changed
+                    :: :states-merge cursor stale $ {} $ :done? |not-a-bool
+                    , |synthetic 2
+                  , false
+                fn (error) true
+            :tags $ #{} :regression :unit
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require
