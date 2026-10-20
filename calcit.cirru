@@ -344,8 +344,8 @@
                             match target
                               (:none) &unit
                               (:some preview) (browser/element-set-attribute! preview |src url)
-                            do (clear-image-cache!)
-                              reset! *image-cache $ Option :some url
+                            clear-image-cache!
+                            reset! *image-cache $ Option :some url
                             swap! *text str | "|(image ready)"
                             d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                   d! $ :: :states cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
@@ -456,8 +456,8 @@
                       image-blob $ js-cast (base64ToBlob image-data) 'js-ffi.browser/BlobHost
                       url $ browser/object-url-create image-blob
                       target $ browser/query-selector |.show-image
-                    do (clear-image-cache!)
-                      reset! *image-cache $ Option :some url
+                    clear-image-cache!
+                    reset! *image-cache $ Option :some url
                     match target
                       (:none) &unit
                       (:some preview) (browser/element-set-attribute! preview |src url)
@@ -579,14 +579,16 @@
                 archived-count $ :archived-count app-store
                 current-session-id $ :current-session-id app-store
                 states $ :states app-store
-                cursor $ option:unwrap-or (get states :cursor) ([])
+                cursor $ decode-map-as
+                  option:unwrap-or (get states :cursor) ([])
+                  :: 'List 'Dynamic
                 state $ let
                     raw-chat-state $ option:unwrap-or (get states :data)
                       {} (:answer |) (:loading? false) (:done? true)
                         :messages $ []
                         :model :gemini
                         :thinking |
-                  unsafe-coerce (normalize-chat-state raw-chat-state) 'app.schema/ChatState
+                  normalize-chat-state raw-chat-state
                 done? $ :done? state
                 messages $ :messages state
                 model $ if
@@ -600,7 +602,7 @@
                         hint-fn $ {}
                           :args $ [] 'app.schema/ChatSession
                           :return 'Bool
-                        = (:id s) (assert-type current-session-id 'String)
+                        = (:id s) (decode-map-as current-session-id 'String)
                       :: 'Option 'app.schema/ChatSession
                     fn ()
                       hint-fn $ {} $ :return 'Bool
@@ -632,15 +634,21 @@
                     ; :confirm-class style-confirm
                     :items models-menu
                     :on-result $ fn (result d!)
-                      d! cursor $ assoc state :model $ option:unwrap-or (nth result 1) :gemini
+                      d! cursor $ assoc state :model $ decode-map-as
+                        option:unwrap-or (nth result 1) :gemini
+                        , 'Tag
                 reply-plugin $ use-prompt (>> states :reply-prompt)
                   {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
-                    :validator $ fn (text)
-                      if (blank? text) "|Please enter text" |
+                    :validator $ fn (raw-text)
+                      let
+                          text $ decode-map-as raw-text 'String
+                        if (blank? text) "|Please enter text" |
                 api-key-plugin $ use-prompt (>> states :api-key-prompt)
                   {} (:text "|API key required") (:placeholder "|Enter API key") (:button-text |Save)
-                    :validator $ fn (text)
-                      if (blank? text) "|Please enter API key" |
+                    :validator $ fn (raw-text)
+                      let
+                          text $ decode-map-as raw-text 'String
+                        if (blank? text) "|Please enter API key" |
                 text-alert-plugin $ use-alert (>> states :empty-message-alert)
                   {} $ :text "|Please enter text"
                 submit-with-key! $ fn (submit-state text search? think? d!)
@@ -652,13 +660,18 @@
                         storage-key $ model-storage-key model
                         stored $ browser/storage-get-or storage-key |
                       if (blank? stored)
-                        .show api-key-plugin d! $ fn (key) (browser/storage-set! storage-key key) (submit-message! cursor submit-state text search? think? model d!)
+                        .show api-key-plugin d! $ fn (key)
+                          browser/storage-set! storage-key $ decode-map-as key 'String
+                          submit-message! cursor submit-state text search? think? model d!
                         submit-message! cursor submit-state text search? think? model d!
                 message-box-state $ let
                     raw-message-box-state $ option:unwrap-or
                       get (>> states :message-box) :data
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
+                  if (struct? raw-message-box-state)
+                    struct-match raw-message-box-state (MessageBoxState typed typed)
+                      _ other $ raise "|Expected MessageBoxState"
+                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
                 sessions-plugin $ use-drawer (>> states :sessions-modal)
                   {} (:title "|History Sessions")
                     :style $ {} (:min-width "||max(320px,30vw)\"") (:max-width |80vw)
@@ -684,7 +697,12 @@
                           hint-fn $ {} $ :async true
                           let
                               archive-key $ :archive-key site
-                              raw $ js-await $ db-get archive-key
+                              raw $ let
+                                  host-value $ js-await $ db-get archive-key
+                                if
+                                  or (nil? host-value)
+                                    = (js/typeof host-value) |undefined
+                                  , | $ contract/expect-string "|Archive storage value" host-value
                             if (blank? raw) (js/alert "|No archives found!")
                               let
                                   parsed $ parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
@@ -714,7 +732,9 @@
                           ->
                             :messages $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
                             map-indexed $ fn (idx msg)
-                              hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatMessage)
+                              hint-fn $ {}
+                                :args $ [] 'Number 'app.schema/ChatMessage
+                                :return $ :: 'List 'Dynamic
                               [] idx $ let
                                   role $ :role msg
                                   content $ stream-text $ :content msg
@@ -753,14 +773,18 @@
                         list->
                           {} $ :class-name css/column
                           let
-                              current-archives $ assert-type @*archived-sessions $ :: 'List 'app.schema/ChatSession
+                              current-archives $ let
+                                  cached @*archived-sessions
+                                if (js-nullish? cached) ([]) cached
                             if (empty? current-archives)
-                              [] :empty $ div
+                              [] $ [] :empty $ div
                                 {} $ :style $ {} (:padding |12px)
                                   :color $ hsl 0 0 60
                                 <> "|No archived sessions left."
                               -> current-archives reverse $ map $ fn (session)
-                                hint-fn $ {} $ :args ([] 'app.schema/ChatSession)
+                                hint-fn $ {}
+                                  :args $ [] 'app.schema/ChatSession
+                                  :return $ :: 'List 'Dynamic
                                 let
                                     session-id $ :id session
                                     created-at $ :created-at session
@@ -787,7 +811,9 @@
                                               proceed? $ js/confirm "|Delete this archived session?"
                                             when proceed? $ let
                                                 new-archives $ filter
-                                                  assert-type @*archived-sessions $ :: 'List 'app.schema/ChatSession
+                                                  let
+                                                      cached @*archived-sessions
+                                                    if (js-nullish? cached) ([]) cached
                                                   fn (s)
                                                     hint-fn $ {}
                                                       :args $ [] 'app.schema/ChatSession
@@ -832,7 +858,9 @@
                         list->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           -> messages $ map-indexed $ fn (idx msg)
-                            hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatMessage)
+                            hint-fn $ {}
+                              :args $ [] 'Number 'app.schema/ChatMessage
+                              :return $ :: 'List 'Dynamic
                             [] idx $ let
                                 role $ :role msg
                                 content $ stream-text $ :content msg
@@ -879,9 +907,10 @@
                             if (:focus-mode? message-box-state) nil $ a $ {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
                               :on-click $ fn (e d!)
                                 let
-                                    focused $ .-activeElement $ unsafe-coerce js/document 'Dynamic
-                                  when (js-present-dynamic? focused)
-                                    .!blur $ unsafe-coerce focused 'Dynamic
+                                    focused $ browser/document-active-element
+                                  match focused
+                                    (:none) &unit
+                                    (:some element) (element .blur!)
                                   d!
                                     option:unwrap-or
                                       get (>> states :message-box) :cursor
@@ -901,7 +930,8 @@
                           if (:done? state)
                             div $ {} $ :class-name (str-spaced css/row-middle css/gap8)
                       =< nil 200
-                    comp-message-box (>> states :message-box)
+                    comp-message-box
+                      decode-map-as (>> states :message-box) (:: 'Map 'Tag 'Dynamic)
                       a $ {}
                         :inner-text $ or (to-string model) |-
                         :role |button
@@ -930,6 +960,7 @@
                                 assoc :thinking |
                                 assoc :done? false
                               , text search? think? d!
+                        , &unit
                       , model
                 model-plugin.render
                 reply-plugin.render
@@ -971,11 +1002,16 @@
         'comp-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-message-box (states picker-el on-submit model)
             let
-                cursor $ option:unwrap-or (get states :cursor) ([])
+                cursor $ decode-map-as
+                  option:unwrap-or (get states :cursor) ([])
+                  :: 'List 'Dynamic
                 state $ let
                     raw-message-box-state $ option:unwrap-or (get states :data)
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if (struct? raw-message-box-state) (unsafe-coerce raw-message-box-state 'app.schema/MessageBoxState) (decode-map-as raw-message-box-state 'app.schema/MessageBoxState)
+                  if (struct? raw-message-box-state)
+                    struct-match raw-message-box-state (MessageBoxState typed typed)
+                      _ other $ raise "|Expected MessageBoxState"
+                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
               [] (effect-focus) (on-fill cursor state on-submit)
                 div
                   {} $ :class-name $ str-spaced css/center style-message-box-panel
@@ -988,7 +1024,9 @@
                           :on-click $ fn (e d!)
                             d! cursor $ assoc state :focus-mode? false
                             js/setTimeout
-                              fn () $ .!focus $ unsafe-coerce (js/document.querySelector |#message) 'Dynamic
+                              fn () $ match (browser/query-selector |#message)
+                                (:none) &unit
+                                (:some input) (input .focus!)
                               , 0
                             , &unit
                         <> $ if
@@ -1002,20 +1040,35 @@
                         :aria-label |prompt-input
                         :class-name $ str-spaced css/textarea css/font-code! style-textbox
                         :on-input $ fn (e d!)
-                          d! cursor $ assoc state :content $ str
+                          d! cursor $ assoc state :content $ decode-map-as
                             option:unwrap-or (get e :value) |
+                            , 'String
                           , &unit
                         :on-keydown $ fn (e d!)
                           if
                             and
-                              = 13 $ option:unwrap-or (get e :keycode) 0
+                              = 13 $ decode-map-as
+                                option:unwrap-or (get e :keycode) 0
+                                , 'Number
                               or
-                                option:unwrap-or (get e :meta?) false
-                                option:unwrap-or (get e :ctrl?) false
+                                decode-map-as
+                                  option:unwrap-or (get e :meta?) false
+                                  , 'Bool
+                                decode-map-as
+                                  option:unwrap-or (get e :ctrl?) false
+                                  , 'Bool
                             on-submit (:content state) (:search? state) (:think? state) d!
                           , &unit
-                        :on-focus $ fn (e d!) (toggle-focus-within! e true) &unit
-                        :on-blur $ fn (e d!) (toggle-focus-within! e false) &unit
+                        :on-focus $ fn (e d!)
+                          toggle-focus-within!
+                            decode-map-as e $ :: 'Map 'Tag 'Dynamic
+                            , true
+                          , &unit
+                        :on-blur $ fn (e d!)
+                          toggle-focus-within!
+                            decode-map-as e $ :: 'Map 'Tag 'Dynamic
+                            , false
+                          , &unit
                     if
                       not $ :focus-mode? state
                       do (=< nil 4)
@@ -1029,7 +1082,9 @@
                               :aria-label |clear-prompt
                               :on-click $ fn (e d!)
                                 d! cursor $ assoc state :content |
-                                .!focus $ unsafe-coerce (js/document.querySelector |#message) 'Dynamic
+                                match (browser/query-selector |#message)
+                                  (:none) &unit
+                                  (:some input) (input .focus!)
                                 , &unit
                             span $ {} $ :class-name style-clear
                           div
@@ -1130,10 +1185,10 @@
                               :aria-label $ str |session-delete: session-id
                               :on-click $ fn (e d!)
                                 let
-                                    event $ unsafe-coerce
+                                    event $ js-cast
                                       option:unwrap-or (get e :event) js/undefined
-                                      , 'Dynamic
-                                  .!stopPropagation event
+                                      , 'js-ffi.browser/EventHost
+                                  browser/event-stop-propagation! event
                                 d! $ :: :remove-session session-id
                                 , &unit
                             <> "|✕"
@@ -1162,7 +1217,12 @@
                                 proceed? $ js/confirm $ str "|Archive " (count sessions) "| sessions and clear active view?"
                               when proceed? $ let
                                   archive-key $ :archive-key site
-                                  raw $ js-await $ db-get archive-key
+                                  raw $ let
+                                      host-value $ js-await $ db-get archive-key
+                                    if
+                                      or (nil? host-value)
+                                        = (js/typeof host-value) |undefined
+                                      , | $ contract/expect-string "|Archive storage value" host-value
                                   old-archives $ if (blank? raw) (take sessions 0)
                                     parse-cirru-edn-as raw $ :: 'List 'app.schema/ChatSession
                                   new-archives $ concat old-archives sessions
@@ -2078,7 +2138,7 @@
           :code $ quote $ defref *reel
             -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
-          :schema $ :: 'Ref
+          :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
         'ChromeDisconnectEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ChromeDisconnectEventHost
             .add-listener! $ :: 'Fn $ {} (:return 'Unit)
@@ -2128,14 +2188,23 @@
             :args $ []
             :features $ #{} :js-ffi
         'dispatch! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch! (op)
-            when config/dev? $ js/console.log |Dispatch: op
-            reset! *reel $ reel-updater updater @*reel op
-            , &unit
+          :code $ quote $ defn dispatch! (raw-op)
+            let
+                op $ if (enum? raw-op) raw-op $ raise "|Expected operation Enum"
+              when config/dev? $ js/console.log |Dispatch: op
+              reset! *reel $ reel-updater
+                fn (raw-store raw-op raw-id raw-time)
+                  updater (schema/normalize-store raw-store)
+                    if (enum? raw-op) raw-op $ raise "|Expected operation Enum"
+                    decode-map-as raw-id 'String
+                    decode-map-as raw-time 'Number
+                , @*reel op
+              , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Enum
+            :args $ [] 'T
             :features $ #{} :js-ffi
+            :generics $ [] 'T
         'extension-action $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn extension-action (message)
             js-nullish->option $ .-action message
@@ -2212,7 +2281,7 @@
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             let
-                t0 $ unsafe-coerce (js/Date.now) 'Number
+                t0 $ unsafe-coerce (ffi/now-ms) 'Number
               println "|Starting main! at" t0
               println "|Running mode:" $ if config/dev? |dev |release
               if config/dev? $ load-console-formatter!
@@ -2238,7 +2307,7 @@
               if config/chrome-extension? $ listen-extension!
               sync-gemini-key!
               let
-                  t1 $ unsafe-coerce (js/Date.now) 'Number
+                  t1 $ unsafe-coerce (ffi/now-ms) 'Number
                 println "|App started at" t1 |cost (- t1 t0) |ms
               , &unit
           :examples $ []
@@ -2277,9 +2346,10 @@
                 add-watch! *reel :changes $ fn (reel prev) (render-app!)
                 add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
                 add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
-                reset! *reel $ refresh-reel @*reel schema/store updater
+                reset! *reel $ decode-map-as (refresh-reel @*reel schema/store updater) (:: 'Map 'Tag 'Dynamic)
                 hud! |ok~ |Ok
               hud! |error $ unsafe-coerce build-errors 'Dynamic
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
@@ -2500,47 +2570,84 @@
                 store raw-store
               match op
                 (:states cursor s)
-                  assoc store :states $ assoc-in (:states store)
-                    concat
-                      assert-type cursor $ :: 'List 'Tag
-                      [] :data
-                    , s
+                  assoc store :states $ decode-map-as
+                    assoc-in (:states store)
+                      concat
+                        decode-map-as cursor $ :: 'List 'Dynamic
+                        [] :data
+                      , s
+                    :: 'Map 'Dynamic 'Dynamic
                 (:states-merge cursor s changes)
                   let
                       path $ concat
-                        assert-type cursor $ :: 'List 'Tag
+                        decode-map-as cursor $ :: 'List 'Dynamic
                         [] :data
                       state $ option:unwrap-or
                         get-in (:states store) path
                         , s
-                      updated-states $ assoc-in (:states store) path $ if
-                        or (map? state) (struct? state)
-                        noted |merge-base-latest-state $ merge
-                          assert-type state $ :: 'Map 'Tag 'Dynamic
-                          assert-type changes $ :: 'Map 'Tag 'Dynamic
-                        do (eprintln |unknown-state-to-merge state) state
-                    assoc store :states updated-states
+                      updated-states $ assoc-in (:states store) path $ if (map? state)
+                        merge
+                          decode-map-as state $ :: 'Map 'Tag 'Dynamic
+                          decode-map-as changes $ :: 'Map 'Tag 'Dynamic
+                        if (struct? state)
+                          struct-match state
+                            ChatState base $ let
+                                typed-changes $ decode-map-as changes $ :: 'Map 'Tag 'Dynamic
+                              ChatState :answer
+                                match (get typed-changes :answer)
+                                  (:none) (:answer base)
+                                  (:some value) (decode-map-as value 'String)
+                                , :loading?
+                                  match (get typed-changes :loading?)
+                                    (:none) (:loading? base)
+                                    (:some value) (decode-map-as value 'Bool)
+                                  , :done?
+                                    match (get typed-changes :done?)
+                                      (:none) (:done? base)
+                                      (:some value) (decode-map-as value 'Bool)
+                                    , :messages
+                                      match (get typed-changes :messages)
+                                        (:none) (:messages base)
+                                        (:some value)
+                                          map
+                                            decode-map-as value $ :: 'List 'Dynamic
+                                            fn (message) (app.schema/normalize-chat-message message)
+                                      , :model
+                                        match (get typed-changes :model)
+                                          (:none) (:model base)
+                                          (:some value) (decode-map-as value 'Tag)
+                                        , :thinking $ match (get typed-changes :thinking)
+                                          (:none) (:thinking base)
+                                          (:some value) (decode-map-as value 'String)
+                            _ other $ raise "|Unsupported state Struct in states-merge"
+                          do (eprintln |unknown-state-to-merge state) state
+                    assoc store :states $ decode-map-as updated-states $ :: 'Map 'Dynamic 'Dynamic
                 (:hydrate-storage data) (app.schema/normalize-store data)
                 (:change-model)
                   if
-                    = (:model store) :anthropic
+                    let
+                        model $ :model store
+                      if (tag? model) (= model :anthropic) false
                     assoc store :model :gemini
                     assoc store :model :anthropic
                 (:save-session state)
                   let
-                      store1 $ save-current-session store $ assert-type state 'app.schema/ChatState
+                      store1 $ save-current-session store $ app.comp.container/normalize-chat-state state
                     assoc store1 :current-session-id nil
-                (:session session-id id) (assoc store :current-session-id id)
+                (:session session-id id)
+                  assoc store :current-session-id $ if (nil? id) id $ decode-map-as id 'String
                 (:load-session cursor state session)
                   let
-                      typed-session $ assert-type (app.schema/normalize-chat-session session) 'app.schema/ChatSession
-                      store1 $ assoc store :states $ assoc-in (:states store)
-                        concat
-                          assert-type cursor $ :: 'List 'Tag
-                          [] :data
-                        -> state
-                          assoc :messages $ :messages typed-session
-                          assoc :done? true
+                      typed-session $ app.schema/normalize-chat-session session
+                      store1 $ assoc store :states $ decode-map-as
+                        assoc-in (:states store)
+                          concat
+                            decode-map-as cursor $ :: 'List 'Dynamic
+                            [] :data
+                          -> (app.comp.container/normalize-chat-state state)
+                            assoc :messages $ :messages typed-session
+                            assoc :done? true
+                        :: 'Map 'Dynamic 'Dynamic
                     assoc store1 :current-session-id $ :id typed-session
                 (:remove-session id)
                   assoc store :sessions $ filter (:sessions store)
@@ -2548,14 +2655,14 @@
                       hint-fn $ {}
                         :args $ [] 'app.schema/ChatSession
                         :return 'Bool
-                      not $ = (:id s) (assert-type id 'String)
+                      not $ = (:id s) (decode-map-as id 'String)
                 (:archive-sessions new-count)
                   -> store
                     assoc :sessions $ []
-                    assoc :archived-count new-count
+                    assoc :archived-count $ decode-map-as new-count 'Number
                     assoc :current-session-id nil
                 (:update-archived-count new-count)
-                  -> store $ assoc :archived-count new-count
+                  -> store $ assoc :archived-count $ decode-map-as new-count 'Number
                 (:clear-sessions)
                   -> store
                     assoc :sessions $ []
