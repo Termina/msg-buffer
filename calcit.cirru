@@ -470,6 +470,7 @@
                 do
                   js/URL.revokeObjectURL $ unsafe-coerce url 'String
                   reset! *image-cache false
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
@@ -1905,10 +1906,10 @@
             |../extension/get-selected :refer $ get-selected
             |../lib/db :refer $ db-get db-set
             |../lib/image :refer $ base64ToBlob
-            respo-alerts.core :refer $ [] use-modal-menu use-prompt use-drawer use-alert
+            respo-alerts.core :refer $ use-modal-menu use-prompt use-drawer use-alert
             respo-ui.util :refer $ tab-echo!
             app.schema :refer $ Store ChatState ChatSession ChatMessage MessageBoxState store
-            calcit.test :refer $ [] is
+            calcit.test :refer $ is
             js-ffi.browser :as browser
             js-ffi.shared :as ffi
     'app.config $ %{} 'FileEntry
@@ -2004,6 +2005,7 @@
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
             reset! *reel $ reel-updater updater @*reel op
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Enum
@@ -2018,15 +2020,17 @@
             :return $ :: 'calcit.core/Option 'String
         'hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn hydrate-storage-later! ()
-            js/setTimeout
+            browser/set-timeout!
               fn () $ let
-                  raw $ js/localStorage.getItem $ :storage-key config/site
-                when (js-present? raw)
-                  let
-                      t-start $ ffi/now-ms
-                      serialized $ assert-type raw 'String
-                    dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
-                    println |Hydrated-in $ - (ffi/now-ms) t-start
+                  storage $ browser/window-local-storage
+                match
+                  js-nullish->option $ storage .get-item $ :storage-key config/site
+                  (:none) &unit
+                  (:some serialized)
+                    let
+                        t-start $ ffi/now-ms
+                      dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
+                      println |Hydrated-in $ - (ffi/now-ms) t-start
               , 0
             , &unit
           :examples $ []
@@ -2087,9 +2091,9 @@
               println "|Running mode:" $ if config/dev? |dev |release
               if config/dev? $ load-console-formatter!
               render-app!
-              add-watch *reel :changes $ fn (reel prev) (render-app!)
-              add-watch *archived-sessions :changes $ fn (s prev) (render-app!)
-              add-watch *viewing-archive-session :changes $ fn (s prev) (render-app!)
+              add-watch! *reel :changes $ fn (reel prev) (render-app!)
+              add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
+              add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
               listen-devtools! |k dispatch!
               js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
               js/window.addEventListener |visibilitychange $ fn (event)
@@ -2116,28 +2120,37 @@
             :args $ []
             :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def mount-target (js/document.querySelector |.app)
+          :code $ quote $ defn mount-target ()
+            let
+                document $ js-cast js/document 'respo.dom/DomDocument
+              document .query-selector |.app
           :examples $ []
-          :schema $ :: 'JsNullish 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ []
+            :features $ #{} :js-ffi
+            :return $ :: 'JsNullish 'respo.dom/DomElement
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ ffi/date-now-snapshot
-            js/localStorage.setItem (:storage-key config/site)
-              format-cirru-edn $ option:unwrap-or
-                assert-type (get @*reel :store) (:: 'Option 'app.schema/Store)
-                , schema/store
+            let
+                storage $ browser/window-local-storage
+                store $ match (get @*reel :store)
+                  (:none) schema/store
+                  (:some value) (decode-map-as value 'app.schema/Store)
+              storage .set-item! (:storage-key config/site) (format-cirru-edn store)
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
               = false $ unsafe-coerce (js/Boolean build-errors) 'Bool
-              do (remove-watch *reel :changes) (remove-watch *archived-sessions :changes) (remove-watch *viewing-archive-session :changes) (clear-cache!)
-                add-watch *reel :changes $ fn (reel prev) (render-app!)
-                add-watch *archived-sessions :changes $ fn (s prev) (render-app!)
-                add-watch *viewing-archive-session :changes $ fn (s prev) (render-app!)
+              do (remove-watch! *reel :changes) (remove-watch! *archived-sessions :changes) (remove-watch! *viewing-archive-session :changes) (clear-cache!)
+                add-watch! *reel :changes $ fn (reel prev) (render-app!)
+                add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
+                add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
                 reset! *reel $ refresh-reel @*reel schema/store updater
                 hud! |ok~ |Ok
               hud! |error $ unsafe-coerce build-errors 'Dynamic
@@ -2148,15 +2161,13 @@
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             let
-                t_start $ unsafe-coerce (js/Date.now) 'Number
+                t_start $ ffi/now-ms
               println "|Rendering app..."
-              render-with! mount-target
+              render-with! (mount-target)
                 fn () $ comp-container @*reel
                 , dispatch!
               println "|Rendered in"
-                -
-                  unsafe-coerce (js/Date.now) 'Number
-                  , t_start
+                - (ffi/now-ms) t_start
                 , |ms
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
@@ -2194,6 +2205,7 @@
             |bottom-tip :default hud!
             respo.controller.client :refer $ send-to-component!
             js-ffi.shared :as ffi
+            js-ffi.browser :as browser
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'ChatMessage $ %{} 'CodeEntry (:doc |)
@@ -2234,10 +2246,12 @@
               :return 'app.schema/ChatMessage
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw) (assert-type raw 'app.schema/ChatMessage)
+            if (struct? raw)
+              struct-match raw (ChatMessage typed typed)
+                _ other $ raise "|Unexpected nominal value for ChatMessage"
               if (map? raw)
                 let
-                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                     thinking-value $ option:unwrap-or (get data :thinking) |
                     normalized-thinking $ if (string? thinking-value) (assert-type thinking-value 'String) |
                   decode-map-as (assoc data :thinking normalized-thinking) 'app.schema/ChatMessage
@@ -2254,10 +2268,12 @@
               :return 'app.schema/ChatSession
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw) (assert-type raw 'app.schema/ChatSession)
+            if (struct? raw)
+              struct-match raw (ChatSession typed typed)
+                _ other $ raise "|Unexpected nominal value for ChatSession"
               if (map? raw)
                 let
-                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                     raw-message-value $ option:unwrap-or (get data :messages) ([])
                     raw-messages $ if (list? raw-message-value)
                       assert-type raw-message-value $ :: 'List 'Dynamic
@@ -2293,10 +2309,12 @@
               :return 'app.schema/Store
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw) (assert-type raw 'app.schema/Store)
+            if (struct? raw)
+              struct-match raw (Store typed typed)
+                _ other $ raise "|Unexpected nominal value for Store"
               if (map? raw)
                 let
-                    data $ assert-type raw $ :: 'Map 'Tag 'Dynamic
+                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
                     raw-session-value $ option:unwrap-or (get data :sessions) ([])
                     raw-sessions $ if (list? raw-session-value)
                       assert-type raw-session-value $ :: 'List 'Dynamic
@@ -2347,7 +2365,7 @@
           :schema $ :: 'app.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
-          :require $ calcit.test :refer $ [] is
+          :require $ calcit.test :refer $ is
     'app.updater $ %{} 'FileEntry
       :defs $ {} $ 'updater
         %{} 'CodeEntry (:doc |)
