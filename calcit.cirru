@@ -203,7 +203,7 @@
                 messages1 $ upsert-assistant-message messages0 | |
                 result $ js-await $ axios-post axios-module (str |https://sa.chenyong.life/v1/messages)
                   js-object
-                    :model $ option:unwrap-or (get-env |claude-model) (or model |claude-3-5-sonnet-latest)
+                    :model $ .unwrap-or (get-env |claude-model) (or model |claude-3-5-sonnet-latest)
                     :max_tokens 1024
                     :stream true
                     :thinking $ if thinking?
@@ -572,7 +572,7 @@
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel)
             let
-                app-store $ option:fold (get reel :store)
+                app-store $ .fold (get reel :store)
                   fn () store
                   fn (raw-store) (app.schema/normalize-store raw-store)
                 sessions $ :sessions app-store
@@ -580,10 +580,10 @@
                 current-session-id $ :current-session-id app-store
                 states $ :states app-store
                 cursor $ decode-map-as
-                  option:unwrap-or (get states :cursor) ([])
+                  .unwrap-or (get states :cursor) ([])
                   :: 'List 'Dynamic
                 state $ let
-                    raw-chat-state $ option:unwrap-or (get states :data)
+                    raw-chat-state $ .unwrap-or (get states :data)
                       {} (:answer |) (:loading? false) (:done? true)
                         :messages $ []
                         :model :gemini
@@ -596,7 +596,7 @@
                   :model state
                   , :gemini
                 is-viewing-history? $ and (js-present-dynamic? current-session-id)
-                  option:fold
+                  .fold
                     assert-type
                       first $ filter sessions $ fn (s)
                         hint-fn $ {}
@@ -612,7 +612,7 @@
                         :args $ [] 'app.schema/ChatSession
                         :return 'Bool
                       :is-history? session
-                last-assistant $ option:fold
+                last-assistant $ .fold
                   assert-type (last messages) (:: 'Option 'app.schema/ChatMessage)
                   fn ()
                     hint-fn $ {} $ :return 'String
@@ -635,7 +635,7 @@
                     :items models-menu
                     :on-result $ fn (result d!)
                       d! cursor $ assoc state :model $ decode-map-as
-                        option:unwrap-or (nth result 1) :gemini
+                        .unwrap-or (nth result 1) :gemini
                         , 'Tag
                 reply-plugin $ use-prompt (>> states :reply-prompt)
                   {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
@@ -665,7 +665,7 @@
                           submit-message! cursor submit-state text search? think? model d!
                         submit-message! cursor submit-state text search? think? model d!
                 message-box-state $ let
-                    raw-message-box-state $ option:unwrap-or
+                    raw-message-box-state $ .unwrap-or
                       get (>> states :message-box) :data
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
                   if (struct? raw-message-box-state)
@@ -691,7 +691,7 @@
                                 :args $ [] 'app.schema/ChatSession
                                 :return 'Bool
                               = (:id s) session-id
-                            , first option:unwrap
+                            , first .unwrap
                           on-close d!
                         , on-close $ fn (d!)
                           hint-fn $ {} $ :async true
@@ -914,7 +914,7 @@
                                     (:none) &unit
                                     (:some element) (element .blur!)
                                   d!
-                                    option:unwrap-or
+                                    .unwrap-or
                                       get (>> states :message-box) :cursor
                                       []
                                     assoc message-box-state :focus-mode? true
@@ -1005,10 +1005,10 @@
           :code $ quote $ defcomp comp-message-box (states picker-el on-submit model)
             let
                 cursor $ decode-map-as
-                  option:unwrap-or (get states :cursor) ([])
+                  .unwrap-or (get states :cursor) ([])
                   :: 'List 'Dynamic
                 state $ let
-                    raw-message-box-state $ option:unwrap-or (get states :data)
+                    raw-message-box-state $ .unwrap-or (get states :data)
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
                   if (struct? raw-message-box-state)
                     struct-match raw-message-box-state (MessageBoxState typed typed)
@@ -1043,21 +1043,21 @@
                         :class-name $ str-spaced css/textarea css/font-code! style-textbox
                         :on-input $ fn (e d!)
                           d! cursor $ assoc state :content $ decode-map-as
-                            option:unwrap-or (get e :value) |
+                            .unwrap-or (get e :value) |
                             , 'String
                           , &unit
                         :on-keydown $ fn (e d!)
                           if
                             and
                               = 13 $ decode-map-as
-                                option:unwrap-or (get e :keycode) 0
+                                .unwrap-or (get e :keycode) 0
                                 , 'Number
                               or
                                 decode-map-as
-                                  option:unwrap-or (get e :meta?) false
+                                  .unwrap-or (get e :meta?) false
                                   , 'Bool
                                 decode-map-as
-                                  option:unwrap-or (get e :ctrl?) false
+                                  .unwrap-or (get e :ctrl?) false
                                   , 'Bool
                             on-submit (:content state) (:search? state) (:think? state) d!
                           , &unit
@@ -1188,7 +1188,7 @@
                               :on-click $ fn (e d!)
                                 let
                                     event $ js-cast
-                                      option:unwrap-or (get e :event) js/undefined
+                                      .unwrap-or (get e :event) js/undefined
                                       , 'js-ffi.browser/EventHost
                                   browser/event-stop-propagation! event
                                 d! $ :: :remove-session session-id
@@ -1245,7 +1245,7 @@
           :code $ quote $ defn create-session (messages model)
             let
                 id $ generate-session-id
-                first-msg $ option:fold
+                first-msg $ .fold
                   assert-type (first messages) (:: 'Option 'app.schema/ChatMessage)
                   fn () |New-chat
                   fn (message)
@@ -1383,7 +1383,7 @@
               when
                 > (count lines) 1
                 eprintln "|Dropping some unexpected lines:" $ slice lines 1
-              option:unwrap-or (first lines) |
+              .unwrap-or (first lines) |
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'String
@@ -1560,25 +1560,25 @@
                 _ other $ raise "|Expected ChatState nominal value"
               let
                   data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                  loading-value $ option:unwrap-or (get data :loading?) false
-                  done-value $ option:unwrap-or (get data :done?) true
-                  model-value $ option:unwrap-or (get data :model) :gemini
+                  loading-value $ .unwrap-or (get data :loading?) false
+                  done-value $ .unwrap-or (get data :done?) true
+                  model-value $ .unwrap-or (get data :model) :gemini
                 app.schema/ChatState :answer
-                  stream-text $ option:unwrap-or (get data :answer) |
+                  stream-text $ .unwrap-or (get data :answer) |
                   , :loading?
                     match loading-value (true true) (false false) (_ false)
                     , :done?
                       match done-value (true true) (false false) (_ true)
                       , :messages
                         let
-                            raw-message-value $ option:unwrap-or (get data :messages) ([])
+                            raw-message-value $ .unwrap-or (get data :messages) ([])
                             raw-messages $ if (list? raw-message-value)
                               decode-map-as raw-message-value $ :: 'List 'Dynamic
                               []
                           map raw-messages $ fn (message) (app.schema/normalize-chat-message message)
                         , :model
                           if (tag? model-value) model-value :gemini
-                          , :thinking $ stream-text $ option:unwrap-or (get data :thinking) |
+                          , :thinking $ stream-text $ .unwrap-or (get data :thinking) |
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ChatState)
             :args $ [] 'T
@@ -1612,10 +1612,10 @@
                   let
                       info-data $ decode-map-as info $ :: 'Map 'Tag 'Dynamic
                       submit? $ decode-map-as
-                        option:unwrap-or (get info-data :submit?) true
+                        .unwrap-or (get info-data :submit?) true
                         , 'Bool
                       text $ decode-map-as
-                        option:unwrap-or (get info-data :text) |
+                        .unwrap-or (get info-data :text) |
                         , 'String
                     dispatch! (:: :states cursor) (assoc state :content text)
                     if submit?
@@ -2037,7 +2037,7 @@
         'toggle-focus-within! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn toggle-focus-within! (respo-event active?)
             let
-                raw-event $ option:unwrap-or (get respo-event :event) js/undefined
+                raw-event $ .unwrap-or (get respo-event :event) js/undefined
               when (js-present-dynamic? raw-event)
                 let
                     event $ unsafe-coerce raw-event FocusEventHost
@@ -2075,7 +2075,7 @@
           :code $ quote $ defn upsert-assistant-message (messages content thinking)
             let
                 size $ count messages
-              option:fold
+              .fold
                 assert-type (last messages) (:: 'Option 'app.schema/ChatMessage)
                 fn ()
                   hint-fn $ {} $ :return (:: 'List 'app.schema/ChatMessage)
@@ -2135,7 +2135,7 @@
             :features $ #{} :js-ffi
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
-            = |dev $ option:unwrap-or (get-env |mode) |release
+            = |dev $ .unwrap-or (get-env |mode) |release
           :examples $ []
           :schema $ :: 'Bool
         'site $ %{} 'CodeEntry (:doc |)
@@ -2226,33 +2226,37 @@
             :features $ #{} :js-ffi
             :return $ :: 'calcit.core/Option 'String
         'hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn hydrate-storage-later! ()
+          :code $ quote $ defn hydrate-storage-later! (on-ready)
             browser/set-timeout!
-              fn () $ let
-                  storage $ browser/window-local-storage
-                match
-                  js-nullish->option $ storage .get-item $ :storage-key config/site
-                  (:none) &unit
-                  (:some serialized)
-                    let
-                        t-start $ ffi/now-ms
-                      dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
-                      println |Hydrated-in $ - (ffi/now-ms) t-start
+              fn ()
+                let
+                    storage $ browser/window-local-storage
+                  match
+                    js-nullish->option $ storage .get-item $ :storage-key config/site
+                    (:none) &unit
+                    (:some serialized)
+                      let
+                          t-start $ ffi/now-ms
+                        dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
+                        println |Hydrated-in $ - (ffi/now-ms) t-start
+                on-ready
               , 0
             , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+            :args $ [] $ :: 'Fn
+              {} (:return 'Unit)
+                :args $ []
             :features $ #{} :js-ffi
         'listen-extension! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn listen-extension! ()
             js/chrome.runtime.onMessage.addListener $ fn (raw-message sender respond!)
               let
                   message $ unsafe-coerce raw-message ExtensionMessageHost
-                  action $ option:unwrap-or (extension-action message) |
+                  action $ .unwrap-or (extension-action message) |
                 when (= |menu-summary action)
                   let
-                      source $ option:unwrap-or
+                      source $ .unwrap-or
                         js-nullish->option $ .-content message
                         , |
                       content $ str "|你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline source
@@ -2260,17 +2264,17 @@
                     send-to-component! event-tuple
                 when (= |fill-text action)
                   let
-                      content $ option:unwrap-or
+                      content $ .unwrap-or
                         js-nullish->option $ .-text message
                         , |
-                      submit? $ option:unwrap-or
+                      submit? $ .unwrap-or
                         js-nullish->option $ .-submit? message
                         , true
                       event-tuple $ :: :fill-text $ {} (:text content) (:submit? submit?)
                     send-to-component! event-tuple
                 when (= |menu-translate action)
                   let
-                      source $ option:unwrap-or
+                      source $ .unwrap-or
                         js-nullish->option $ .-content message
                         , |
                       content $ str "|请将以下内容翻译成中文, 保持简洁分段:\n\n" &newline &newline source
@@ -2278,7 +2282,7 @@
                     send-to-component! event-tuple
                 when (= |menu-custom action)
                   let
-                      content $ option:unwrap-or
+                      content $ .unwrap-or
                         js-nullish->option $ .-content message
                         , |
                       event-tuple $ :: :fill-text $ {} (:text content) (:submit? false)
@@ -2302,20 +2306,21 @@
               add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
               add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
               listen-devtools! |k dispatch!
-              js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
-              js/window.addEventListener |visibilitychange $ fn (event)
-                let
-                    document $ unsafe-coerce js/document DocumentHost
-                    visibility-state $ option:unwrap-or
-                      js-nullish->option $ .-visibilityState document
-                      , |
-                  if (= |hidden visibility-state) (persist-storage!)
               js/window.addEventListener |dblclick $ fn (event) (.!preventDefault event)
               js/window.addEventListener |wheel
                 fn (event)
                   if (.-ctrlKey event) (.!preventDefault event)
                 js-object $ :passive false
-              hydrate-storage-later!
+              hydrate-storage-later! $ fn ()
+                js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
+                js/window.addEventListener |visibilitychange $ fn (event)
+                  let
+                      document $ unsafe-coerce js/document DocumentHost
+                      visibility-state $ .unwrap-or
+                        js-nullish->option $ .-visibilityState document
+                        , |
+                    if (= |hidden visibility-state) (persist-storage!)
+                , &unit
               if config/chrome-extension? $ listen-extension!
               sync-gemini-key!
               let
@@ -2465,7 +2470,7 @@
               if (map? raw)
                 let
                     data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                    thinking-value $ option:unwrap-or (get data :thinking) |
+                    thinking-value $ .unwrap-or (get data :thinking) |
                     normalized-thinking $ if (string? thinking-value) (assert-type thinking-value 'String) |
                   decode-map-as (assoc data :thinking normalized-thinking) 'app.schema/ChatMessage
                 raise "|Expected chat message map"
@@ -2495,7 +2500,7 @@
               if (map? raw)
                 let
                     data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                    raw-message-value $ option:unwrap-or (get data :messages) ([])
+                    raw-message-value $ .unwrap-or (get data :messages) ([])
                     raw-messages $ if (list? raw-message-value)
                       assert-type raw-message-value $ :: 'List 'Dynamic
                       []
@@ -2544,7 +2549,7 @@
               if (map? raw)
                 let
                     data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                    raw-session-value $ option:unwrap-or (get data :sessions) ([])
+                    raw-session-value $ .unwrap-or (get data :sessions) ([])
                     raw-sessions $ if (list? raw-session-value)
                       assert-type raw-session-value $ :: 'List 'Dynamic
                       []
@@ -2575,12 +2580,12 @@
                 normalized $ assert-type (normalize-store legacy) 'app.schema/Store
                 sessions $ assert-type (:sessions normalized) (:: 'List 'app.schema/ChatSession)
                 fallback-session $ ChatSession :id |fallback :created-at 0 :messages ([]) :model :gemini :preview | :is-history? false
-                session $ option:unwrap-or
+                session $ .unwrap-or
                   assert-type (first sessions) (:: 'Option 'app.schema/ChatSession)
                   , fallback-session
                 messages $ assert-type (:messages session) (:: 'List 'app.schema/ChatMessage)
                 fallback-message $ ChatMessage :role :user :content | :thinking |fallback
-                message $ option:unwrap-or
+                message $ .unwrap-or
                   assert-type (first messages) (:: 'Option 'app.schema/ChatMessage)
                   , fallback-message
               is $ = | $ :thinking message
@@ -2615,7 +2620,7 @@
                       path $ concat
                         decode-map-as cursor $ :: 'List 'Dynamic
                         [] :data
-                      state $ option:unwrap-or
+                      state $ .unwrap-or
                         get-in (:states store) path
                         , s
                       updated-states $ assoc-in (:states store) path $ if (map? state)
