@@ -18,33 +18,6 @@
       :typeNotFull 0
       :unresolved 1
       :unsafeCoerce 0
-    |app.comp.container/*gen-ai-new $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
-    |app.comp.container/*image-cache $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
-    |app.comp.container/*openai $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
     |app.comp.container/*viewing-archive-session $ {} (:codeDynamic 0)
       :codeNil 1
       :declaredOptional 0
@@ -71,7 +44,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 4
+      :unsafeCoerce 0
     |app.comp.container/call-flash-imagen-msg! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -80,7 +53,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 15
+      :unsafeCoerce 0
     |app.comp.container/call-genai-msg! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -89,7 +62,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 5
+      :unsafeCoerce 0
     |app.comp.container/call-imagen-4-msg! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -98,7 +71,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 9
+      :unsafeCoerce 0
     |app.comp.container/call-openrouter! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -107,16 +80,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 8
-    |app.comp.container/clear-image-cache! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 1
+      :unsafeCoerce 0
     |app.comp.container/comp-abort $ {} (:codeDynamic 0)
       :codeNil 1
       :declaredOptional 0
@@ -134,7 +98,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 12
-      :unsafeCoerce 5
+      :unsafeCoerce 0
     |app.comp.container/comp-message-box $ {} (:codeDynamic 0)
       :codeNil 3
       :declaredOptional 0
@@ -143,7 +107,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 3
-      :unsafeCoerce 3
+      :unsafeCoerce 0
     |app.comp.container/comp-sessions-modal $ {} (:codeDynamic 0)
       :codeNil 1
       :declaredOptional 0
@@ -152,44 +116,8 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 1
-      :unsafeCoerce 1
-    |app.comp.container/decode-genai-chunk $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 8
-    |app.comp.container/download-sessions! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 0
-      :unsafeCoerce 4
-    |app.comp.container/effect-focus $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 2
+      :unsafeCoerce 0
     |app.comp.container/js-present-dynamic? $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 0
-      :unsafeCoerce 1
-    |app.comp.container/make-genai-tools $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
@@ -234,15 +162,6 @@
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
-    |app.comp.container/normalize-chat-state $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 3
     |app.comp.container/on-fill $ {} (:codeDynamic 0)
       :codeNil 1
       :declaredOptional 0
@@ -612,15 +531,6 @@
       :typeNotFull 1
       :unresolved 0
       :unsafeCoerce 4
-    |app.config/detect-chrome-extension? $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 2
     |app.main/*reel $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -657,24 +567,6 @@
       :typeNotFull 0
       :unresolved 0
       :unsafeCoerce 3
-    |app.main/mount-target $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 0
-      :unsafeCoerce 0
-    |app.main/persist-storage! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 0
-      :unsafeCoerce 0
     |app.main/reload! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -683,16 +575,7 @@
       :typeNone 0
       :typeNotFull 0
       :unresolved 0
-      :unsafeCoerce 2
-    |app.main/render-app! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 2
+      :unsafeCoerce 1
     |app.main/sync-gemini-key! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -724,11 +607,11 @@
     :codeNil 25
     :declaredOptional 0
     :deprecatedCalls 0
-    :schemaDynamic 46
+    :schemaDynamic 43
     :typeNone 0
-    :typeNotFull 65
-    :unresolved 71
-    :unsafeCoerce 85
+    :typeNotFull 58
+    :unresolved 68
+    :unsafeCoerce 11
   :scope $ {} (:includeDependencies false)
     :namespace nil
     :namespacePrefix nil
