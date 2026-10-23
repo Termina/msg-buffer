@@ -29,10 +29,15 @@ PR 网页预览按 `Termina/msg-buffer/pr/<PR 编号>/<run ID>/<attempt>/` 隔�
 同仓库 PR 与生产上传需要 `COS_BUCKET`、`COS_SECRET_ID`、`COS_SECRET_KEY`；fork PR 不上传。
 服务器继续仅在 main push 部署 `dist/*` 到原路径，本次只更新前端资源配置。
 
-### Calcit 0.30.1 迁移候选（尚未交付）
+### 正式 Calcit 0.30.1 迁移（待本轮验收）
 
-本分支将 CLI 与 `@calcit/procs` 配对固定为已发布的 `0.30.1-alpha.5`，Calcit 模块改用正式 tag。
-0.30.1 正式版的 CLI/npm 配对发布尚未完成，暂不只升级其中一端。
+本分支将 CLI 与 `@calcit/procs` 配对固定为正式 `0.30.1`，升级到 Alerts 0.10.57、Reel 0.6.41、
+Markdown 0.4.59、UI 0.8.0、Respo 0.16.124、JS-FFI 0.2.5，全部使用精确正式 tag。
+升级后重启开发服务并刷新页面，不混用旧 runtime；不改变存档、模型服务地址或网页/扩展资源分离合同。
+
+本轮迁移 41 处源码及原测试中的 2 处 Option helper 调用，改为 `.fold`、`.unwrap-or`、`.unwrap`。
+保持默认值、惰性分支回调、8 项原测试、1 个示例及两处 `hud!` 不变，不增加强转或放宽质量基线。
+正式 Linux CI 与真实页面验收以本轮 PR 的实际结果为准；下面是此前 alpha 候选的迁移记录，不能替代正式版验收。
 
 存档格式、模型选择、扩展消息和网页/扩展资源分离的合同不变。DOM 挂载查询改为带明确能力合同的函数，
 存档恢复区分具名 Struct 与旧 Map，并检查 Map 的键和值；同步回调明确返回 Unit。
