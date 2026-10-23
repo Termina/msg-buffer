@@ -2226,23 +2226,27 @@
             :features $ #{} :js-ffi
             :return $ :: 'calcit.core/Option 'String
         'hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn hydrate-storage-later! ()
+          :code $ quote $ defn hydrate-storage-later! (on-ready)
             browser/set-timeout!
-              fn () $ let
-                  storage $ browser/window-local-storage
-                match
-                  js-nullish->option $ storage .get-item $ :storage-key config/site
-                  (:none) &unit
-                  (:some serialized)
-                    let
-                        t-start $ ffi/now-ms
-                      dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
-                      println |Hydrated-in $ - (ffi/now-ms) t-start
+              fn ()
+                let
+                    storage $ browser/window-local-storage
+                  match
+                    js-nullish->option $ storage .get-item $ :storage-key config/site
+                    (:none) &unit
+                    (:some serialized)
+                      let
+                          t-start $ ffi/now-ms
+                        dispatch! $ :: :hydrate-storage $ parse-cirru-edn serialized
+                        println |Hydrated-in $ - (ffi/now-ms) t-start
+                on-ready
               , 0
             , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+            :args $ [] $ :: 'Fn
+              {} (:return 'Unit)
+                :args $ []
             :features $ #{} :js-ffi
         'listen-extension! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn listen-extension! ()
@@ -2302,20 +2306,21 @@
               add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
               add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
               listen-devtools! |k dispatch!
-              js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
-              js/window.addEventListener |visibilitychange $ fn (event)
-                let
-                    document $ unsafe-coerce js/document DocumentHost
-                    visibility-state $ .unwrap-or
-                      js-nullish->option $ .-visibilityState document
-                      , |
-                  if (= |hidden visibility-state) (persist-storage!)
               js/window.addEventListener |dblclick $ fn (event) (.!preventDefault event)
               js/window.addEventListener |wheel
                 fn (event)
                   if (.-ctrlKey event) (.!preventDefault event)
                 js-object $ :passive false
-              hydrate-storage-later!
+              hydrate-storage-later! $ fn ()
+                js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
+                js/window.addEventListener |visibilitychange $ fn (event)
+                  let
+                      document $ unsafe-coerce js/document DocumentHost
+                      visibility-state $ .unwrap-or
+                        js-nullish->option $ .-visibilityState document
+                        , |
+                    if (= |hidden visibility-state) (persist-storage!)
+                , &unit
               if config/chrome-extension? $ listen-extension!
               sync-gemini-key!
               let
