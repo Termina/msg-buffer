@@ -27,7 +27,7 @@ function walk(x,path,id){
     ops.push(['tree','replace',id,'--path',p,'--input-format','json-ast','--code',JSON.stringify(adapter),'--expect','quote d!']);x[2]=adapter;adapters++;
     if(['api-key-plugin','reply-plugin'].includes(x[1])){
       const cb=x[3];assert.equal(cb[0],'fn');const cp='@'+[...path,3].join('.');assert.deepEqual(JSON.parse(run('tree','show',id,'--path',cp,'--format','json')).tree,cb);
-      cb.push('&unit');ops.push(['tree','replace',id,'--path',cp,'--input-format','json-ast','--code',JSON.stringify(cb)]);unitCallbacks++;
+      cb.splice(2,0,['hint-fn',['{}',[':args',['[]',"'String"]],[':return',"'Unit"]]]);cb.push('&unit');ops.push(['tree','replace',id,'--path',cp,'--input-format','json-ast','--code',JSON.stringify(cb)]);unitCallbacks++;
     }
   }
   if(id==='app.comp.container/comp-sessions-modal'&&JSON.stringify(path)===JSON.stringify([3,1,0,1,3,2])){
