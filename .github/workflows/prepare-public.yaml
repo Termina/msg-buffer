@@ -36,7 +36,7 @@ jobs:
           set -euo pipefail
           calcit edit format
           calcit --check-only --all-defs
-          calcit fix --workflow strict --verify --format json | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
+          calcit fix --workflow strict --verify --format json | tee acceptance/strict.json | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
           calcit analyze quality --baseline config/calcit-quality.cirru
           calcit test --require-match --summary-only --format json
           yarn build
