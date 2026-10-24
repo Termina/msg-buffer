@@ -522,7 +522,7 @@
                       if
                         not $ blank? text
                         swap! *text str text
-                      swap! *char-buf + $ count text
+                      swap! *char-buf + $ .len text
                       when
                         or (> @*char-buf 80) (includes? text &newline)
                         do (reset! *char-buf 0)
@@ -655,14 +655,33 @@
                   hint-fn $ {}
                     :args $ [] 'app.schema/ChatState 'String 'Bool 'Bool 'Dynamic
                     :features $ #{} :js-ffi
-                  if (blank? text) (.show text-alert-plugin d! "|Please enter text")
+                  if (blank? text)
+                    .show text-alert-plugin
+                      fn (op)
+                        hint-fn $ {}
+                          :args $ [] 'Enum
+                          :return 'Unit
+                        d! op
+                        , &unit
+                      , "|Please enter text"
                     let
                         storage-key $ model-storage-key model
                         stored $ browser/storage-get-or storage-key |
                       if (blank? stored)
-                        .show api-key-plugin d! $ fn (key)
-                          browser/storage-set! storage-key $ decode-map-as key 'String
-                          submit-message! cursor submit-state text search? think? model d!
+                        .show api-key-plugin
+                          fn (op)
+                            hint-fn $ {}
+                              :args $ [] 'Enum
+                              :return 'Unit
+                            d! op
+                            , &unit
+                          fn (key)
+                            hint-fn $ {}
+                              :args $ [] 'String
+                              :return 'Unit
+                            browser/storage-set! storage-key $ decode-map-as key 'String
+                            submit-message! cursor submit-state text search? think? model d!
+                            , &unit
                         submit-message! cursor submit-state text search? think? model d!
                 message-box-state $ let
                     raw-message-box-state $ .unwrap-or
@@ -681,7 +700,7 @@
                           hint-fn $ {} $ :args ([] 'String 'Dynamic)
                           when
                             and
-                              > (count messages) 0
+                              > (.len messages) 0
                               :done? state
                               not $ js-present-dynamic? current-session-id
                             d! $ :: :save-session state
@@ -825,7 +844,7 @@
                                               let
                                                   archive-key $ :archive-key site
                                                 js-await $ db-set archive-key $ format-cirru-edn new-archives
-                                                d! $ :: :update-archived-count $ count new-archives
+                                                d! $ :: :update-archived-count $ .len new-archives
                                           , &unit
                                       <> "|✕"
                   ; Else render normal chat view
@@ -841,15 +860,22 @@
                         div
                           {} (:class-name css/row-middle) (:title |History) (:role |button) (:aria-label |history-open)
                             :style $ {} $ :cursor :pointer
-                            :on-click $ fn (e d!) (.show sessions-plugin d!) &unit
+                            :on-click $ fn (e d!)
+                              .show sessions-plugin $ fn (op)
+                                hint-fn $ {}
+                                  :args $ [] 'Enum
+                                  :return 'Unit
+                                d! op
+                                , &unit
+                              , &unit
                           div
                             {} $ :class-name style-history-button
                             comp-local-icon :clock 14
                           =< 4 nil
                           if
-                            > (count sessions) 0
+                            > (.len sessions) 0
                             <>
-                              str $ count sessions
+                              str $ .len sessions
                               str-spaced css/font-fancy style-history-count
                       div
                         {} (:role |region) (:aria-label |message-list)
@@ -885,7 +911,7 @@
                                   pre $ {} (:class-name style-message-text) (:inner-text content)
                                 if
                                   and (= role :assistant)
-                                    or done? $ not= idx $ dec (count messages)
+                                    or done? $ not= idx $ dec (.len messages)
                                   div
                                     {} $ :class-name $ str-spaced css/row-middle css/gap8 style-message-actions
                                     if chrome-extension? (comp-fill content) nil
@@ -893,7 +919,7 @@
                                   , nil
                         if
                           and
-                            > (count messages) 0
+                            > (.len messages) 0
                             :done? state
                             not is-viewing-history?
                           div
@@ -902,8 +928,19 @@
                               {} (:role |button) (:aria-label |reply-message)
                                 :class-name $ str-spaced css/button style-reply-button
                                 :on-click $ fn (e d!)
-                                  .show reply-plugin d! $ fn (text)
-                                    submit-with-key! state (stream-text text) (:search? message-box-state) (:think? message-box-state) d!
+                                  .show reply-plugin
+                                    fn (op)
+                                      hint-fn $ {}
+                                        :args $ [] 'Enum
+                                        :return 'Unit
+                                      d! op
+                                      , &unit
+                                    fn (text)
+                                      hint-fn $ {}
+                                        :args $ [] 'String
+                                        :return 'Unit
+                                      submit-with-key! state (stream-text text) (:search? message-box-state) (:think? message-box-state) d!
+                                      , &unit
                                   , &unit
                               <> |Reply
                             if (:focus-mode? message-box-state) nil $ a $ {} (:class-name style-focus-link) (:inner-text |Focus) (:role |button) (:aria-label |focus-composer)
@@ -943,14 +980,27 @@
                           if (= model :anthropic) 1 0.3
                         :on-click $ fn (e d!)
                           ; d! $ :: :change-model
-                          .show model-plugin d!
+                          .show model-plugin $ fn (op)
+                            hint-fn $ {}
+                              :args $ [] 'Enum
+                              :return 'Unit
+                            d! op
+                            , &unit
                           , &unit
                       fn (text search? think? d!)
-                        if (blank? text) (.show text-alert-plugin d! "|Please enter text")
+                        if (blank? text)
+                          .show text-alert-plugin
+                            fn (op)
+                              hint-fn $ {}
+                                :args $ [] 'Enum
+                                :return 'Unit
+                              d! op
+                              , &unit
+                            , "|Please enter text"
                           do
                             when
                               and
-                                > (count messages) 0
+                                > (.len messages) 0
                                 :done? state
                                 not $ js-present-dynamic? current-session-id
                               d! $ :: :save-session state
@@ -1136,9 +1186,11 @@
         'comp-sessions-modal $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
             let
-                history-items $ foldl sessions 0 $ fn (acc session)
-                  hint-fn $ {} $ :args ([] 'Number 'app.schema/ChatSession)
-                  + acc $ count $ or (:messages session) ([])
+                history-items $ .foldl sessions 0 $ fn (acc session)
+                  hint-fn $ {}
+                    :args $ [] 'Number 'app.schema/ChatSession
+                    :return 'Number
+                  + acc $ .len $ or (:messages session) ([])
               div
                 {} $ :class-name $ str-spaced css/column css/gap8 style-sessions-list
                 if (> archived-count 0)
@@ -1195,7 +1247,7 @@
                                 , &unit
                             <> "|✕"
                 if
-                  > (count sessions) 0
+                  > (.len sessions) 0
                   div
                     {}
                       :class-name $ str-spaced css/column css/gap8
@@ -1211,12 +1263,12 @@
                         a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button) (:aria-label |sessions-download)
                           :on-click $ fn (e d!) (download-sessions! sessions) &unit
                       if
-                        > (count sessions) 0
+                        > (.len sessions) 0
                         a $ {} (:class-name style-clear) (:inner-text "|Archive all") (:role |button) (:aria-label |sessions-archive-all)
                           :on-click $ fn (e d!)
                             hint-fn $ {} $ :async true
                             let
-                                proceed? $ js/confirm $ str "|Archive " (count sessions) "| sessions and clear active view?"
+                                proceed? $ js/confirm $ str "|Archive " (.len sessions) "| sessions and clear active view?"
                               when proceed? $ let
                                   archive-key $ :archive-key site
                                   raw $ let
@@ -1231,7 +1283,7 @@
                                       fn (session) (app.schema/normalize-chat-session session)
                                   new-archives $ concat old-archives sessions
                                 js-await $ db-set archive-key $ format-cirru-edn new-archives
-                                d! $ :: :archive-sessions $ count new-archives
+                                d! $ :: :archive-sessions $ .len new-archives
                             , &unit
                         span $ {}
                     div $ {} $ :style
@@ -1255,7 +1307,7 @@
                     :content message
               ChatSession :id id :created-at (ffi/now-ms) :messages messages :model model :preview
                 let
-                    len $ count first-msg
+                    len $ .len first-msg
                     end $ if (< len 100) len 100
                   slice first-msg 0 end
                 , :is-history? false
@@ -1381,7 +1433,7 @@
                       :return 'Bool
                     not $ blank? line
               when
-                > (count lines) 1
+                > (.len lines) 1
                 eprintln "|Dropping some unexpected lines:" $ slice lines 1
               .unwrap-or (first lines) |
           :examples $ []
@@ -1663,7 +1715,7 @@
                 messages $ :messages state
                 model $ either (:model state) :gemini
               if
-                > (count messages) 0
+                > (.len messages) 0
                 let
                     new-session $ create-session messages model
                     updated-session $ assoc new-session :is-history? true
@@ -2074,7 +2126,7 @@
         'upsert-assistant-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn upsert-assistant-message (messages content thinking)
             let
-                size $ count messages
+                size $ .len messages
               .fold
                 assert-type (last messages) (:: 'Option 'app.schema/ChatMessage)
                 fn ()
@@ -2624,7 +2676,7 @@
                         get-in (:states store) path
                         , s
                       updated-states $ assoc-in (:states store) path $ if (map? state)
-                        merge
+                        .merge
                           decode-map-as state $ :: 'Map 'Tag 'Dynamic
                           decode-map-as changes $ :: 'Map 'Tag 'Dynamic
                         if (struct? state)
