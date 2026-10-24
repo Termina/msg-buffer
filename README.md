@@ -31,6 +31,19 @@ PR 网页预览按 `Termina/msg-buffer/pr/<PR 编号>/<run ID>/<attempt>/` 隔�
 
 ### 正式 Calcit 0.30.1 迁移
 
+本轮继续配对正式 CLI / `@calcit/procs` **0.30.1**，将完整 Calcit 模块图同步到
+Alerts 0.10.58、Reel 0.6.42、Markdown 0.4.60、UI 0.8.1、Respo 0.16.126、JS-FFI 0.2.6，
+均为精确正式 tag。升级后重新生成资源、重启开发服务并完整刷新，不混用旧依赖缓存。
+模型 SDK、模型名称/地址、密钥、存档格式及网页/扩展资源分离不变；本轮不调用模型服务或安装扩展。
+
+迁移 17 处已证明为 String/List 的 `count` 到 `.len`，以及一处 List `foldl`、一处 Map `merge`
+到同实现的接收者方法。保持求值顺序、集合输入、累加初值、原 8 项测试和 1 个示例。
+累加回调补全 Number 返回合同；弹窗入口用单参数 Enum→Unit 薄适配转发原多参数 Respo 派发器，
+不把它强转成只接收 Enum 的函数。两个弹窗回调在启动原 effect 后显式返回 Unit；不新增 await 或吞异常。
+两处实际 `hud!` 继续在页面显示热更新状态/错误，原工作流、质量基线、npm/lock 和 COS 内置校验不变。
+原部署 SSH 主机身份检查的独立问题见 [#56](https://github.com/Termina/msg-buffer/issues/56)，本轮未改生产信任配置。
+以下为前轮验收记录，不代表本轮最新 HEAD 已通过。
+
 本分支将 CLI 与 `@calcit/procs` 配对固定为正式 `0.30.1`，升级到 Alerts 0.10.57、Reel 0.6.41、
 Markdown 0.4.59、UI 0.8.0、Respo 0.16.124、JS-FFI 0.2.5，全部使用精确正式 tag。
 升级后重启开发服务并刷新页面，不混用旧 runtime；不改变存档、模型服务地址或网页/扩展资源分离合同。
