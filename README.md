@@ -29,7 +29,30 @@ PR 网页预览按 `Termina/msg-buffer/pr/<PR 编号>/<run ID>/<attempt>/` 隔�
 同仓库 PR 与生产上传需要 `COS_BUCKET`、`COS_SECRET_ID`、`COS_SECRET_KEY`；fork PR 不上传。
 服务器继续仅在 main push 部署 `dist/*` 到原路径，本次只更新前端资源配置。
 
-### 正式 Calcit 0.30.1 迁移
+### 正式 Calcit 0.31.0 迁移：使用者影响
+
+CLI/procs 配对正式 0.31.0。Alerts 0.11.0-alpha.3、Reel 0.7.0-alpha.4、
+Markdown 0.5.0-alpha.4、UI 0.9.0-alpha.4、Respo 0.17.0-alpha.4 和传递 Router
+0.9.0-alpha.3 仍是明确标记的 alpha，JS-FFI 使用正式 0.2.7；重新安装整张图并生成资源。
+模型 SDK、名称、地址、密钥和存档协议不变；扩展资源仍为相对路径，与网页 CDN 构建分开。
+
+Anthropic delta 的嵌套读取按 Result/PathError 区分缺失与形状错误：缺失继续跳过，
+错误中间形状抛错。模型已是 String，移除恒真 `or` 的不可达默认值，空字符串仍原样保留。
+会话预览截取显式使用 Option 结束位置；session 的 nil 分支移到 Store 更新外层，保留原值。
+fill 提交前检查实际回调是函数，非法值明确失败；不伪造函数类型。为入口绑定原 Enum 派发合同。
+不改两处真实 `hud!`、原 8 项测试、质量预算或 COS 内置校验，不调用模型服务或安装扩展。
+旧存档中的无来源 Struct 不再直接按本地名义类型匹配：Store、ChatSession、ChatMessage、
+ChatState、MessageBoxState 的同名数据先转 Map，再经过原字段及嵌套值解码重建；名称仅选择解码器，不证明身份。
+本地真实类型继续保留原对象快速路径，异名 Struct 仍拒绝。原往返回归保留全部断言，
+只将两处测试中的旧 get-in unwrap 改为显式 Result 分支，8 项测试通过。
+同时将输入、搜索、聚焦、模型选择和提交路径中的 10 处旧二参状态派发改为单个
+`:: :states cursor value`，避免新版 Respo 单参数派发入口报错；状态值及派发顺序保留。
+本轮完整 strict、491 个定义检查、原质量预算、原 8 项测试、immutable 安装及两种构建通过。
+隔离页面实测合成草稿、搜索切换、模型选择和连续刷新恢复通过，最终阶段无新增 warning/error。
+未调用真实模型、使用密钥或安装扩展；模型流式路径仅有原测试与静态检查证据。
+以下历史记录不作为本轮通过证据。
+
+### 此前正式 Calcit 0.30.1 迁移
 
 本轮继续配对正式 CLI / `@calcit/procs` **0.30.1**，将完整 Calcit 模块图同步到
 Alerts 0.10.58、Reel 0.6.42、Markdown 0.4.60、UI 0.8.1、Respo 0.16.126、JS-FFI 0.2.6，
