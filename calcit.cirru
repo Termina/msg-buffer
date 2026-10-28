@@ -6,7 +6,7 @@
     {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |respo-markdown.calcit/ |alerts.calcit/
-      :type-slots $ {}
+      :type-slots $ {} $ :dispatch-op |app.schema/DispatchOp
   :files $ {}
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
@@ -203,7 +203,7 @@
                 messages1 $ upsert-assistant-message messages0 | |
                 result $ js-await $ axios-post axios-module (str |https://sa.chenyong.life/v1/messages)
                   js-object
-                    :model $ .unwrap-or (get-env |claude-model) (or model |claude-3-5-sonnet-latest)
+                    :model $ .unwrap-or (get-env |claude-model) model
                     :max_tokens 1024
                     :stream true
                     :thinking $ if thinking?
@@ -269,8 +269,11 @@
                             :messages $ upsert-assistant-message messages1 @*text |
                           match
                             get-in event $ [] |delta |text
-                            (:none) (recur rest-events)
-                            (:some fragment)
+                            (:err error)
+                              match error
+                                (:missing) (recur rest-events)
+                                (:shape message) (raise message)
+                            (:ok fragment)
                               let
                                   text $ stream-text fragment
                                 swap! *text str text
@@ -634,9 +637,10 @@
                     ; :confirm-class style-confirm
                     :items models-menu
                     :on-result $ fn (result d!)
-                      d! cursor $ assoc state :model $ decode-map-as
-                        .unwrap-or (nth result 1) :gemini
-                        , 'Tag
+                      d! $ :: :states cursor $ assoc state :model
+                        decode-map-as
+                          .unwrap-or (nth result 1) :gemini
+                          , 'Tag
                 reply-plugin $ use-prompt (>> states :reply-prompt)
                   {} (:text |Follow-up) (:placeholder "|Enter your follow-up") (:multiline? true) (:button-text |Send)
                     :validator $ fn (raw-text)
@@ -687,10 +691,18 @@
                     raw-message-box-state $ .unwrap-or
                       get (>> states :message-box) :data
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if (struct? raw-message-box-state)
+                  if
+                    and (struct? raw-message-box-state) (&struct:matches? raw-message-box-state MessageBoxState)
                     struct-match raw-message-box-state (MessageBoxState typed typed)
                       _ other $ raise "|Expected MessageBoxState"
-                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
+                    decode-map-as
+                      if (struct? raw-message-box-state)
+                        if
+                          = (&struct:get-name raw-message-box-state) :MessageBoxState
+                          &struct:to-map raw-message-box-state
+                          raise "|Expected MessageBoxState"
+                        , raw-message-box-state
+                      , 'app.schema/MessageBoxState
                 sessions-plugin $ use-drawer (>> states :sessions-modal)
                   {} (:title "|History Sessions")
                     :style $ {} (:min-width "||max(320px,30vw)\"") (:max-width |80vw)
@@ -950,7 +962,7 @@
                                   match focused
                                     (:none) &unit
                                     (:some element) (element .blur!)
-                                  d!
+                                  d! $ :: :states
                                     .unwrap-or
                                       get (>> states :message-box) :cursor
                                       []
@@ -1060,10 +1072,18 @@
                 state $ let
                     raw-message-box-state $ .unwrap-or (get states :data)
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if (struct? raw-message-box-state)
+                  if
+                    and (struct? raw-message-box-state) (&struct:matches? raw-message-box-state MessageBoxState)
                     struct-match raw-message-box-state (MessageBoxState typed typed)
                       _ other $ raise "|Expected MessageBoxState"
-                    decode-map-as raw-message-box-state 'app.schema/MessageBoxState
+                    decode-map-as
+                      if (struct? raw-message-box-state)
+                        if
+                          = (&struct:get-name raw-message-box-state) :MessageBoxState
+                          &struct:to-map raw-message-box-state
+                          raise "|Expected MessageBoxState"
+                        , raw-message-box-state
+                      , 'app.schema/MessageBoxState
               [] (effect-focus) (on-fill cursor state on-submit)
                 div
                   {} $ :class-name $ str-spaced css/center style-message-box-panel
@@ -1074,7 +1094,7 @@
                         {} (:role |button) (:aria-label |expand-prompt)
                           :class-name $ str-spaced css/font-code! style-focus-box style-textbox-compact
                           :on-click $ fn (e d!)
-                            d! cursor $ assoc state :focus-mode? false
+                            d! $ :: :states cursor $ assoc state :focus-mode? false
                             js/setTimeout
                               fn () $ match (browser/query-selector |#message)
                                 (:none) &unit
@@ -1092,9 +1112,10 @@
                         :aria-label |prompt-input
                         :class-name $ str-spaced css/textarea css/font-code! style-textbox
                         :on-input $ fn (e d!)
-                          d! cursor $ assoc state :content $ decode-map-as
-                            .unwrap-or (get e :value) |
-                            , 'String
+                          d! $ :: :states cursor $ assoc state :content
+                            decode-map-as
+                              .unwrap-or (get e :value) |
+                              , 'String
                           , &unit
                         :on-keydown $ fn (e d!)
                           if
@@ -1133,7 +1154,7 @@
                               :role |button
                               :aria-label |clear-prompt
                               :on-click $ fn (e d!)
-                                d! cursor $ assoc state :content |
+                                d! $ :: :states cursor $ assoc state :content |
                                 match (browser/query-selector |#message)
                                   (:none) &unit
                                   (:some input) (input .focus!)
@@ -1148,7 +1169,8 @@
                                   {} (:role |group) (:aria-label |think-toggle)
                                     :class-name $ str-spaced css/row style-checkbox
                                     :on-click $ fn (e d!)
-                                      d! cursor $ assoc state :think? $ not (:think? state)
+                                      d! $ :: :states cursor $ assoc state :think?
+                                        not $ :think? state
                                       , &unit
                                   input $ {}
                                     :checked $ :think? state
@@ -1161,7 +1183,8 @@
                                 {} (:role |group) (:aria-label |search-toggle)
                                   :class-name $ str-spaced css/row style-checkbox
                                   :on-click $ fn (e d!)
-                                    d! cursor $ assoc state :search? $ not (:search? state)
+                                    d! $ :: :states cursor $ assoc state :search?
+                                      not $ :search? state
                                     , &unit
                                 input $ {}
                                   :checked $ :search? state
@@ -1309,7 +1332,7 @@
                 let
                     len $ .len first-msg
                     end $ if (< len 100) len 100
-                  slice first-msg 0 end
+                  slice first-msg 0 $ Option :some end
                 , :is-history? false
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ChatSession)
@@ -1591,7 +1614,8 @@
           :schema $ :: 'List
         'normalize-chat-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-state (raw)
-            if (struct? raw)
+            if
+              and (struct? raw) (&struct:matches? raw ChatState)
               struct-match raw
                 ChatState state $ if
                   match (struct-definition state)
@@ -1611,26 +1635,33 @@
                           stream-text $ :thinking state
                 _ other $ raise "|Expected ChatState nominal value"
               let
-                  data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                  loading-value $ .unwrap-or (get data :loading?) false
-                  done-value $ .unwrap-or (get data :done?) true
-                  model-value $ .unwrap-or (get data :model) :gemini
-                app.schema/ChatState :answer
-                  stream-text $ .unwrap-or (get data :answer) |
-                  , :loading?
-                    match loading-value (true true) (false false) (_ false)
-                    , :done?
-                      match done-value (true true) (false false) (_ true)
-                      , :messages
-                        let
-                            raw-message-value $ .unwrap-or (get data :messages) ([])
-                            raw-messages $ if (list? raw-message-value)
-                              decode-map-as raw-message-value $ :: 'List 'Dynamic
-                              []
-                          map raw-messages $ fn (message) (app.schema/normalize-chat-message message)
-                        , :model
-                          if (tag? model-value) model-value :gemini
-                          , :thinking $ stream-text $ .unwrap-or (get data :thinking) |
+                  input $ if (struct? raw)
+                    if
+                      = (&struct:get-name raw) :ChatState
+                      &struct:to-map raw
+                      raise "|Expected ChatState nominal value"
+                    , raw
+                let
+                    data $ decode-map-as input $ :: 'Map 'Tag 'Dynamic
+                    loading-value $ .unwrap-or (get data :loading?) false
+                    done-value $ .unwrap-or (get data :done?) true
+                    model-value $ .unwrap-or (get data :model) :gemini
+                  app.schema/ChatState :answer
+                    stream-text $ .unwrap-or (get data :answer) |
+                    , :loading?
+                      match loading-value (true true) (false false) (_ false)
+                      , :done?
+                        match done-value (true true) (false false) (_ true)
+                        , :messages
+                          let
+                              raw-message-value $ .unwrap-or (get data :messages) ([])
+                              raw-messages $ if (list? raw-message-value)
+                                decode-map-as raw-message-value $ :: 'List 'Dynamic
+                                []
+                            map raw-messages $ fn (message) (app.schema/normalize-chat-message message)
+                          , :model
+                            if (tag? model-value) model-value :gemini
+                            , :thinking $ stream-text $ .unwrap-or (get data :thinking) |
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ChatState)
             :args $ [] 'T
@@ -1669,9 +1700,11 @@
                       text $ decode-map-as
                         .unwrap-or (get info-data :text) |
                         , 'String
-                    dispatch! (:: :states cursor) (assoc state :content text)
+                    dispatch! $ :: :states cursor $ assoc state :content text
                     if submit?
-                      on-submit text (:search? state) (:think? state) dispatch!
+                      if (fn? on-submit)
+                        on-submit text (:search? state) (:think? state) dispatch!
+                        raise |Expected-submit-callback
                       , nil
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
@@ -2053,7 +2086,7 @@
                 *text $ ref |
                 *thinking-text $ ref |
                 model $ :model state
-              d! cursor state1
+              d! $ :: :states cursor state1
               try
                 match model
                   :gemini-3.1-flash-lite-preview $ js-await $ call-genai-msg! model cursor state1 prompt-text search? think? d! *text *thinking-text
@@ -2080,7 +2113,7 @@
                 fn (e) (js/console.error :msg-buffer-request-failed e)
                   let
                       err-text $ str |Failed-to-load: e
-                    d! cursor $ -> state1 (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
+                    d! $ :: :states cursor $ -> state1 (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
                       assoc :messages $ upsert-assistant-message (:messages state1) err-text |
           :examples $ []
           :schema $ :: 'Fn $ {} (:async true) (:return 'Dynamic)
@@ -2492,6 +2525,10 @@
             :thinking 'String
           :examples $ []
           :schema $ :: 'StructDef
+        'DispatchOp $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ def DispatchOp (:: :unhandled)
+          :examples $ []
+          :schema $ :: 'Enum
         'MessageBoxState $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct MessageBoxState (:content 'String) (:search? 'Bool) (:think? 'Bool) (:focus-mode? 'Bool)
           :examples $ []
@@ -2511,7 +2548,8 @@
               :return 'app.schema/ChatMessage
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw)
+            if
+              and (struct? raw) (&struct:matches? raw ChatMessage)
               struct-match raw
                 ChatMessage typed $ if
                   match (struct-definition typed)
@@ -2519,13 +2557,20 @@
                     (:some definition) (identical? definition ChatMessage)
                   , typed $ ChatMessage :content (:content typed) :role (:role typed) :thinking (:thinking typed)
                 _ other $ raise "|Unexpected nominal value for ChatMessage"
-              if (map? raw)
-                let
-                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                    thinking-value $ .unwrap-or (get data :thinking) |
-                    normalized-thinking $ if (string? thinking-value) (assert-type thinking-value 'String) |
-                  decode-map-as (assoc data :thinking normalized-thinking) 'app.schema/ChatMessage
-                raise "|Expected chat message map"
+              let
+                  input $ if (struct? raw)
+                    if
+                      = (&struct:get-name raw) :ChatMessage
+                      &struct:to-map raw
+                      raise "|Unexpected nominal value for ChatMessage"
+                    , raw
+                if (map? input)
+                  let
+                      data $ decode-map-as input $ :: 'Map 'Tag 'Dynamic
+                      thinking-value $ .unwrap-or (get data :thinking) |
+                      normalized-thinking $ if (string? thinking-value) (assert-type thinking-value 'String) |
+                    decode-map-as (assoc data :thinking normalized-thinking) 'app.schema/ChatMessage
+                  raise "|Expected chat message map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ChatMessage)
             :args $ [] 'T
@@ -2538,7 +2583,8 @@
               :return 'app.schema/ChatSession
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw)
+            if
+              and (struct? raw) (&struct:matches? raw ChatSession)
               struct-match raw
                 ChatSession typed $ if
                   match (struct-definition typed)
@@ -2549,19 +2595,26 @@
                       fn (message) (normalize-chat-message message)
                     , :model (:model typed) :preview (:preview typed) :is-history? (:is-history? typed)
                 _ other $ raise "|Unexpected nominal value for ChatSession"
-              if (map? raw)
-                let
-                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                    raw-message-value $ .unwrap-or (get data :messages) ([])
-                    raw-messages $ if (list? raw-message-value)
-                      assert-type raw-message-value $ :: 'List 'Dynamic
-                      []
-                    messages $ map raw-messages $ fn (message) (normalize-chat-message message)
-                    base $ decode-map-as
-                      assoc data :messages $ []
-                      , 'app.schema/ChatSession
-                  ChatSession :id (:id base) :created-at (:created-at base) :messages messages :model (:model base) :preview (:preview base) :is-history? $ :is-history? base
-                raise "|Expected chat session map"
+              let
+                  input $ if (struct? raw)
+                    if
+                      = (&struct:get-name raw) :ChatSession
+                      &struct:to-map raw
+                      raise "|Unexpected nominal value for ChatSession"
+                    , raw
+                if (map? input)
+                  let
+                      data $ decode-map-as input $ :: 'Map 'Tag 'Dynamic
+                      raw-message-value $ .unwrap-or (get data :messages) ([])
+                      raw-messages $ if (list? raw-message-value)
+                        assert-type raw-message-value $ :: 'List 'Dynamic
+                        []
+                      messages $ map raw-messages $ fn (message) (normalize-chat-message message)
+                      base $ decode-map-as
+                        assoc data :messages $ []
+                        , 'app.schema/ChatSession
+                    ChatSession :id (:id base) :created-at (:created-at base) :messages messages :model (:model base) :preview (:preview base) :is-history? $ :is-history? base
+                  raise "|Expected chat session map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ChatSession)
             :args $ [] 'T
@@ -2587,7 +2640,8 @@
               :return 'app.schema/Store
               :features $ #{} :js-ffi
               :generics $ [] 'T
-            if (struct? raw)
+            if
+              and (struct? raw) (&struct:matches? raw Store)
               struct-match raw
                 Store typed $ if
                   match (struct-definition typed)
@@ -2598,20 +2652,27 @@
                       fn (session) (normalize-chat-session session)
                     , :current-session-id (:current-session-id typed) :model (:model typed) :archived-count (:archived-count typed)
                 _ other $ raise "|Unexpected nominal value for Store"
-              if (map? raw)
-                let
-                    data $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                    raw-session-value $ .unwrap-or (get data :sessions) ([])
-                    raw-sessions $ if (list? raw-session-value)
-                      assert-type raw-session-value $ :: 'List 'Dynamic
-                      []
-                    sessions $ map raw-sessions $ fn (session) (normalize-chat-session session)
-                    patched $ dissoc data :current-chapter-id
-                    base $ decode-map-as
-                      assoc patched :sessions $ []
-                      , 'app.schema/Store
-                  Store :states (:states base) :sessions sessions :current-session-id (:current-session-id base) :model (:model base) :archived-count $ :archived-count base
-                raise "|Expected store map"
+              let
+                  input $ if (struct? raw)
+                    if
+                      = (&struct:get-name raw) :Store
+                      &struct:to-map raw
+                      raise "|Unexpected nominal value for Store"
+                    , raw
+                if (map? input)
+                  let
+                      data $ decode-map-as input $ :: 'Map 'Tag 'Dynamic
+                      raw-session-value $ .unwrap-or (get data :sessions) ([])
+                      raw-sessions $ if (list? raw-session-value)
+                        assert-type raw-session-value $ :: 'List 'Dynamic
+                        []
+                      sessions $ map raw-sessions $ fn (session) (normalize-chat-session session)
+                      patched $ dissoc data :current-chapter-id
+                      base $ decode-map-as
+                        assoc patched :sessions $ []
+                        , 'app.schema/Store
+                    Store :states (:states base) :sessions sessions :current-session-id (:current-session-id base) :model (:model base) :archived-count $ :archived-count base
+                  raise "|Expected store map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Store)
             :args $ [] 'T
@@ -2680,8 +2741,9 @@
                           decode-map-as state $ :: 'Map 'Tag 'Dynamic
                           decode-map-as changes $ :: 'Map 'Tag 'Dynamic
                         if (struct? state)
-                          struct-match state
-                            ChatState raw-base $ let
+                          let
+                              raw-base state
+                            let
                                 base $ app.comp.container/normalize-chat-state raw-base
                                 typed-changes $ decode-map-as changes $ :: 'Map 'Tag 'Dynamic
                               ChatState :answer
@@ -2710,7 +2772,6 @@
                                         , :thinking $ match (get typed-changes :thinking)
                                           (:none) (:thinking base)
                                           (:some value) (decode-map-as value 'String)
-                            _ other $ raise "|Unsupported state Struct in states-merge"
                           do (eprintln |unknown-state-to-merge state) state
                     assoc store :states $ decode-map-as updated-states $ :: 'Map 'Dynamic 'Dynamic
                 (:hydrate-storage data) (app.schema/normalize-store data)
@@ -2726,7 +2787,8 @@
                       store1 $ save-current-session store $ app.comp.container/normalize-chat-state state
                     assoc store1 :current-session-id nil
                 (:session session-id id)
-                  assoc store :current-session-id $ if (nil? id) id $ decode-map-as id 'String
+                  if (nil? id) (assoc store :current-session-id id)
+                    assoc store :current-session-id $ decode-map-as id 'String
                 (:load-session cursor state session)
                   let
                       typed-session $ app.schema/normalize-chat-session session
@@ -2773,16 +2835,22 @@
                 changed $ updater initial
                   :: :states-merge cursor stale $ {} $ :thinking |thought
                   , |synthetic 1
-                restored $ app.comp.container/normalize-chat-state $ .unwrap
+                restored $ app.comp.container/normalize-chat-state $ match
                   get-in (:states changed)
                     concat cursor $ [] :data
+                  (:ok value) value
+                  (:err error)
+                    raise $ str |Expected-test-state: error
                 roundtrip $ app.schema/normalize-store $ parse-cirru-edn (format-cirru-edn changed)
                 updated-again $ updater roundtrip
                   :: :states-merge cursor stale $ {} $ :answer |after-restore
                   , |synthetic 3
-                restored-again $ app.comp.container/normalize-chat-state $ .unwrap
+                restored-again $ app.comp.container/normalize-chat-state $ match
                   get-in (:states updated-again)
                     concat cursor $ [] :data
+                  (:ok value) value
+                  (:err error)
+                    raise $ str |Expected-test-state: error
               assert= |latest $ :answer restored
               assert= |thought $ :thinking restored
               assert= (:messages latest) (:messages restored)
