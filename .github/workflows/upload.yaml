@@ -40,7 +40,7 @@ jobs:
         deps-file: deps.cirru
 
     - name: Resolve Calcit dependencies
-      # Resolve the declared formal module tags independently of local module exports.
+      # Resolve the declared published module tags independently of local module exports.
       run: caps --strict --ci
 
     - name: Install JavaScript dependencies
@@ -53,7 +53,7 @@ jobs:
       run: |
         set -euo pipefail
         calcit calcit.cirru edit format
-        git diff --exit-code -- calcit.cirru
+        git diff --exit-code --quiet -- calcit.cirru
         test ! -e compact.cirru
         test ! -e package.cirru
 
@@ -98,7 +98,7 @@ jobs:
 
     - name: Save tested local-assets build for acceptance
       if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v7.0.1
+      uses: actions/upload-artifact@v7.0.2
       with:
         name: extension-frontend-${{ github.run_id }}-${{ github.run_attempt }}
         path: extension/dist
