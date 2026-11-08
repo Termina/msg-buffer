@@ -7,17 +7,13 @@ Demo：<https://r.tiye.me/Termina/msg-buffer/>。Gemini 文档：<https://ai.goo
 
 ## 对使用者的影响
 
-配对升级到正式 Calcit / `@calcit/procs` **0.32.1**，需重新生成网页与扩展资源并完整刷新。
-模型 SDK、名称、请求地址、密钥和存档协议保持；不调用模型服务、不使用真实密钥或安装扩展。
-两处实际 `hud!` 继续显示热更新状态与错误，不改为异常抛出。
+本地开发使用正式 Calcit 和 `@calcit/procs` **0.38.0**。升级后请重装依赖，分别重建网页与扩展资源，并刷新。页面 HUD、模型名称、请求配置和存档格式保持原行为。
 
-依赖使用已发布的 Respo 0.17.1、UI 0.9.0、JS FFI 0.2.9，以及精确 Reel 0.7.0-alpha.5、Alerts 0.11.0-alpha.4、Markdown 0.5.0-alpha.5。
-这些 alpha 依赖已标明，不将尚未发布的 0.5.0 等正式版本当作可安装依赖；UI 升级不保证逐像素相同。
+模块使用已发布的 Respo 0.19.5、UI 0.15.2、JS FFI 0.2.13、Reel 0.10.0、Alerts 0.14.2、Markdown 0.8.2 和 Router 0.12.2。
 
 ## 迁移合同
 
-官方工具转换 66 处类型写法，138 个定义 schema 不变；原测试四处类型表达式同步转换，业务断言保留。
-原八项测试、质量基线、完整 strict、动态方法报告和零弃用调用检查继续保留，不增加伪强转、质量预算或校验脚本。
+应用和流式回调使用具名 `DispatchOp`，`WidgetState` union 区分聊天状态和输入框状态。Respo 与 Reel 的匿名事件在渲染入口归一化，保留原游标位置。输入框聚焦、失焦和键盘事件使用具名 `RespoEvent`，焦点样式通过 JS FFI 的 DOM 接口更新。
 
 旧存档中的 Store、ChatSession、ChatMessage、ChatState、MessageBoxState 同名外部 Struct 先转 Map，经过原字段及嵌套值解码后重建。
 名称只选择解码器，不证明名义身份；本地真实类型保持快速路径，异名值仍拒绝。原 Map 存档继续兼容。
@@ -30,7 +26,7 @@ SDK 响应、可空 DOM 和 object URL 保留原受检边界及清理行为。�
 
 ## 开发和验证
 
-使用 Node.js 24、Yarn 4.18.0、Calcit 0.32.1，文件为 `calcit.cirru`、`deps.cirru`。
+使用 Node.js 24、Yarn 4.18.0、Calcit 0.38.0，文件为 `calcit.cirru`、`deps.cirru`。
 
 ```sh
 caps --strict --ci
@@ -43,9 +39,7 @@ calcit test --require-match
 yarn build
 ```
 
-本轮在已发布依赖图上通过 Caps 严格安装 7 个模块、工具链配对、不可变安装、491 个定义、完整 strict、原质量预算、八项测试、零弃用调用、原动态方法报告、扩展包检查及独立网页构建；最终远端结果以 PR CI 为准。
-页面交互沿用此前 0.32.0 的隔离合成草稿、搜索切换、模型选择、空历史面板和连续刷新恢复记录。
-本轮未重复浏览器交互，不把静态复核称为新页面验收；未新增流式请求、实际扩展运行或坏存档的浏览器验收。
+全量 504 个定义、完整 strict、原质量基线、八项测试、弃用调用检查和原扩展资源检查通过。隔离 Chrome 验证空内容提醒、草稿、历史面板、模型选择、搜索开关和刷新恢复。验收使用合成数据和本地预览。
 
 ## 网页和扩展部署
 
