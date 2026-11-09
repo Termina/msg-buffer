@@ -525,11 +525,9 @@
           :examples $ []
           :schema $ quote $ Fn String (-> respo.schema/Element) (:features :js-ffi)
         'comp-container $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-container (reel)
+          :code $ quote $ defcomp comp-container (reel on-control)
             let
-                app-store $ .fold (get reel :store)
-                  fn () store
-                  fn (raw-store) (app.schema/normalize-store raw-store)
+                app-store $ :store reel
                 sessions $ :sessions app-store
                 archived-count $ :archived-count app-store
                 current-session-id $ :current-session-id app-store
@@ -958,10 +956,13 @@
                 text-alert-plugin.render
                 api-key-plugin.render
                 sessions-plugin.render
-                show dev? $ comp-reel (>> states :reel) reel $ {}
+                show dev? $ comp-typed-reel (>> states :reel) reel ({}) on-control
                 show dev? $ comp-inspect |Store app-store $ {}
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn (reel.typed/State app.schema/DispatchOp app.schema/Store)
+            Fn reel.typed/Control $ -> Unit
+            -> respo.schema/Component
+            :features :js-ffi
         'comp-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-fill (text)
             div
@@ -2029,7 +2030,7 @@
             respo.core :refer $ defcomp defeffect show <> >> list-> div button textarea span input a pre img memo-comp-by
             respo.comp.space :refer $ space-x space-y
             respo.comp.inspect :refer $ comp-inspect
-            reel.comp.reel :refer $ comp-reel
+            reel.comp.reel :refer $ comp-typed-reel
             app.config :refer $ dev? chrome-extension? site
             respo-md.comp.md :refer $ comp-md-block style-code-block
             respo-ui.comp :refer $ comp-copy style-close
@@ -2073,10 +2074,9 @@
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *reel
-            -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
+          :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
-          :schema $ quote $ Ref (Map Tag Dynamic)
+          :schema $ quote $ Ref (reel.typed/State app.schema/DispatchOp app.schema/Store)
         'ChromeDisconnectEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ChromeDisconnectEventHost
             .add-listener! $ Fn app.main/ChromeDisconnectEventHost
@@ -2107,11 +2107,6 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
           :schema $ quote Trait
-        'apply-app-op $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn apply-app-op (raw-store raw-op raw-id raw-time)
-            updater (schema/normalize-store raw-store) (decode-map-as raw-op app.schema/DispatchOp) (decode-map-as raw-id String) (decode-map-as raw-time Number)
-          :examples $ []
-          :schema $ quote $ Fn T U V W (-> app.schema/Store) (:generics T U V W) (:features :js-ffi)
         'connect-to-worker! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn connect-to-worker! ()
             when config/chrome-extension? $ let
@@ -2130,10 +2125,13 @@
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
-            reset! *reel $ reel-updater apply-app-op @*reel op
+            reset! *reel $ match op
+              (app.schema/DispatchOp action)
+                typed/record-op updater @*reel action (generate-id!) (ffi/now-ms)
+              (reel.typed/Control control) (typed/apply-control updater @*reel control)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn app.schema/DispatchOp (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn app.schema/ResolvedOp (-> Unit) (:features :js-ffi)
         'dispatch-event! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch-event! (event)
             dispatch! $ normalize-event event
@@ -2223,7 +2221,7 @@
               add-watch! *reel :changes $ fn (reel prev) (render-app!)
               add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
               add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
-              listen-devtools! |k dispatch-event!
+              listen-devtools! |k on-control!
               js/window.addEventListener |dblclick $ fn (event) (.!preventDefault event)
               js/window.addEventListener |wheel
                 fn (event)
@@ -2266,26 +2264,19 @@
                   schema/DispatchOp :states
                     decode-map-as cursor $ List respo.schema/CoordKey
                     , data
-                (:reel/toggle) (schema/DispatchOp :reel/toggle)
-                (:reel/recall index)
-                  schema/DispatchOp :reel/recall $ decode-map-as index Number
-                (:reel/run) (schema/DispatchOp :reel/run)
-                (:reel/step) (schema/DispatchOp :reel/step)
-                (:reel/merge) (schema/DispatchOp :reel/merge)
-                (:reel/reset) (schema/DispatchOp :reel/reset)
-                (:reel/remove index)
-                  schema/DispatchOp :reel/remove $ decode-map-as index Number
                 _ $ do (eprintln "|unknown op:" raw) (schema/DispatchOp :unhandled)
           :examples $ []
           :schema $ quote $ Fn AnyEnum (-> app.schema/DispatchOp) (:open :decode)
+        'on-control! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn on-control! (control) (dispatch! control)
+          :examples $ []
+          :schema $ quote $ Fn reel.typed/Control (-> Unit) (:features :js-ffi)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ ffi/date-now-snapshot
             let
                 storage $ browser/window-local-storage
-                store $ match (get @*reel :store)
-                  (:none) schema/store
-                  (:some value) (schema/normalize-store value)
+                store $ :store @*reel
               storage .set-item! (:storage-key config/site) (format-cirru-edn store)
             , &unit
           :examples $ []
@@ -2298,7 +2289,7 @@
                 add-watch! *reel :changes $ fn (reel prev) (render-app!)
                 add-watch! *archived-sessions :changes $ fn (s prev) (render-app!)
                 add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
-                reset! *reel $ decode-map-as (refresh-reel @*reel schema/store apply-app-op) (Map Tag Dynamic)
+                reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
               hud! |error $ unsafe-coerce build-errors 'Dynamic
             , &unit
@@ -2310,7 +2301,7 @@
                 t_start $ ffi/now-ms
               println "|Rendering app..."
               render-with! (mount-target)
-                fn () $ comp-container @*reel
+                fn () $ comp-container @*reel on-control!
                 fn (event)
                   hint-fn $ Fn *dispatch-op $ -> Unit
                   dispatch-event! event
@@ -2342,14 +2333,13 @@
             app.updater :refer $ updater
             app.schema :as schema
             reel.util :refer $ listen-devtools!
-            reel.core :refer $ reel-updater refresh-reel
-            reel.schema :as reel-schema
             app.config :as config
             |./calcit.build-errors :default build-errors
             |bottom-tip :default hud!
             respo.controller.client :refer $ send-to-component!
             js-ffi.shared :as ffi
             js-ffi.browser :as browser
+            reel.typed :as typed
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'ChatMessage $ %{} 'CodeEntry (:doc |)
@@ -2385,19 +2375,16 @@
             :archive-sessions Number
             :update-archived-count Number
             :clear-sessions
-            :reel/toggle
-            :reel/recall Number
-            :reel/run
-            :reel/step
-            :reel/merge
-            :reel/reset
-            :reel/remove Number
           :examples $ []
           :schema $ quote EnumDef
         'MessageBoxState $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct MessageBoxState (:content String) (:search? Bool) (:think? Bool) (:focus-mode? Bool)
           :examples $ []
           :schema $ quote StructDef
+        'ResolvedOp $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion ResolvedOp app.schema/DispatchOp reel.typed/Control
+          :examples $ []
+          :schema $ quote UnionDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store (:states Map)
             :sessions $ List app.schema/ChatSession
