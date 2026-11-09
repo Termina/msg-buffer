@@ -228,7 +228,7 @@
                                 recur rest-events
                   if done? &unit $ recur remainder
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) app.schema/ChatState String String Bool
+          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/ChatState String String Bool
             Fn app.schema/DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
@@ -302,7 +302,7 @@
               d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Tag (List Dynamic) app.schema/ChatState String
+          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) app.schema/ChatState String
             Fn app.schema/DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
@@ -366,7 +366,7 @@
               d! $ DispatchOp :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                 :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-          :schema $ quote $ Fn Tag (List Dynamic) app.schema/ChatState String Bool Bool
+          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) app.schema/ChatState String Bool Bool
             Fn app.schema/DispatchOp $ -> Unit
             Ref String
             Ref String
@@ -420,7 +420,7 @@
               d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Tag (List Dynamic) app.schema/ChatState String
+          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) app.schema/ChatState String
             Fn app.schema/DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
@@ -490,7 +490,7 @@
                   :messages $ upsert-assistant-message messages1 @*text @*thinking-text
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) app.schema/ChatState String Tag String Bool
+          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/ChatState String Tag String Bool
             Fn app.schema/DispatchOp $ -> Unit
             Ref String
             -> Unit
@@ -536,7 +536,7 @@
                 states $ :states app-store
                 cursor $ decode-map-as
                   .unwrap-or (get states :cursor) ([])
-                  List Dynamic
+                  List respo.schema/CoordKey
                 state $ let
                     raw-chat-state $ .unwrap-or (get states :data)
                       {} (:answer |) (:loading? false) (:done? true)
@@ -895,7 +895,7 @@
                                         .unwrap-or
                                           get (>> states :message-box) :cursor
                                           []
-                                        List Dynamic
+                                        List respo.schema/CoordKey
                                       assoc message-box-state :focus-mode? true
                                   , &unit
                         show (:loading? state)
@@ -990,7 +990,7 @@
             let
                 cursor $ decode-map-as
                   .unwrap-or (get states :cursor) ([])
-                  List Dynamic
+                  List respo.schema/CoordKey
                 state $ let
                     raw-message-box-state $ .unwrap-or (get states :data)
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
@@ -1581,7 +1581,7 @@
                     when submit? $ on-submit text (:search? state) (:think? state) dispatch!
                     , &unit
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) app.schema/MessageBoxState
+          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/MessageBoxState
             Fn String Bool Bool
               Fn app.schema/DispatchOp $ -> Unit
               -> Unit
@@ -1981,7 +1981,7 @@
                     d! $ DispatchOp :widget-state cursor $ -> state1 (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
                       assoc :messages $ upsert-assistant-message (:messages state1) err-text |
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) app.schema/ChatState String Bool Bool Tag
+          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/ChatState String Bool Bool Tag
             Fn app.schema/DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
@@ -2264,7 +2264,7 @@
               match raw
                 (:states cursor data)
                   schema/DispatchOp :states
-                    decode-map-as cursor $ List Dynamic
+                    decode-map-as cursor $ List respo.schema/CoordKey
                     , data
                 (:reel/toggle) (schema/DispatchOp :reel/toggle)
                 (:reel/recall index)
@@ -2373,14 +2373,14 @@
           :schema $ quote StructDef
         'DispatchOp $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum DispatchOp (:unhandled)
-            :states (List Dynamic) Dynamic
-            :widget-state (List Dynamic) WidgetState
-            :states-merge (List Dynamic) app.schema/ChatState $ Map Tag Dynamic
+            :states (List respo.schema/CoordKey) Dynamic
+            :widget-state (List respo.schema/CoordKey) WidgetState
+            :states-merge (List respo.schema/CoordKey) app.schema/ChatState $ Map Tag Dynamic
             :hydrate-storage app.schema/Store
             :change-model
             :save-session app.schema/ChatState
             :session $ Option String
-            :load-session (List Dynamic) app.schema/ChatState app.schema/ChatSession
+            :load-session (List respo.schema/CoordKey) app.schema/ChatState app.schema/ChatSession
             :remove-session String
             :archive-sessions Number
             :update-archived-count Number
@@ -2571,24 +2571,18 @@
                 (:states cursor s)
                   assoc store :states $ decode-map-as
                     assoc-in (:states store)
-                      concat
-                        decode-map-as cursor $ List Dynamic
-                        [] :data
+                      concat cursor $ [] :data
                       , s
                     Map Dynamic Dynamic
                 (:widget-state cursor s)
                   assoc store :states $ decode-map-as
                     assoc-in (:states store)
-                      concat
-                        decode-map-as cursor $ List Dynamic
-                        [] :data
+                      concat cursor $ [] :data
                       , s
                     Map Dynamic Dynamic
                 (:states-merge cursor s changes)
                   let
-                      path $ concat
-                        decode-map-as cursor $ List Dynamic
-                        [] :data
+                      path $ concat cursor $ [] :data
                       state $ .unwrap-or
                         get-in (:states store) path
                         , s
@@ -2652,9 +2646,7 @@
                       typed-session session
                       store1 $ assoc store :states $ decode-map-as
                         assoc-in (:states store)
-                          concat
-                            decode-map-as cursor $ List Dynamic
-                            [] :data
+                          concat cursor $ [] :data
                           -> state
                             assoc :messages $ :messages typed-session
                             assoc :done? true
