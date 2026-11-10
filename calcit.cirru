@@ -647,36 +647,48 @@
                   {} (:title "|History Sessions")
                     :style $ {} (:min-width "||max(320px,30vw)\"") (:max-width |80vw)
                     :render $ fn (on-close)
-                      comp-sessions-modal sessions archived-count
-                        fn (session-id d!)
-                          hint-fn $ {} $ :args ([] 'String 'Dynamic)
-                          when
-                            and
-                              > (.len messages) 0
-                              :done? state
-                              not $ js-present-dynamic? current-session-id
-                            d! $ DispatchOp :save-session state
-                          d! $ DispatchOp :load-session cursor state $ -> sessions
-                            filter $ fn (s)
-                              hint-fn $ Fn app.schema/ChatSession $ -> Bool
-                              = (:id s) session-id
-                            , first .unwrap
-                          on-close d!
-                        , on-close $ fn (d!) (hint-fn Async)
-                          let
-                              archive-key $ :archive-key site
-                              raw $ let
-                                  host-value $ js-await $ db-get archive-key
-                                if
-                                  or (nil? host-value)
-                                    = (js/typeof host-value) |undefined
-                                  , | $ contract/expect-string "|Archive storage value" host-value
-                            if (blank? raw) (js/alert "|No archives found!")
-                              let
-                                  parsed $ map
-                                    decode-map-as (parse-cirru-edn raw) (List Dynamic)
-                                    fn (session) (app.schema/normalize-chat-session session)
-                                reset! *archived-sessions parsed
+                      let
+                          close! $ fn (d!)
+                            hint-fn $ Fn
+                              Fn app.schema/DispatchOp $ -> Unit
+                              -> Unit
+                            on-close d!
+                            , &unit
+                        comp-sessions-modal sessions archived-count
+                          fn (session-id d!)
+                            hint-fn $ Fn String
+                              Fn app.schema/DispatchOp $ -> Unit
+                              -> Unit
+                            when
+                              and
+                                > (.len messages) 0
+                                :done? state
+                                not $ js-present-dynamic? current-session-id
+                              d! $ DispatchOp :save-session state
+                            d! $ DispatchOp :load-session cursor state $ -> sessions
+                              filter $ fn (s)
+                                hint-fn $ Fn app.schema/ChatSession $ -> Bool
+                                = (:id s) session-id
+                              , first .unwrap
+                            close! d!
+                            , &unit
+                          , close! $ fn ()
+                            hint-fn $ Fn (-> Unit) (:async) (:features :js-ffi)
+                            let
+                                archive-key $ :archive-key site
+                                raw $ let
+                                    host-value $ js-await $ db-get archive-key
+                                  if
+                                    or (nil? host-value)
+                                      = (js/typeof host-value) |undefined
+                                    , | $ contract/expect-string "|Archive storage value" host-value
+                              if (blank? raw) (js/alert "|No archives found!")
+                                let
+                                    parsed $ map
+                                      decode-map-as (parse-cirru-edn raw) (List Dynamic)
+                                      fn (session) (app.schema/normalize-chat-session session)
+                                  reset! *archived-sessions parsed
+                            , &unit
               div
                 {} $ :class-name $ str-spaced css/preset css/global css/column css/fullscreen css/gap8 style-app-global
                 if (js-present? @*archived-sessions)
@@ -1152,29 +1164,41 @@
                     button
                       {} (:class-name css/button)
                         :style $ {} $ :cursor :pointer
-                        :on-click $ fn (e d!) (on-close d!) (on-view-archive d!) &unit
+                        :on-click $ fn (_event d!)
+                          hint-fn $ Fn respo.schema/RespoEvent
+                            Fn app.schema/DispatchOp $ -> Unit
+                            -> Unit
+                          on-close d!
+                          on-view-archive
+                          , &unit
                       <> "|View Archive"
                 if (empty? sessions)
                   div
                     {} $ :style $ {} (:padding |12px)
                       :color $ hsl 0 0 60
                     <> "|No history sessions"
-                  list->
+                  respo.core/keyed->
                     {} $ :class-name css/column
                     -> sessions reverse $ map $ fn (session)
-                      hint-fn $ Fn app.schema/ChatSession $ -> (List Dynamic)
+                      hint-fn $ Fn app.schema/ChatSession $ -> respo.schema/ChildPair
                       let
                           session-id $ :id session
                           created-at $ :created-at session
                           preview $ :preview session
                           date-str $ ffi/date-local-string $ ffi/date-from-ms created-at
-                        [] session-id $ div
+                        respo.core/keyed-element session-id $ div
                           {} $ :class-name style-session-item
                           div
                             {} (:role |button)
                               :aria-label $ str |session-select: preview
                               :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
-                              :on-click $ fn (e d!) (on-select session-id d!) (on-close d!) &unit
+                              :on-click $ fn (_event d!)
+                                hint-fn $ Fn respo.schema/RespoEvent
+                                  Fn app.schema/DispatchOp $ -> Unit
+                                  -> Unit
+                                on-select session-id d!
+                                on-close d!
+                                , &unit
                             div
                               {} $ :style $ {} (:font-size |12px)
                                 :color $ hsl 0 0 60
@@ -1235,7 +1259,16 @@
                     div $ {} $ :style
                       {} $ :height 200
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatSession) Number Dynamic Dynamic Dynamic (-> Dynamic) (:features :js-ffi)
+          :schema $ quote $ Fn (List app.schema/ChatSession) Number
+            Fn String
+              Fn app.schema/DispatchOp $ -> Unit
+              -> Unit
+            Fn
+              Fn app.schema/DispatchOp $ -> Unit
+              -> Unit
+            Fn (-> Unit) (:features :js-ffi) (:async)
+            -> respo.schema/Component
+            :features :js-ffi
         'create-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn create-session (messages model)
             let
@@ -1651,7 +1684,7 @@
               |& $ {} (:cursor :pointer) (:background-color :white) (:color :black)
               "|.focus-within &" $ {} $ :color :black
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-abort-close $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-abort-close
             {} $ |& $ {} (:vertical-align :middle) (:font-size 10)
@@ -1668,7 +1701,7 @@
               |&:hover $ {} (:color |#777)
                 :background-color $ hsl 0 0 100
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-archive-close $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-archive-close
             {}
@@ -1677,7 +1710,7 @@
                 :transition-duration |200ms
               |&:hover $ {} $ :color (hsl 0 0 20)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-archive-header $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-archive-header
             {} $ |& $ {} (:padding "|12px 16px")
@@ -1688,7 +1721,7 @@
               :align-items :center
               :justify-content :space-between
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-archive-row $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-archive-row
             {} $ |& $ {} (:padding |12px)
@@ -1697,22 +1730,22 @@
               :justify-content :space-between
               :align-items :center
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-checkbox $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-checkbox
             {} $ |& $ {} (:cursor :pointer) (:user-select :none) (:font-size 12) (:line-height |28px) (:vertical-align :middle)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-clear $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-clear
             {} $ |& $ {} (:opacity 0.4) (:padding "|4px 8px") (:display :inline-block) (:height |24px)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-code-content $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-code-content
             {} $ |& $ {} (:line-height |1.5) (:font-size 13)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-delete-button $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-delete-button
             {}
@@ -1727,7 +1760,7 @@
               |&:active $ {} (:opacity 1)
                 :color $ hsl 0 90 40
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-fill
             {}
@@ -1738,12 +1771,12 @@
                 :color $ hsl 0 0 40
                 :transform "|scale(1.06)"
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-focus-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-focus-box
             {} $ |& $ {} (:width |100%) (:border-radius 12) (:min-height 40) (:max-height 40) (:padding "|9px 12px") (:cursor :text) (:overflow :hidden) (:white-space :pre) (:text-overflow :ellipsis) (:background-color :transparent)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-focus-link $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-focus-link
             {}
@@ -1753,12 +1786,12 @@
                 :padding "|4px 0"
               |&:hover $ {} $ :text-decoration :underline
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-gap12 $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-gap12
             {} $ |& $ {} (:gap 12)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-history-button $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-history-button
             {} $ |& $ {} (:font-size |20px)
@@ -1770,7 +1803,7 @@
               :justify-content :center
               |&:hover $ {} $ :color (hsl 200 80 50)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-history-count $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-history-count
             {} $ |& $ {}
@@ -1778,40 +1811,40 @@
               :font-size |12px
               :display :inline-block
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-image $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-image
             {} $ |& $ {} (:max-width |100%) (:align-self :flex-start) (:border-radius |6px)
               :border $ str "|1px solid " $ hsl 0 0 90
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-md-content $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-md-content
             {} $ "|& .md-p" $ {} (:margin "|16px 0") (:line-height |1.6)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-actions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-actions
             {} $ |& $ {} (:margin-top 6) (:justify-content :flex-end) (:width |100%)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-area $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-area
             {} $ |& $ {} (:flex 2) (:overflow :scroll)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-assistant $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-assistant
             {} $ |& $ {} (:align-self :flex-start)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-box
             {}
               |& $ {} (:width |100%) (:max-width 1200) (:right |50%) (:padding |8px) (:margin :auto) (:transition-duration |300ms) (; :transform "|translate(50%,0)") (:transition-property |height)
               |&:focus-within $ {} (:opacity 1) (; :transform "|translate(50%,0)")
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-box-panel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-box-panel
             {}
@@ -1822,17 +1855,17 @@
                 :background-color $ hsl 0 0 100 0.9
                 :box-shadow $ str "|0 0px 8px " $ hsl 0 0 0 0.3
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-item $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-item
             {} $ |& $ {} (:line-height |1.6)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-list $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-list
             {} $ |& $ {} (:flex 2) (:padding "|40px 16px 20vh 16px") (:width |100%) (:max-width 1200) (:margin :auto) (:position :relative)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-role $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-role
             {} $ |& $ {} (:font-size 12)
@@ -1840,12 +1873,12 @@
               :margin-bottom 6
               :padding-right |16px
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-text
             {} $ |& $ {} (:white-space :pre-wrap) (:line-height |1.6) (:margin 0) (:padding-right |16px)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-message-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-message-user
             {}
@@ -1862,7 +1895,7 @@
                 :border-radius |2px
               |&::-webkit-scrollbar-track $ {} $ :background-color :transparent
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-more $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-more
             {}
@@ -1876,12 +1909,12 @@
               |&:hover $ {} $ :box-shadow
                 str "|1px 1px 4px " $ hsl 0 0 0 0.2
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-reply-actions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-reply-actions
             {} $ |& $ {} (:margin-top 6) (:justify-content :flex-start) (:width |100%)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-reply-button $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-reply-button
             {}
@@ -1895,7 +1928,7 @@
               |&:hover $ {} $ :box-shadow
                 str "|1px 1px 4px " $ hsl 0 0 0 0.2
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-session-item $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-session-item
             {} $ |& $ {} (:padding |12px)
@@ -1906,31 +1939,31 @@
               :gap |12px
               |:hover $ {} $ :background-color (hsl 0 0 96)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-sessions-list $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-sessions-list
             {} $ |& $ {} (:flex |1) (:overflow-y :auto) (:min-width |300px)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-submit
             {} $ |& $ {}
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-textbox $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-textbox
             {}
               |& $ {} (:border-radius 12) (:height "|max(100px,15vh)") (:width |100%) (:transition-duration |320ms) (:border :none) (:background-color :transparent)
               |&.focus-within $ {} (:height "|max(240px,32vh)") (:border :none) (:box-shadow :none)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-textbox-compact $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-textbox-compact
             {}
               |& $ {} (:height 40) (:min-height 40) (:max-height 40) (:overflow :hidden)
               |&.focus-within $ {} (:height "|max(240px,32vh)") (:min-height |unset) (:max-height |unset)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'style-thinking $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle style-thinking
             {}
@@ -1944,7 +1977,7 @@
                 :border $ str "|1px solid " $ hsl 0 0 90
               "|& .md-p" $ {} $ :margin "|4px 0"
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
+          :schema $ quote String
         'submit-message! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn submit-message! (cursor state prompt-text search? think? model d!)
             let
