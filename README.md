@@ -7,7 +7,7 @@ Demo：<https://r.tiye.me/Termina/msg-buffer/>。Gemini 文档：<https://ai.goo
 
 ## 对使用者的影响
 
-本地开发使用正式 Calcit 和 `@calcit/procs` **0.38.0**。升级后请重装依赖，分别重建网页与扩展资源，并刷新。页面 HUD、模型名称、请求配置和存档格式保持原行为。
+本地开发使用正式 Calcit 和 `@calcit/procs` **0.40.0**。升级后请重装依赖，分别重建网页与扩展资源，并刷新。页面 HUD、模型名称、请求配置和存档格式保持原行为。
 
 模块使用已发布的 Respo 0.19.5、UI 0.15.2、JS FFI 0.2.13、Reel 0.10.0、Alerts 0.14.2、Markdown 0.8.2 和 Router 0.12.2。
 
@@ -26,7 +26,7 @@ SDK 响应、可空 DOM 和 object URL 保留原受检边界及清理行为。�
 
 ## 开发和验证
 
-使用 Node.js 24、Yarn 4.18.0、Calcit 0.38.0，文件为 `calcit.cirru`、`deps.cirru`。
+使用 Node.js 24、Yarn 4.18.0、Calcit 0.40.0，文件为 `calcit.cirru`、`deps.cirru`。
 
 ```sh
 caps --strict --ci

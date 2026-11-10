@@ -2346,6 +2346,10 @@
           :code $ quote $ defstruct ChatMessage (:role Tag) (:content String) (:thinking String)
           :examples $ []
           :schema $ quote StructDef
+        'ChatPatchValue $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion ChatPatchValue String Bool Tag (List app.schema/ChatMessage)
+          :examples $ []
+          :schema $ quote UnionDef
         'ChatSession $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct ChatSession (:id String) (:created-at Number)
             :messages $ List app.schema/ChatMessage
@@ -2365,7 +2369,7 @@
           :code $ quote $ defenum DispatchOp (:unhandled)
             :states (List respo.schema/CoordKey) Dynamic
             :widget-state (List respo.schema/CoordKey) WidgetState
-            :states-merge (List respo.schema/CoordKey) app.schema/ChatState $ Map Tag Dynamic
+            :states-merge (List respo.schema/CoordKey) app.schema/ChatState $ Map Tag ChatPatchValue
             :hydrate-storage app.schema/Store
             :change-model
             :save-session app.schema/ChatState
@@ -2576,37 +2580,36 @@
                       updated-states $ assoc-in (:states store) path $ if (map? state)
                         .merge
                           decode-map-as state $ Map Tag Dynamic
-                          decode-map-as changes $ Map Tag Dynamic
+                          , changes
                         if (struct? state)
                           let
                               raw-base state
                             let
                                 base $ app.comp.container/normalize-chat-state raw-base
-                                typed-changes $ decode-map-as changes $ Map Tag Dynamic
                               ChatState :answer
-                                match (get typed-changes :answer)
+                                match (get changes :answer)
                                   (:none) (:answer base)
                                   (:some value) (decode-map-as value 'String)
                                 , :loading?
-                                  match (get typed-changes :loading?)
+                                  match (get changes :loading?)
                                     (:none) (:loading? base)
                                     (:some value) (decode-map-as value 'Bool)
                                   , :done?
-                                    match (get typed-changes :done?)
+                                    match (get changes :done?)
                                       (:none) (:done? base)
                                       (:some value) (decode-map-as value 'Bool)
                                     , :messages
-                                      match (get typed-changes :messages)
+                                      match (get changes :messages)
                                         (:none) (:messages base)
                                         (:some value)
                                           map
                                             decode-map-as value $ List Dynamic
                                             fn (message) (app.schema/normalize-chat-message message)
                                       , :model
-                                        match (get typed-changes :model)
+                                        match (get changes :model)
                                           (:none) (:model base)
                                           (:some value) (decode-map-as value 'Tag)
-                                        , :thinking $ match (get typed-changes :thinking)
+                                        , :thinking $ match (get changes :thinking)
                                           (:none) (:thinking base)
                                           (:some value) (decode-map-as value 'String)
                           do (eprintln |unknown-state-to-merge state) state
