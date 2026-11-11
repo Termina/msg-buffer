@@ -2,7 +2,6 @@
   "coverage": {
     "app.comp.container/comp-message-box": "partial",
     "app.comp.container/js-present-dynamic?": "partial",
-    "app.comp.container/models-menu": "partial",
     "app.comp.container/stream-text": "partial"
   },
   "weak": {
@@ -20,9 +19,6 @@
     },
     "app.comp.container/js-present-dynamic?": {
       "schema-dynamic/intentional-js-ffi": 1
-    },
-    "app.comp.container/models-menu": {
-      "schema-dynamic/unresolved": 1
     },
     "app.comp.container/stream-text": {
       "schema-dynamic/js-ffi-non-host": 1
