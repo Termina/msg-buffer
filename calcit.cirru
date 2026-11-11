@@ -275,7 +275,7 @@
                   , 'app.comp.container/GenAIPartsHost
                 *text $ ref |
               .for-each! parts $ fn (chunk _a _b)
-                hint-fn $ Fn (JsNullish JsObject) Number app.comp.container/GenAIPartsHost (-> Unit) (:features :js-ffi)
+                hint-fn $ Fn (JsNullish JsObject) Number GenAIPartsHost (-> Unit) (:features :js-ffi)
                 if (js-present-dynamic? chunk)
                   let
                       chunk-data $ contract/expect-object "|GenAI image part" chunk
@@ -530,10 +530,10 @@
                 current-session-id $ :current-session-id app-store
                 states $ :states app-store
                 cursor $ decode-map-as
-                  .unwrap-or (get states :cursor) ([])
+                  .unwrap-or (&map:get states :cursor) ([])
                   List respo.schema/CoordKey
                 state $ let
-                    raw-chat-state $ .unwrap-or (get states :data)
+                    raw-chat-state $ .unwrap-or (&map:get states :data)
                       {} (:answer |) (:loading? false) (:done? true)
                         :messages $ []
                         :model :gemini
@@ -554,12 +554,12 @@
                       fn () false
                       fn (session) (:is-history? session)
                 last-assistant $ .fold
-                  assert-type (last messages) (Option app.schema/ChatMessage)
+                  assert-type (last messages) (Option ChatMessage)
                   fn ()
                     hint-fn $ {} $ :return 'String
                     :answer state
                   fn (last-msg)
-                    hint-fn $ Fn app.schema/ChatMessage $ -> String
+                    hint-fn $ Fn ChatMessage $ -> String
                     if
                       = :assistant $ :role last-msg
                       :content last-msg
@@ -593,14 +593,14 @@
                 text-alert-plugin $ use-alert (>> states :empty-message-alert)
                   {} $ :text "|Please enter text"
                 submit-with-key! $ fn (submit-state text search? think? d!)
-                  hint-fn $ Fn app.schema/ChatState String Bool Bool
-                    Fn app.schema/DispatchOp $ -> Unit
+                  hint-fn $ Fn ChatState String Bool Bool
+                    Fn DispatchOp $ -> Unit
                     -> Unit
                     :features :js-ffi
                   if (blank? text)
                     .show text-alert-plugin
                       fn (op)
-                        hint-fn $ Fn app.schema/DispatchOp $ -> Unit
+                        hint-fn $ Fn DispatchOp $ -> Unit
                         d! op
                         , &unit
                       Some "|Please enter text"
@@ -610,7 +610,7 @@
                       if (blank? stored)
                         .show api-key-plugin
                           fn (op)
-                            hint-fn $ Fn app.schema/DispatchOp $ -> Unit
+                            hint-fn $ Fn DispatchOp $ -> Unit
                             d! op
                             , &unit
                           fn (key)
@@ -622,7 +622,7 @@
                   , &unit
                 message-box-state $ let
                     raw-message-box-state $ .unwrap-or
-                      get (>> states :message-box) :data
+                      &map:get (>> states :message-box) :data
                       {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
                   if
                     and (struct? raw-message-box-state) (&struct:matches? raw-message-box-state MessageBoxState)
@@ -643,14 +643,14 @@
                       let
                           close! $ fn (d!)
                             hint-fn $ Fn
-                              Fn app.schema/DispatchOp $ -> Unit
+                              Fn DispatchOp $ -> Unit
                               -> Unit
                             on-close d!
                             , &unit
                         comp-sessions-modal sessions archived-count
                           fn (session-id d!)
                             hint-fn $ Fn String
-                              Fn app.schema/DispatchOp $ -> Unit
+                              Fn DispatchOp $ -> Unit
                               -> Unit
                             when
                               and
@@ -660,7 +660,7 @@
                               d! $ DispatchOp :save-session state
                             d! $ DispatchOp :load-session cursor state $ -> sessions
                               filter $ fn (s)
-                                hint-fn $ Fn app.schema/ChatSession $ -> Bool
+                                hint-fn $ Fn ChatSession $ -> Bool
                                 = (:id s) session-id
                               , first .unwrap
                             close! d!
@@ -693,7 +693,7 @@
                         div $ {}
                           :style $ {} $ :font-weight :bold
                           :inner-text $ str "|Archived: " $ :preview
-                            assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
+                            assert-type (app.schema/normalize-chat-session @*viewing-archive-session) ChatSession
                         div
                           {} (:class-name style-archive-close)
                             :on-click $ fn (e d!) (reset! *viewing-archive-session nil) &unit
@@ -705,9 +705,9 @@
                         list->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           ->
-                            :messages $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) 'app.schema/ChatSession
+                            :messages $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) ChatSession
                             map-indexed $ fn (idx msg)
-                              hint-fn $ Fn Number app.schema/ChatMessage $ -> (List Dynamic)
+                              hint-fn $ Fn Number ChatMessage $ -> (List Dynamic)
                               [] idx $ let
                                   role $ :role msg
                                   content $ stream-text $ :content msg
@@ -755,7 +755,7 @@
                                   :color $ hsl 0 0 60
                                 <> "|No archived sessions left."
                               -> current-archives reverse $ map $ fn (session)
-                                hint-fn $ Fn app.schema/ChatSession $ -> (List Dynamic)
+                                hint-fn $ Fn ChatSession $ -> (List Dynamic)
                                 let
                                     session-id $ :id session
                                     created-at $ :created-at session
@@ -785,7 +785,7 @@
                                                       cached @*archived-sessions
                                                     if (js-nullish? cached) ([]) cached
                                                   fn (s)
-                                                    hint-fn $ Fn app.schema/ChatSession $ -> Bool
+                                                    hint-fn $ Fn ChatSession $ -> Bool
                                                     not= (:id s) session-id
                                               reset! *archived-sessions new-archives
                                               let
@@ -809,7 +809,7 @@
                             :style $ {} $ :cursor :pointer
                             :on-click $ fn (e d!)
                               .show sessions-plugin $ fn (op)
-                                hint-fn $ Fn app.schema/DispatchOp $ -> Unit
+                                hint-fn $ Fn DispatchOp $ -> Unit
                                 d! op
                                 , &unit
                               , &unit
@@ -831,7 +831,7 @@
                         list->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           -> messages $ map-indexed $ fn (idx msg)
-                            hint-fn $ Fn Number app.schema/ChatMessage $ -> (List Dynamic)
+                            hint-fn $ Fn Number ChatMessage $ -> (List Dynamic)
                             [] idx $ let
                                 role $ :role msg
                                 content $ stream-text $ :content msg
@@ -871,11 +871,11 @@
                                 :class-name $ str-spaced css/button style-reply-button
                                 :on-click $ fn (e d!)
                                   hint-fn $ Fn respo.schema/RespoEvent
-                                    Fn app.schema/DispatchOp $ -> Unit
+                                    Fn DispatchOp $ -> Unit
                                     -> Unit
                                   .show reply-plugin
                                     fn (op)
-                                      hint-fn $ Fn app.schema/DispatchOp $ -> Unit
+                                      hint-fn $ Fn DispatchOp $ -> Unit
                                       d! op
                                       , &unit
                                     fn (text)
@@ -896,7 +896,7 @@
                                     d! $ DispatchOp :widget-state
                                       decode-map-as
                                         .unwrap-or
-                                          get (>> states :message-box) :cursor
+                                          &map:get (>> states :message-box) :cursor
                                           []
                                         List respo.schema/CoordKey
                                       assoc message-box-state :focus-mode? true
@@ -927,7 +927,7 @@
                         :on-click $ fn (e d!)
                           ; d! $ DispatchOp :change-model
                           .show model-plugin $ fn (op)
-                            hint-fn $ Fn app.schema/DispatchOp $ -> Unit
+                            hint-fn $ Fn DispatchOp $ -> Unit
                             d! op
                             , &unit
                           , &unit
@@ -935,7 +935,7 @@
                         if (blank? text)
                           .show text-alert-plugin
                             fn (op)
-                              hint-fn $ Fn app.schema/DispatchOp $ -> Unit
+                              hint-fn $ Fn DispatchOp $ -> Unit
                               d! op
                               , &unit
                             Some "|Please enter text"
@@ -1041,14 +1041,14 @@
                         :class-name $ str-spaced css/textarea css/font-code! style-textbox
                         :on-input $ fn (e d!)
                           hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/DispatchOp $ -> Unit
+                            Fn DispatchOp $ -> Unit
                             -> Unit
                           d! $ DispatchOp :widget-state cursor $ assoc state :content
                             decode-map-as (:value e) String
                           , &unit
                         :on-keydown $ fn (e d!)
                           hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/DispatchOp $ -> Unit
+                            Fn DispatchOp $ -> Unit
                             -> Unit
                           when
                             and
@@ -1066,13 +1066,13 @@
                           , &unit
                         :on-focus $ fn (e d!)
                           hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/DispatchOp $ -> Unit
+                            Fn DispatchOp $ -> Unit
                             -> Unit
                           toggle-focus-within! e true
                           , &unit
                         :on-blur $ fn (e d!)
                           hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/DispatchOp $ -> Unit
+                            Fn DispatchOp $ -> Unit
                             -> Unit
                           toggle-focus-within! e false
                           , &unit
@@ -1130,7 +1130,7 @@
                                 :inner-text |Submit
                                 :on-click $ fn (e d!)
                                   hint-fn $ Fn respo.schema/RespoEvent
-                                    Fn app.schema/DispatchOp $ -> Unit
+                                    Fn DispatchOp $ -> Unit
                                     -> Unit
                                   on-submit (:content state) (:search? state) (:think? state) d!
                                   , &unit
@@ -1144,7 +1144,7 @@
           :code $ quote $ defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
             let
                 history-items $ .foldl sessions 0 $ fn (acc session)
-                  hint-fn $ Fn Number app.schema/ChatSession $ -> Number
+                  hint-fn $ Fn Number ChatSession $ -> Number
                   + acc $ .len $ or (:messages session) ([])
               div
                 {} $ :class-name $ str-spaced css/column css/gap8 style-sessions-list
@@ -1159,7 +1159,7 @@
                         :style $ {} $ :cursor :pointer
                         :on-click $ fn (_event d!)
                           hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/DispatchOp $ -> Unit
+                            Fn DispatchOp $ -> Unit
                             -> Unit
                           on-close d!
                           on-view-archive
@@ -1173,7 +1173,7 @@
                   respo.core/keyed->
                     {} $ :class-name css/column
                     -> sessions reverse $ map $ fn (session)
-                      hint-fn $ Fn app.schema/ChatSession $ -> respo.schema/ChildPair
+                      hint-fn $ Fn ChatSession $ -> respo.schema/ChildPair
                       let
                           session-id $ :id session
                           created-at $ :created-at session
@@ -1187,7 +1187,7 @@
                               :style $ {} (:flex |1) (:cursor :pointer) (:min-width 0) (:overflow :hidden)
                               :on-click $ fn (_event d!)
                                 hint-fn $ Fn respo.schema/RespoEvent
-                                  Fn app.schema/DispatchOp $ -> Unit
+                                  Fn DispatchOp $ -> Unit
                                   -> Unit
                                 on-select session-id d!
                                 on-close d!
@@ -1204,7 +1204,7 @@
                               :aria-label $ str |session-delete: session-id
                               :on-click $ fn (e d!)
                                 hint-fn $ Fn respo.schema/RespoEvent
-                                  Fn app.schema/DispatchOp $ -> Unit
+                                  Fn DispatchOp $ -> Unit
                                   -> Unit
                                 .stop-propagation! $ :event e
                                 d! $ DispatchOp :remove-session session-id
@@ -1267,10 +1267,10 @@
             let
                 id $ generate-session-id
                 first-msg $ .fold
-                  assert-type (first messages) (Option app.schema/ChatMessage)
+                  assert-type (first messages) (Option ChatMessage)
                   fn () |New-chat
                   fn (message)
-                    hint-fn $ Fn app.schema/ChatMessage $ -> String
+                    hint-fn $ Fn ChatMessage $ -> String
                     :content message
               ChatSession :id id :created-at (ffi/now-ms) :messages messages :model model :preview
                 let
@@ -1592,27 +1592,52 @@
             %{} respo.schema/RespoListener (:name :on-fill)
               :handler $ fn (event dispatch!)
                 hint-fn $ Fn AnyEnum
-                  Fn app.schema/DispatchOp $ -> Unit
+                  Fn DispatchOp $ -> Unit
                   -> Unit
-                match event $
-                  :fill-text info
-                  let
-                      info-data $ decode-map-as info $ Map Tag Dynamic
-                      submit? $ decode-map-as
-                        .unwrap-or (get info-data :submit?) true
-                        , 'Bool
-                      text $ decode-map-as
-                        .unwrap-or (get info-data :text) |
-                        , 'String
-                    dispatch! $ DispatchOp :widget-state cursor $ assoc state :content text
-                    when submit? $ on-submit text (:search? state) (:think? state) dispatch!
-                    , &unit
+                match (try-decode-map-as event 'app.schema/FillEvent)
+                  (:ok checked)
+                    match checked $
+                      :fill-text text submit?
+                      do
+                        dispatch! $ DispatchOp :widget-state cursor $ assoc state :content text
+                        when submit? $ on-submit text (:search? state) (:think? state) dispatch!
+                        , &unit
+                  (:err _) &unit
           :examples $ []
           :schema $ quote $ Fn (List respo.schema/CoordKey) MessageBoxState
             Fn String Bool Bool
               Fn DispatchOp $ -> Unit
               -> Unit
             -> respo.schema/RespoListener
+          :tests $ [] $ %{} 'TestEntry (:name |fills-draft-and-only-submits-when-requested)
+            :code $ quote $ let
+                state $ MessageBoxState :content |old :search? true :think? false :focus-mode? false
+                cursor $ [] :message-box
+                changes $ ref $ assert-type ([]) (List DispatchOp)
+                submissions $ ref $ assert-type ([]) (List String)
+                dispatch! $ fn (op)
+                  hint-fn $ Fn DispatchOp $ -> Unit
+                  swap! changes append op
+                  , &unit
+                submit! $ fn (text search? think? _dispatch!)
+                  hint-fn $ Fn String Bool Bool
+                    Fn DispatchOp $ -> Unit
+                    -> Unit
+                  assert= true search?
+                  assert= false think?
+                  swap! submissions append text
+                  , &unit
+                listener $ on-fill cursor state submit!
+                handler $ :handler listener
+              handler (app.schema/FillEvent :fill-text |draft false) dispatch!
+              assert= ([]) @submissions
+              handler (app.schema/FillEvent :fill-text |send true) dispatch!
+              assert= ([] |send) @submissions
+              assert=
+                []
+                  DispatchOp :widget-state cursor $ assoc state :content |draft
+                  DispatchOp :widget-state cursor $ assoc state :content |send
+                , @changes
         'openai-new $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn openai-new (module base-url api-key) (raise "|JavaScript OpenAI constructor")
           :examples $ []
@@ -2033,12 +2058,12 @@
             let
                 size $ .len messages
               .fold
-                assert-type (last messages) (Option app.schema/ChatMessage)
+                assert-type (last messages) (Option ChatMessage)
                 fn ()
                   hint-fn $ {} $ :return (:: 'List 'app.schema/ChatMessage)
                   conj messages $ ChatMessage :role :assistant :content content :thinking thinking
                 fn (last-msg)
-                  hint-fn $ Fn app.schema/ChatMessage $ -> (List app.schema/ChatMessage)
+                  hint-fn $ Fn ChatMessage $ -> (List ChatMessage)
                   if
                     = :assistant $ :role last-msg
                     assoc messages (dec size)
@@ -2142,7 +2167,7 @@
                   on-disconnect $ .-onDisconnect port
                 when (js-present? on-disconnect)
                   let
-                      listener $ assert-type on-disconnect 'app.main/ChromeDisconnectEventHost
+                      listener $ assert-type on-disconnect ChromeDisconnectEventHost
                     listener .add-listener! $ fn (event) (println |Worker-disconnected-retrying) (js/setTimeout connect-to-worker! 500) &unit
             , &unit
           :examples $ []
@@ -2203,7 +2228,7 @@
                         js-nullish->option $ .-content message
                         , |
                       content $ str "|你扮演一个专业的工程师, 对以下内容做一下讲解, 用中文, 注意要简略, 内容注意分块.\n\n" &newline &newline source
-                      event-tuple $ :: :fill-text $ {} (:text content) (:submit? true)
+                      event-tuple $ schema/FillEvent :fill-text content true
                     send-to-component! event-tuple
                 when (= |fill-text action)
                   let
@@ -2213,7 +2238,7 @@
                       submit? $ .unwrap-or
                         js-nullish->option $ .-submit? message
                         , true
-                      event-tuple $ :: :fill-text $ {} (:text content) (:submit? submit?)
+                      event-tuple $ schema/FillEvent :fill-text content submit?
                     send-to-component! event-tuple
                 when (= |menu-translate action)
                   let
@@ -2221,14 +2246,14 @@
                         js-nullish->option $ .-content message
                         , |
                       content $ str "|请将以下内容翻译成中文, 保持简洁分段:\n\n" &newline &newline source
-                      event-tuple $ :: :fill-text $ {} (:text content) (:submit? true)
+                      event-tuple $ schema/FillEvent :fill-text content true
                     send-to-component! event-tuple
                 when (= |menu-custom action)
                   let
                       content $ .unwrap-or
                         js-nullish->option $ .-content message
                         , |
-                      event-tuple $ :: :fill-text $ {} (:text content) (:submit? false)
+                      event-tuple $ schema/FillEvent :fill-text content false
                     send-to-component! event-tuple
               , &unit
             connect-to-worker!
@@ -2407,6 +2432,10 @@
             :clear-sessions
           :examples $ []
           :schema $ quote EnumDef
+        'FillEvent $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum FillEvent (:fill-text String Bool)
+          :examples $ []
+          :schema $ quote EnumDef
         'MessageBoxState $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct MessageBoxState (:content String) (:search? Bool) (:think? Bool) (:focus-mode? Bool)
           :examples $ []
@@ -2454,7 +2483,7 @@
               assert= store $ normalize-store empty-wire
         'normalize-chat-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-message (raw)
-            hint-fn $ Fn T (-> app.schema/ChatMessage) (:generics T) (:features :js-ffi)
+            hint-fn $ Fn T (-> ChatMessage) (:generics T) (:features :js-ffi)
             if
               and (struct? raw) (&struct:matches? raw ChatMessage)
               struct-match raw
@@ -2482,7 +2511,7 @@
           :schema $ quote $ Fn T (-> ChatMessage) (:generics T) (:features :js-ffi)
         'normalize-chat-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-session (raw)
-            hint-fn $ Fn T (-> app.schema/ChatSession) (:generics T) (:features :js-ffi)
+            hint-fn $ Fn T (-> ChatSession) (:generics T) (:features :js-ffi)
             if
               and (struct? raw) (&struct:matches? raw ChatSession)
               struct-match raw
@@ -2532,7 +2561,7 @@
             :tags $ #{} :regression :unit
         'normalize-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-store (raw)
-            hint-fn $ Fn T (-> app.schema/Store) (:generics T) (:features :js-ffi)
+            hint-fn $ Fn T (-> Store) (:generics T) (:features :js-ffi)
             if
               and (struct? raw)
                 match (struct-definition raw)
@@ -2595,16 +2624,16 @@
                     :current-session-id nil
                     :model nil
                     :archived-count 0
-                  normalized $ assert-type (normalize-store legacy) 'app.schema/Store
-                  sessions $ assert-type (:sessions normalized) (List app.schema/ChatSession)
+                  normalized $ assert-type (normalize-store legacy) Store
+                  sessions $ assert-type (:sessions normalized) (List ChatSession)
                   fallback-session $ ChatSession :id |fallback :created-at 0 :messages ([]) :model :gemini :preview | :is-history? false
                   session $ .unwrap-or
-                    assert-type (first sessions) (Option app.schema/ChatSession)
+                    assert-type (first sessions) (Option ChatSession)
                     , fallback-session
-                  messages $ assert-type (:messages session) (List app.schema/ChatMessage)
+                  messages $ assert-type (:messages session) (List ChatMessage)
                   fallback-message $ ChatMessage :role :user :content | :thinking |fallback
                   message $ .unwrap-or
-                    assert-type (first messages) (Option app.schema/ChatMessage)
+                    assert-type (first messages) (Option ChatMessage)
                     , fallback-message
                 is $ = | $ :thinking message
               :tags $ #{} :regression :unit
@@ -2712,7 +2741,7 @@
                 (:remove-session id)
                   assoc store :sessions $ filter (:sessions store)
                     fn (s)
-                      hint-fn $ Fn app.schema/ChatSession $ -> Bool
+                      hint-fn $ Fn ChatSession $ -> Bool
                       not $ = (:id s) id
                 (:archive-sessions new-count)
                   -> store
