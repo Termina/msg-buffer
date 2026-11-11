@@ -656,7 +656,7 @@
                               and
                                 > (.len messages) 0
                                 :done? state
-                                not $ not= current-session-id None
+                                not $ .some? current-session-id
                               d! $ DispatchOp :save-session state
                             d! $ DispatchOp :load-session cursor state $ -> sessions
                               filter $ fn (s)
@@ -944,7 +944,7 @@
                               and
                                 > (.len messages) 0
                                 :done? state
-                                not $ not= current-session-id None
+                                not $ .some? current-session-id
                               d! $ DispatchOp :save-session state
                             d! $ DispatchOp :session None
                             submit-with-key!
@@ -2302,7 +2302,7 @@
             let
                 storage $ browser/window-local-storage
                 store $ :store @*reel
-              storage .set-item! (:storage-key config/site) (format-cirru-edn store)
+              storage .set-item! (:storage-key config/site) (schema/encode-store store)
             , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
@@ -2427,6 +2427,31 @@
           :code $ quote $ defunion WidgetState ChatState MessageBoxState
           :examples $ []
           :schema $ quote UnionDef
+        'encode-store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn encode-store (store)
+            let
+                fields $ &struct:to-map store
+                with-selection $ match (:current-session-id store)
+                  (:some id) (assoc fields :current-session-id id)
+                  (:none) (assoc fields :current-session-id nil)
+              format-cirru-edn $ match (:model store)
+                (:some model) (assoc with-selection :model model)
+                (:none) (assoc with-selection :model nil)
+          :examples $ []
+          :schema $ quote $ Fn Store (-> String)
+          :tests $ [] $ %{} 'TestEntry (:name |keeps-legacy-selection-fields)
+            :code $ quote $ let
+                selected $ -> store
+                  assoc :current-session-id $ Some |legacy
+                  assoc :model $ Some :anthropic
+                selected-wire $ parse-cirru-edn $ encode-store selected
+                empty-wire $ parse-cirru-edn $ encode-store store
+              assert= (Some |legacy) (get selected-wire :current-session-id)
+              assert= (Some :anthropic) (get selected-wire :model)
+              assert= true $ nil? $ .unwrap (get empty-wire :current-session-id)
+              assert= true $ nil? $ .unwrap (get empty-wire :model)
+              assert= selected $ normalize-store selected-wire
+              assert= store $ normalize-store empty-wire
         'normalize-chat-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-message (raw)
             hint-fn $ Fn T (-> app.schema/ChatMessage) (:generics T) (:features :js-ffi)
