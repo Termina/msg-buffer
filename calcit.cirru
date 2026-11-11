@@ -2706,9 +2706,10 @@
                                       match (get changes :messages)
                                         (:none) (:messages base)
                                         (:some value)
-                                          map
-                                            decode-map-as value $ List Dynamic
-                                            fn (message) (app.schema/normalize-chat-message message)
+                                          match value
+                                            (List messages)
+                                              map messages $ fn (message) (app.schema/normalize-chat-message message)
+                                            _ $ raise "|Chat patch :messages expects a list of ChatMessage"
                                       , :model
                                         match (get changes :model)
                                           (:none) (:model base)
