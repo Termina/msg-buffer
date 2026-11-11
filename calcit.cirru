@@ -18,24 +18,24 @@
           :code $ quote $ defref *archived-sessions nil
           :examples $ []
           :schema $ quote $ Ref
-            JsNullish $ List app.schema/ChatSession
+            JsNullish $ List ChatSession
         '*gen-ai-new $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *gen-ai-new (Option :none)
+          :code $ quote $ defref *gen-ai-new None
           :examples $ []
-          :schema $ quote $ Ref (Option app.comp.container/GenAIClientHost)
+          :schema $ quote $ Ref (Option GenAIClientHost)
         '*image-cache $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *image-cache (Option :none)
+          :code $ quote $ defref *image-cache None
           :examples $ []
           :schema $ quote $ Ref (Option String)
         '*openai $ %{} 'CodeEntry
           :doc "|OpenAI-compatible SDK cache; reused only when provider base URL and current in-memory API key match. Never serialized."
-          :code $ quote $ defref *openai (Option :none)
+          :code $ quote $ defref *openai None
           :examples $ []
-          :schema $ quote $ Ref (Option app.comp.container/OpenAIClientHost)
+          :schema $ quote $ Ref (Option OpenAIClientHost)
         '*viewing-archive-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *viewing-archive-session nil
           :examples $ []
-          :schema $ quote $ Ref (JsNullish app.schema/ChatSession)
+          :schema $ quote $ Ref (JsNullish ChatSession)
         'AxiosStreamResponseHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait AxiosStreamResponseHost (:data 'app.comp.container/ByteStreamHost)
           :examples $ []
@@ -127,8 +127,8 @@
           :code $ quote $ defn append-user-message (messages content)
             conj messages $ ChatMessage :role :user :content content :thinking |
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatMessage) String
-            -> $ List app.schema/ChatMessage
+          :schema $ quote $ Fn (List ChatMessage) String
+            -> $ List ChatMessage
         'axios-post $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn axios-post (module url body config) (raise "|JavaScript Axios binding")
           :examples $ []
@@ -228,8 +228,8 @@
                                 recur rest-events
                   if done? &unit $ recur remainder
           :examples $ []
-          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/ChatState String String Bool
-            Fn app.schema/DispatchOp $ -> Unit
+          :schema $ quote $ Fn (List respo.schema/CoordKey) ChatState String String Bool
+            Fn DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
             :async
@@ -293,7 +293,7 @@
                               (:none) &unit
                               (:some preview) (browser/element-set-attribute! preview |src url)
                             clear-image-cache!
-                            reset! *image-cache $ Option :some url
+                            reset! *image-cache $ Some url
                             swap! *text str | "|(image ready)"
                             d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
                   d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? false)
@@ -302,8 +302,8 @@
               d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) app.schema/ChatState String
-            Fn app.schema/DispatchOp $ -> Unit
+          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) ChatState String
+            Fn DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
             :async
@@ -366,8 +366,8 @@
               d! $ DispatchOp :states-merge cursor state $ {} (:answer @*text) (:thinking @*thinking-text) (:loading? false) (:done? true)
                 :messages $ upsert-assistant-message messages1 @*text @*thinking-text
           :examples $ []
-          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) app.schema/ChatState String Bool Bool
-            Fn app.schema/DispatchOp $ -> Unit
+          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) ChatState String Bool Bool
+            Fn DispatchOp $ -> Unit
             Ref String
             Ref String
             -> Unit
@@ -411,7 +411,7 @@
                       url $ browser/object-url-create image-blob
                       target $ browser/query-selector |.show-image
                     clear-image-cache!
-                    reset! *image-cache $ Option :some url
+                    reset! *image-cache $ Some url
                     match target
                       (:none) &unit
                       (:some preview) (browser/element-set-attribute! preview |src url)
@@ -420,8 +420,8 @@
               d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer @*text) (assoc :loading? false) (assoc :done? true)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) app.schema/ChatState String
-            Fn app.schema/DispatchOp $ -> Unit
+          :schema $ quote $ Fn Tag (List respo.schema/CoordKey) ChatState String
+            Fn DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
             :async
@@ -490,8 +490,8 @@
                   :messages $ upsert-assistant-message messages1 @*text @*thinking-text
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/ChatState String Tag String Bool
-            Fn app.schema/DispatchOp $ -> Unit
+          :schema $ quote $ Fn (List respo.schema/CoordKey) ChatState String Tag String Bool
+            Fn DispatchOp $ -> Unit
             Ref String
             -> Unit
             :features :js-ffi
@@ -501,9 +501,7 @@
             match @*image-cache
               (:none) &unit
               (:some url)
-                do (browser/object-url-revoke! url)
-                  reset! *image-cache $ Option :none
-                  , &unit
+                do (browser/object-url-revoke! url) (reset! *image-cache None) &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'comp-abort $ %{} 'CodeEntry (:doc |)
@@ -610,7 +608,7 @@
                         hint-fn $ Fn app.schema/DispatchOp $ -> Unit
                         d! op
                         , &unit
-                      Option :some "|Please enter text"
+                      Some "|Please enter text"
                     let
                         storage-key $ model-storage-key model
                         stored $ browser/storage-get-or storage-key |
@@ -945,7 +943,7 @@
                               hint-fn $ Fn app.schema/DispatchOp $ -> Unit
                               d! op
                               , &unit
-                            Option :some "|Please enter text"
+                            Some "|Please enter text"
                           do
                             when
                               and
@@ -953,7 +951,7 @@
                                 :done? state
                                 not $ js-present-dynamic? current-session-id
                               d! $ DispatchOp :save-session state
-                            d! $ DispatchOp :session $ Option :none
+                            d! $ DispatchOp :session None
                             submit-with-key!
                               -> state
                                 assoc :messages $ []
@@ -971,7 +969,7 @@
                 show dev? $ comp-typed-reel (>> states :reel) reel ({}) on-control
                 show dev? $ comp-inspect |Store app-store $ {}
           :examples $ []
-          :schema $ quote $ Fn (reel.typed/State app.schema/DispatchOp app.schema/Store)
+          :schema $ quote $ Fn (reel.typed/State DispatchOp Store)
             Fn reel.typed/Control $ -> Unit
             -> respo.schema/Component
             :features :js-ffi
@@ -1144,7 +1142,7 @@
           :examples $ []
           :schema $ quote $ Fn (Map Tag Dynamic) respo.schema/Element
             Fn String Bool Bool
-              Fn app.schema/DispatchOp $ -> Unit
+              Fn DispatchOp $ -> Unit
               -> Unit
             , Tag (-> respo.schema/Component) (:features :js-ffi)
         'comp-sessions-modal $ %{} 'CodeEntry (:doc |)
@@ -1229,7 +1227,7 @@
                         {} $ :class-name $ str-spaced css/row css/gap8
                         a $ {} (:class-name style-clear) (:inner-text |Data) (:role |button) (:aria-label |sessions-export-data)
                           :on-click $ fn (e d!)
-                            tab-echo! sessions $ Option :some :edn
+                            tab-echo! sessions $ Some :edn
                             , &unit
                         a $ {} (:class-name style-clear) (:inner-text |Download) (:role |button) (:aria-label |sessions-download)
                           :on-click $ fn (e d!) (download-sessions! sessions) &unit
@@ -1259,12 +1257,12 @@
                     div $ {} $ :style
                       {} $ :height 200
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatSession) Number
+          :schema $ quote $ Fn (List ChatSession) Number
             Fn String
-              Fn app.schema/DispatchOp $ -> Unit
+              Fn DispatchOp $ -> Unit
               -> Unit
             Fn
-              Fn app.schema/DispatchOp $ -> Unit
+              Fn DispatchOp $ -> Unit
               -> Unit
             Fn (-> Unit) (:features :js-ffi) (:async)
             -> respo.schema/Component
@@ -1283,10 +1281,10 @@
                 let
                     len $ .len first-msg
                     end $ if (< len 100) len 100
-                  slice first-msg 0 $ Option :some end
+                  slice first-msg 0 $ Some end
                 , :is-history? false
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatMessage) Tag (-> app.schema/ChatSession)
+          :schema $ quote $ Fn (List ChatMessage) Tag (-> ChatSession)
         'decode-genai-chunk $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-genai-chunk (chunk)
             let
@@ -1313,7 +1311,7 @@
                 decoded $ unsafe-coerce (decode-genai-chunk feedback-only) 'app.comp.container/StreamChunk
               assert= |blocked $ :text decoded
               assert= false $ :thinking? decoded
-          :schema $ quote $ Fn T (-> app.comp.container/StreamChunk) (:generics T) (:features :js-ffi)
+          :schema $ quote $ Fn T (-> StreamChunk) (:generics T) (:features :js-ffi)
         'download-sessions! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn download-sessions! (sessions)
             let
@@ -1336,7 +1334,7 @@
                 , 0
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatSession) (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (List ChatSession) (-> Unit) (:features :js-ffi)
         'effect-focus $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defeffect effect-focus () (action el at?)
             when (= action :mount)
@@ -1361,7 +1359,7 @@
                     client $ js-cast
                       genai-new module $ get-gemini-key!
                       , 'app.comp.container/GenAIClientHost
-                  reset! *gen-ai-new $ Option :some client
+                  reset! *gen-ai-new $ Some client
                   , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi) (:async)
@@ -1380,7 +1378,7 @@
               when replace? $ let
                   module $ contract/expect-object |OpenAI.module $ js-await (js/import |openai)
                   client $ js-cast (openai-new module base-url api-key) 'app.comp.container/OpenAIClientHost
-                reset! *openai $ Option :some client
+                reset! *openai $ Some client
               , &unit
           :examples $ []
           :schema $ quote $ Fn Tag (-> Unit) (:features :js-ffi) (:async)
@@ -1463,38 +1461,38 @@
           :schema $ quote $ Fn Bool Bool (-> JsObject) (:features :js-ffi)
         'messages->anthropic $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn messages->anthropic (messages)
-            to-js-data $ map messages $ fn (m)
+            js-array & $ map messages $ fn (m)
               hint-fn $ {} $ :args ([] 'app.schema/ChatMessage)
-              {}
+              js-object
                 :role $ if
                   = :assistant $ :role m
                   , |assistant |user
                 :content $ :content m
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatMessage) (-> Dynamic) (:features :js-ffi)
+          :schema $ quote $ Fn (List ChatMessage) (-> JsObject) (:features :js-ffi)
         'messages->gemini $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn messages->gemini (messages)
-            to-js-data $ map messages $ fn (m)
+            js-array & $ map messages $ fn (m)
               hint-fn $ {} $ :args ([] 'app.schema/ChatMessage)
-              {}
+              js-object
                 :role $ if
                   = :assistant $ :role m
                   , |model |user
-                :parts $ [] $ {}
+                :parts $ js-array $ js-object
                   :text $ :content m
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatMessage) (-> Dynamic) (:features :js-ffi)
+          :schema $ quote $ Fn (List ChatMessage) (-> JsObject) (:features :js-ffi)
         'messages->openai $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn messages->openai (messages)
-            to-js-data $ map messages $ fn (m)
+            js-array & $ map messages $ fn (m)
               hint-fn $ {} $ :args ([] 'app.schema/ChatMessage)
-              {}
+              js-object
                 :role $ if
                   = :assistant $ :role m
                   , |assistant |user
                 :content $ :content m
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatMessage) (-> Dynamic) (:features :js-ffi)
+          :schema $ quote $ Fn (List ChatMessage) (-> JsObject) (:features :js-ffi)
         'model-storage-key $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn model-storage-key (model)
             match model (:claude-3.7 |claude-key) (:openrouter/anthropic/claude-sonnet-4 |openrouter-key) (:openrouter/anthropic/claude-sonnet-4.5 |openrouter-key) (:openrouter/anthropic/claude-opus-4 |openrouter-key) (:openrouter/anthropic/claude-3.7-sonnet:thinking |openrouter-key) (:openrouter/google/gemini-2.5-pro-preview |openrouter-key)
@@ -1574,7 +1572,7 @@
                             if (tag? model-value) model-value :gemini
                             , :thinking $ stream-text $ .unwrap-or (get data :thinking) |
           :examples $ []
-          :schema $ quote $ Fn T (-> app.schema/ChatState) (:generics T) (:features :js-ffi)
+          :schema $ quote $ Fn T (-> ChatState) (:generics T) (:features :js-ffi)
           :tests $ [] $ %{} 'TestEntry (:name |legacy-nil-fields)
             :code $ quote $ let
                 legacy $ normalize-chat-state $ {} (:answer nil) (:loading? false) (:done? true)
@@ -1615,9 +1613,9 @@
                     when submit? $ on-submit text (:search? state) (:think? state) dispatch!
                     , &unit
           :examples $ []
-          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/MessageBoxState
+          :schema $ quote $ Fn (List respo.schema/CoordKey) MessageBoxState
             Fn String Bool Bool
-              Fn app.schema/DispatchOp $ -> Unit
+              Fn DispatchOp $ -> Unit
               -> Unit
             -> respo.schema/RespoListener
         'openai-new $ %{} 'CodeEntry (:doc |)
@@ -1662,7 +1660,7 @@
                   assoc store :sessions $ append sessions updated-session
                 , store
           :examples $ []
-          :schema $ quote $ Fn app.schema/Store app.schema/ChatState (-> app.schema/Store)
+          :schema $ quote $ Fn Store ChatState (-> Store)
         'stream-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn stream-text (value)
             hint-fn $ Fn T (-> String) (:generics T) (:features :js-ffi)
@@ -2015,8 +2013,8 @@
                     d! $ DispatchOp :widget-state cursor $ -> state1 (assoc :answer err-text) (assoc :loading? false) (assoc :done? true)
                       assoc :messages $ upsert-assistant-message (:messages state1) err-text |
           :examples $ []
-          :schema $ quote $ Fn (List respo.schema/CoordKey) app.schema/ChatState String Bool Bool Tag
-            Fn app.schema/DispatchOp $ -> Unit
+          :schema $ quote $ Fn (List respo.schema/CoordKey) ChatState String Bool Bool Tag
+            Fn DispatchOp $ -> Unit
             -> Unit
             :features :js-ffi
             :async
@@ -2053,8 +2051,8 @@
                       -> last-msg (assoc :content content) (assoc :thinking thinking)
                     conj messages $ ChatMessage :role :assistant :content content :thinking thinking
           :examples $ []
-          :schema $ quote $ Fn (List app.schema/ChatMessage) String String
-            -> $ List app.schema/ChatMessage
+          :schema $ quote $ Fn (List ChatMessage) String String
+            -> $ List ChatMessage
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require (respo-ui.css :as css)
@@ -2101,7 +2099,7 @@
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ Site :storage-key |msg-buffer :archive-key |msg-buffer-archive
           :examples $ []
-          :schema $ quote app.config/Site
+          :schema $ quote Site
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
     'app.main $ %{} 'FileEntry
@@ -2109,7 +2107,7 @@
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
-          :schema $ quote $ Ref (reel.typed/State app.schema/DispatchOp app.schema/Store)
+          :schema $ quote $ Ref (typed/State schema/DispatchOp schema/Store)
         'ChromeDisconnectEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ChromeDisconnectEventHost
             .add-listener! $ Fn app.main/ChromeDisconnectEventHost
@@ -2164,7 +2162,7 @@
               (reel.typed/Control control) (typed/apply-control updater @*reel control)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn app.schema/ResolvedOp (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn schema/ResolvedOp (-> Unit) (:features :js-ffi)
         'dispatch-event! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch-event! (event)
             dispatch! $ normalize-event event
@@ -2174,8 +2172,8 @@
           :code $ quote $ defn extension-action (message)
             js-nullish->option $ .-action message
           :examples $ []
-          :schema $ quote $ Fn app.main/ExtensionMessageHost
-            -> $ calcit.core/Option String
+          :schema $ quote $ Fn ExtensionMessageHost
+            -> $ Option String
             :features :js-ffi
         'hydrate-storage-later! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn hydrate-storage-later! (on-ready)
@@ -2246,7 +2244,7 @@
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             let
-                t0 $ unsafe-coerce (ffi/now-ms) 'Number
+                t0 $ unsafe-coerce (ffi/now-ms) Number
               println "|Starting main! at" t0
               println "|Running mode:" $ if config/dev? |dev |release
               if config/dev? $ load-console-formatter!
@@ -2273,7 +2271,7 @@
               if config/chrome-extension? $ listen-extension!
               sync-gemini-key!
               let
-                  t1 $ unsafe-coerce (ffi/now-ms) 'Number
+                  t1 $ unsafe-coerce (ffi/now-ms) Number
                 println "|App started at" t1 |cost (- t1 t0) |ms
               , &unit
           :examples $ []
@@ -2290,7 +2288,7 @@
         'normalize-event $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-event (raw)
             if
-              = (enum-definition raw) (Option :some schema/DispatchOp)
+              = (enum-definition raw) (Some schema/DispatchOp)
               decode-map-as raw app.schema/DispatchOp
               match raw
                 (:states cursor data)
@@ -2299,11 +2297,11 @@
                     , data
                 _ $ do (eprintln "|unknown op:" raw) (schema/DispatchOp :unhandled)
           :examples $ []
-          :schema $ quote $ Fn AnyEnum (-> app.schema/DispatchOp) (:open :decode)
+          :schema $ quote $ Fn AnyEnum (-> schema/DispatchOp) (:open :decode)
         'on-control! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-control! (control) (dispatch! control)
           :examples $ []
-          :schema $ quote $ Fn reel.typed/Control (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn typed/Control (-> Unit) (:features :js-ffi)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ ffi/date-now-snapshot
@@ -2324,7 +2322,7 @@
                 add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
-              hud! |error $ unsafe-coerce build-errors 'Dynamic
+              hud! |error $ unsafe-coerce build-errors Dynamic
             , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
@@ -2356,8 +2354,9 @@
                 when (js-present? deepseek-key)
                   js/chrome.runtime.sendMessage $ js-object (:action |sync-deepseek-key) (:key deepseek-key)
                   js/chrome.storage.local.set $ js-object $ :deepseekKey deepseek-key
+            , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Dynamic) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require
@@ -2457,11 +2456,11 @@
                   let
                       data $ decode-map-as input $ Map Tag Dynamic
                       thinking-value $ .unwrap-or (get data :thinking) |
-                      normalized-thinking $ if (string? thinking-value) (assert-type thinking-value 'String) |
+                      normalized-thinking $ if (string? thinking-value) (assert-type thinking-value String) |
                     decode-map-as (assoc data :thinking normalized-thinking) 'app.schema/ChatMessage
                   raise "|Expected chat message map"
           :examples $ []
-          :schema $ quote $ Fn T (-> app.schema/ChatMessage) (:generics T) (:features :js-ffi)
+          :schema $ quote $ Fn T (-> ChatMessage) (:generics T) (:features :js-ffi)
         'normalize-chat-session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-session (raw)
             hint-fn $ Fn T (-> app.schema/ChatSession) (:generics T) (:features :js-ffi)
@@ -2498,7 +2497,7 @@
                     ChatSession :id (:id base) :created-at (:created-at base) :messages messages :model (:model base) :preview (:preview base) :is-history? $ :is-history? base
                   raise "|Expected chat session map"
           :examples $ []
-          :schema $ quote $ Fn T (-> app.schema/ChatSession) (:generics T) (:features :js-ffi)
+          :schema $ quote $ Fn T (-> ChatSession) (:generics T) (:features :js-ffi)
           :tests $ [] $ %{} 'TestEntry (:name |accepts-typed-and-map)
             :code $ quote $ let
                 typed $ ChatSession :id |typed :created-at 1 :messages ([]) :model :gemini :preview |Typed :is-history? true
@@ -2549,7 +2548,7 @@
                     Store :states (:states base) :sessions sessions :current-session-id (:current-session-id base) :model (:model base) :archived-count $ :archived-count base
                   raise "|Expected store map"
           :examples $ []
-          :schema $ quote $ Fn T (-> app.schema/Store) (:generics T) (:features :js-ffi)
+          :schema $ quote $ Fn T (-> Store) (:generics T) (:features :js-ffi)
           :tests $ [] $ %{} 'TestEntry (:name |migrates-legacy-message-thinking)
             :code $ quote $ let
                 legacy $ {}
@@ -2581,7 +2580,7 @@
               {} $ :cursor $ []
               , :sessions ([]) :current-session-id nil :model nil :archived-count 0
           :examples $ []
-          :schema $ quote app.schema/Store
+          :schema $ quote Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
           :require $ calcit.test :refer $ is
@@ -2693,7 +2692,7 @@
                     assoc :current-session-id nil
                 _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
-          :schema $ quote $ Fn app.schema/Store app.schema/DispatchOp String Number (-> app.schema/Store)
+          :schema $ quote $ Fn Store app.schema/DispatchOp String Number (-> Store)
           :tests $ [] $ %{} 'TestEntry (:name |mixed-cursor-latest-state-merge)
             :code $ quote $ let
                 cursor $ [] :panel |draft 7
