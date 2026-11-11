@@ -11,9 +11,9 @@
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
         '*abort-control $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *abort-control false
+          :code $ quote $ defref *abort-control None
           :examples $ []
-          :schema $ quote Ref
+          :schema $ quote $ Ref (Option ffi/AbortControllerHost)
         '*archived-sessions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *archived-sessions nil
           :examples $ []
@@ -85,6 +85,10 @@
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} $ :for-each! |forEach
           :schema $ quote Trait
+        'ModelMenuItem $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct ModelMenuItem (:model Tag) (:label String)
+          :examples $ []
+          :schema $ quote StructDef
         'OpenAIChatHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait OpenAIChatHost (:completions 'app.comp.container/OpenAICompletionsHost)
           :examples $ []
@@ -118,11 +122,14 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
           :schema $ quote Trait
-        'abort-dynamic! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn abort-dynamic! (value)
-            ffi/abort! $ unsafe-coerce value 'js-ffi.shared/AbortControllerHost
+        'abort-previous! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn abort-previous! (previous)
+            match previous
+              (:none) &unit
+              (:some controller)
+                do (ffi/console-warn! |Aborting-prev) (ffi/abort! controller)
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (Option ffi/AbortControllerHost) (-> Unit) (:features :js-ffi)
         'append-user-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn append-user-message (messages content)
             conj messages $ ChatMessage :role :user :content content :thinking |
@@ -139,8 +146,7 @@
           :code $ quote $ defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             d! $ DispatchOp :change-model
             let
                 axios-module $ contract/expect-object "|Axios module" $ js-await (js/import |axios)
@@ -169,7 +175,7 @@
                     :adapter |fetch
                     :signal $ let
                         abort $ ffi/abort-controller-create
-                      reset! *abort-control abort
+                      reset! *abort-control $ Some abort
                       ffi/abort-signal abort
                 stream $ js-cast
                   .-data $ js-cast result 'app.comp.container/AxiosStreamResponseHost
@@ -241,8 +247,7 @@
               (:some preview) (browser/element-set-attribute! preview |src |)
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             clear-image-cache!
             d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
@@ -253,7 +258,7 @@
                 content $ &str:replace prompt-text |{{selected}} selected
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
-                  reset! *abort-control abort
+                  reset! *abort-control $ Some abort
                   ffi/abort-signal abort
                 sdk-result $ js-await $ .generate-content
                   js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
@@ -313,8 +318,7 @@
             js-await $ ensure-genai!
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             let
                 selected $ let
                     selected0 $ if (includes? prompt-text |{{selected}})
@@ -331,7 +335,7 @@
                 messages1 $ upsert-assistant-message messages0 | |
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
-                  reset! *abort-control abort
+                  reset! *abort-control $ Some abort
                   ffi/abort-signal abort
                 tools $ make-genai-tools search? has-url?
                 sdk-result $ js-await $ .generate-content-stream
@@ -381,15 +385,14 @@
               (:some preview) (browser/element-remove-attribute! preview |src)
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             clear-image-cache!
             d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
                 gen-ai $ .unwrap @*gen-ai-new
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
-                  reset! *abort-control abort
+                  reset! *abort-control $ Some abort
                   ffi/abort-signal abort
                 response $ js-await $ .generate-images
                   js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
@@ -430,8 +433,7 @@
             js-await $ ensure-openai! provider
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
@@ -451,7 +453,7 @@
                     :headers $ js-object $ :HTTP-Referer js/location.host
                   js-object $ :signal $ let
                       abort $ ffi/abort-controller-create
-                    reset! *abort-control abort
+                    reset! *abort-control $ Some abort
                     ffi/abort-signal abort
               browser/set-timeout!
                 fn ()
@@ -512,10 +514,7 @@
                 :class-name $ str-spaced css/font-fancy css/row-middle style-more
                 :style $ {} $ :cursor :pointer
                 :on-click $ fn (e d!)
-                  let
-                      abort $ deref *abort-control
-                    when (js-present-dynamic? abort)
-                      do (js/console.warn |Aborting-prev) (abort-dynamic! abort)
+                  abort-previous! $ deref *abort-control
                   , &unit
               <> t
               space-x 8
@@ -577,7 +576,8 @@
                     ; :card-class style-card
                     ; :backdrop-class style-backdrop
                     ; :confirm-class style-confirm
-                    :items models-menu
+                    :items $ .map models-menu $ fn (item)
+                      :: :item (:model item) (:label item)
                     :on-result $ fn (result d!)
                       d! $ DispatchOp :widget-state cursor $ assoc state :model
                         decode-map-as
@@ -1512,15 +1512,15 @@
               assert= |claude-key $ model-storage-key :claude-3.7
         'models-menu $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def models-menu
-            [] (:: :item :gemini-3.5-flash-lite "|Gemini Flash Lite 3.5") (:: :item :gemini-3.6-flash "|Gemini Flash 3.6") (:: :item :gemini-3.7-flash "|Gemini Flash 3.7") (:: :item :gemini-3.8-flash "|Gemini Flash 3.8") (:: :item :gemini-flash "|Gemini Flash 3") (:: :item :gemini-3.5-flash "|Gemini Flash 3.5") (:: :item :gemini-pro "|Gemini Pro 3.1") (:: :item :gemini-3.1-flash-lite-preview "|Gemini Flash Lite 3.1") (:: :item :flash-imagen "|Flash Imagen") (:: :item :imagen-4 "|Imagen 4") (:: :item :gemma "|Gemma 3 27b") (:: :item :openrouter/anthropic/claude-sonnet-4.5 "|Openrouter Claude Sonnet 4.5") (:: :item :openrouter/anthropic/claude-opus-4 "|Openrouter Claude Opus 4") (:: :item :openrouter/google/gemini-2.5-pro-preview "|Openrouter Google Gemini 2.5 pro preview")
-              :: :item :openrouter/google/gemini-2.5-flash-preview-05-20 "|Openrouter Google Gemini 2.5 flash preview"
-              :: :item :openrouter/openai/gpt-5 "|Openrouter GPT 5"
-              :: :item :openrouter/deepseek/deepseek-chat-v3.1 "|Openrouter deepseek-chat-v3.1"
-              :: :item :deepseek-v4-pro "|DeepSeek V4 Pro"
-              :: :item :deepseek-v4-flash "|DeepSeek V4 Flash"
-              ; :: :item :claude-4.5 "|Claude 4.5"
+            [] (ModelMenuItem :model :gemini-3.5-flash-lite :label "|Gemini Flash Lite 3.5") (ModelMenuItem :model :gemini-3.6-flash :label "|Gemini Flash 3.6") (ModelMenuItem :model :gemini-3.7-flash :label "|Gemini Flash 3.7") (ModelMenuItem :model :gemini-3.8-flash :label "|Gemini Flash 3.8") (ModelMenuItem :model :gemini-flash :label "|Gemini Flash 3") (ModelMenuItem :model :gemini-3.5-flash :label "|Gemini Flash 3.5") (ModelMenuItem :model :gemini-pro :label "|Gemini Pro 3.1") (ModelMenuItem :model :gemini-3.1-flash-lite-preview :label "|Gemini Flash Lite 3.1") (ModelMenuItem :model :flash-imagen :label "|Flash Imagen") (ModelMenuItem :model :imagen-4 :label "|Imagen 4") (ModelMenuItem :model :gemma :label "|Gemma 3 27b") (ModelMenuItem :model :openrouter/anthropic/claude-sonnet-4.5 :label "|Openrouter Claude Sonnet 4.5") (ModelMenuItem :model :openrouter/anthropic/claude-opus-4 :label "|Openrouter Claude Opus 4") (ModelMenuItem :model :openrouter/google/gemini-2.5-pro-preview :label "|Openrouter Google Gemini 2.5 pro preview")
+              ModelMenuItem :model :openrouter/google/gemini-2.5-flash-preview-05-20 :label "|Openrouter Google Gemini 2.5 flash preview"
+              ModelMenuItem :model :openrouter/openai/gpt-5 :label "|Openrouter GPT 5"
+              ModelMenuItem :model :openrouter/deepseek/deepseek-chat-v3.1 :label "|Openrouter deepseek-chat-v3.1"
+              ModelMenuItem :model :deepseek-v4-pro :label "|DeepSeek V4 Pro"
+              ModelMenuItem :model :deepseek-v4-flash :label "|DeepSeek V4 Flash"
+              ; ModelMenuItem :model :claude-4.5 :label "|Claude 4.5"
           :examples $ []
-          :schema $ quote List
+          :schema $ quote $ List ModelMenuItem
         'normalize-chat-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-chat-state (raw)
             if
