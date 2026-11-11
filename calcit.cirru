@@ -1439,7 +1439,7 @@
           :code $ quote $ defn js-present-dynamic? (value)
             if (js/Boolean value) true false
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Bool) (:features :js-ffi)
+          :schema $ quote $ Fn T (-> Bool) (:generics T) (:features :js-ffi)
         'json-pattern? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn json-pattern? (text)
             or (starts-with? text |{) (starts-with? text |[)
@@ -1663,10 +1663,9 @@
           :schema $ quote $ Fn Store ChatState (-> Store)
         'stream-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn stream-text (value)
-            hint-fn $ Fn T (-> String) (:generics T) (:features :js-ffi)
             if (string? value) value |
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> String) (:features :js-ffi)
+          :schema $ quote $ Fn T (-> String) (:generics T) (:features :js-ffi)
           :tests $ []
             %{} 'TestEntry (:name |keeps-string)
               :code $ quote $ is
