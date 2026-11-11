@@ -35,11 +35,8 @@
     "app.main/reload!": {
       "unsafe-coerce/explicit-unsafe": 1
     },
-    "app.schema/store": {
+    "app.schema/encode-store": {
       "code-nil/unresolved": 2
-    },
-    "app.updater/updater": {
-      "code-nil/unresolved": 3
     }
   }
 }
