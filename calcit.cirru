@@ -11,9 +11,9 @@
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
         '*abort-control $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *abort-control false
+          :code $ quote $ defref *abort-control None
           :examples $ []
-          :schema $ quote Ref
+          :schema $ quote $ Ref (Option ffi/AbortControllerHost)
         '*archived-sessions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *archived-sessions nil
           :examples $ []
@@ -118,11 +118,14 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
           :schema $ quote Trait
-        'abort-dynamic! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn abort-dynamic! (value)
-            ffi/abort! $ unsafe-coerce value 'js-ffi.shared/AbortControllerHost
+        'abort-previous! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn abort-previous! (previous)
+            match previous
+              (:none) &unit
+              (:some controller)
+                do (ffi/console-warn! |Aborting-prev) (ffi/abort! controller)
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (Option ffi/AbortControllerHost) (-> Unit) (:features :js-ffi)
         'append-user-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn append-user-message (messages content)
             conj messages $ ChatMessage :role :user :content content :thinking |
@@ -139,8 +142,7 @@
           :code $ quote $ defn call-anthropic-msg! (cursor state prompt-text model thinking? d!)
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             d! $ DispatchOp :change-model
             let
                 axios-module $ contract/expect-object "|Axios module" $ js-await (js/import |axios)
@@ -169,7 +171,7 @@
                     :adapter |fetch
                     :signal $ let
                         abort $ ffi/abort-controller-create
-                      reset! *abort-control abort
+                      reset! *abort-control $ Some abort
                       ffi/abort-signal abort
                 stream $ js-cast
                   .-data $ js-cast result 'app.comp.container/AxiosStreamResponseHost
@@ -241,8 +243,7 @@
               (:some preview) (browser/element-set-attribute! preview |src |)
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             clear-image-cache!
             d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
@@ -253,7 +254,7 @@
                 content $ &str:replace prompt-text |{{selected}} selected
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
-                  reset! *abort-control abort
+                  reset! *abort-control $ Some abort
                   ffi/abort-signal abort
                 sdk-result $ js-await $ .generate-content
                   js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
@@ -313,8 +314,7 @@
             js-await $ ensure-genai!
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             let
                 selected $ let
                     selected0 $ if (includes? prompt-text |{{selected}})
@@ -331,7 +331,7 @@
                 messages1 $ upsert-assistant-message messages0 | |
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
-                  reset! *abort-control abort
+                  reset! *abort-control $ Some abort
                   ffi/abort-signal abort
                 tools $ make-genai-tools search? has-url?
                 sdk-result $ js-await $ .generate-content-stream
@@ -381,15 +381,14 @@
               (:some preview) (browser/element-remove-attribute! preview |src)
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             clear-image-cache!
             d! $ DispatchOp :widget-state cursor $ -> state (assoc :answer |) (assoc :loading? true)
             let
                 gen-ai $ .unwrap @*gen-ai-new
                 abort-signal $ let
                     abort $ ffi/abort-controller-create
-                  reset! *abort-control abort
+                  reset! *abort-control $ Some abort
                   ffi/abort-signal abort
                 response $ js-await $ .generate-images
                   js-cast (.-models gen-ai) 'app.comp.container/GenAIModelsHost
@@ -430,8 +429,7 @@
             js-await $ ensure-openai! provider
             let
                 abort $ deref *abort-control
-              when (js-present-dynamic? abort)
-                do (ffi/console-warn! |Aborting-prev) (abort-dynamic! abort)
+              abort-previous! abort
             let
                 selected $ let
                     selected0 $ js-await $ get-selected
@@ -451,7 +449,7 @@
                     :headers $ js-object $ :HTTP-Referer js/location.host
                   js-object $ :signal $ let
                       abort $ ffi/abort-controller-create
-                    reset! *abort-control abort
+                    reset! *abort-control $ Some abort
                     ffi/abort-signal abort
               browser/set-timeout!
                 fn ()
@@ -512,10 +510,7 @@
                 :class-name $ str-spaced css/font-fancy css/row-middle style-more
                 :style $ {} $ :cursor :pointer
                 :on-click $ fn (e d!)
-                  let
-                      abort $ deref *abort-control
-                    when (js-present-dynamic? abort)
-                      do (js/console.warn |Aborting-prev) (abort-dynamic! abort)
+                  abort-previous! $ deref *abort-control
                   , &unit
               <> t
               space-x 8
