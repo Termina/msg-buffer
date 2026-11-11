@@ -1,0 +1,58 @@
+{
+  "coverage": {
+    "app.comp.container/*abort-control": "partial",
+    "app.comp.container/abort-dynamic!": "partial",
+    "app.comp.container/comp-message-box": "partial",
+    "app.comp.container/js-present-dynamic?": "partial",
+    "app.comp.container/models-menu": "partial",
+    "app.comp.container/stream-text": "partial"
+  },
+  "weak": {
+    "app.comp.container/*abort-control": {
+      "schema-dynamic/unresolved": 1
+    },
+    "app.comp.container/*archived-sessions": {
+      "code-nil/unresolved": 1
+    },
+    "app.comp.container/*viewing-archive-session": {
+      "code-nil/unresolved": 1
+    },
+    "app.comp.container/abort-dynamic!": {
+      "schema-dynamic/intentional-js-ffi": 1,
+      "unsafe-coerce/explicit-unsafe": 1
+    },
+    "app.comp.container/comp-container": {
+      "code-nil/unresolved": 3
+    },
+    "app.comp.container/comp-message-box": {
+      "schema-dynamic/intentional-js-ffi": 1
+    },
+    "app.comp.container/js-present-dynamic?": {
+      "schema-dynamic/intentional-js-ffi": 1
+    },
+    "app.comp.container/models-menu": {
+      "schema-dynamic/unresolved": 1
+    },
+    "app.comp.container/stream-text": {
+      "schema-dynamic/js-ffi-non-host": 1
+    },
+    "app.main/connect-to-worker!": {
+      "unsafe-coerce/explicit-unsafe": 1
+    },
+    "app.main/listen-extension!": {
+      "unsafe-coerce/explicit-unsafe": 1
+    },
+    "app.main/main!": {
+      "unsafe-coerce/explicit-unsafe": 3
+    },
+    "app.main/reload!": {
+      "unsafe-coerce/explicit-unsafe": 1
+    },
+    "app.schema/store": {
+      "code-nil/unresolved": 2
+    },
+    "app.updater/updater": {
+      "code-nil/unresolved": 3
+    }
+  }
+}

@@ -7,7 +7,7 @@ Demo：<https://r.tiye.me/Termina/msg-buffer/>。Gemini 文档：<https://ai.goo
 
 ## 对使用者的影响
 
-本地开发使用正式 Calcit 和 `@calcit/procs` **0.40.0**。升级后请重装依赖，分别重建网页与扩展资源，并刷新。页面 HUD、模型名称、请求配置和存档格式保持原行为。
+本地开发使用正式 Calcit 和 `@calcit/procs` **0.41.0**。升级后请重装依赖，分别重建网页与扩展资源，并刷新。页面 HUD、模型名称、请求配置和存档格式保持原行为。
 
 模块使用已发布的 Respo 0.19.5、UI 0.15.2、JS FFI 0.2.13、Reel 0.10.0、Alerts 0.14.2、Markdown 0.8.2 和 Router 0.12.2。
 
@@ -26,7 +26,7 @@ SDK 响应、可空 DOM 和 object URL 保留原受检边界及清理行为。�
 
 ## 开发和验证
 
-使用 Node.js 24、Yarn 4.18.0、Calcit 0.40.0，文件为 `calcit.cirru`、`deps.cirru`。
+使用 Node.js 24、Yarn 4.18.0、Calcit 0.41.0，文件为 `calcit.cirru`、`deps.cirru`。
 
 ```sh
 caps --strict --ci
@@ -34,12 +34,12 @@ yarn install --immutable
 caps verify --toolchain
 calcit --check-only --all-defs
 calcit fix --workflow strict --verify
-calcit analyze quality --baseline config/calcit-quality.cirru
+calcit analyze weak-types --format json
 calcit test --require-match
 yarn build
 ```
 
-全量 504 个定义、完整 strict、原质量基线、八项测试、弃用调用检查和原扩展资源检查通过。隔离 Chrome 验证空内容提醒、草稿、历史面板、模型选择、搜索开关和刷新恢复。验收使用合成数据和本地预览。
+CI 对照 `config/calcit-quality.json` 检查各定义的弱类型与覆盖，并检查弃用调用和扩展资源。此前的隔离 Chrome 验收使用合成数据，覆盖空内容提醒、草稿、历史面板、模型选择、搜索开关和刷新恢复。
 
 ## 网页和扩展部署
 
