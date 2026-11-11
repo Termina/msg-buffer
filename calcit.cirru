@@ -545,19 +545,14 @@
                   tag? $ :model state
                   :model state
                   , :gemini
-                is-viewing-history? $ and (js-present-dynamic? current-session-id)
-                  .fold
-                    assert-type
-                      first $ filter sessions $ fn (s)
-                        hint-fn $ Fn app.schema/ChatSession $ -> Bool
-                        = (:id s) (decode-map-as current-session-id 'String)
-                      Option app.schema/ChatSession
-                    fn ()
-                      hint-fn $ {} $ :return 'Bool
-                      , false
-                    fn (session)
-                      hint-fn $ Fn app.schema/ChatSession $ -> Bool
-                      :is-history? session
+                is-viewing-history? $ match current-session-id
+                  (:none) false
+                  (:some id)
+                    .fold
+                      first $ filter sessions $ fn (session)
+                        = (:id session) id
+                      fn () false
+                      fn (session) (:is-history? session)
                 last-assistant $ .fold
                   assert-type (last messages) (Option app.schema/ChatMessage)
                   fn ()
@@ -661,7 +656,7 @@
                               and
                                 > (.len messages) 0
                                 :done? state
-                                not $ js-present-dynamic? current-session-id
+                                not $ not= current-session-id None
                               d! $ DispatchOp :save-session state
                             d! $ DispatchOp :load-session cursor state $ -> sessions
                               filter $ fn (s)
@@ -949,7 +944,7 @@
                               and
                                 > (.len messages) 0
                                 :done? state
-                                not $ js-present-dynamic? current-session-id
+                                not $ not= current-session-id None
                               d! $ DispatchOp :save-session state
                             d! $ DispatchOp :session None
                             submit-with-key!
@@ -2423,8 +2418,8 @@
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store (:states Map)
             :sessions $ List app.schema/ChatSession
-            :current-session-id Dynamic
-            :model Dynamic
+            :current-session-id $ Option String
+            :model $ Option Tag
             :archived-count Number
           :examples $ []
           :schema $ quote StructDef
@@ -2514,16 +2509,11 @@
           :code $ quote $ defn normalize-store (raw)
             hint-fn $ Fn T (-> app.schema/Store) (:generics T) (:features :js-ffi)
             if
-              and (struct? raw) (&struct:matches? raw Store)
-              struct-match raw
-                Store typed $ if
-                  match (struct-definition typed)
-                    (:none) false
-                    (:some definition) (identical? definition Store)
-                  , typed $ Store :states (:states typed) :sessions
-                    map (:sessions typed)
-                      fn (session) (normalize-chat-session session)
-                    , :current-session-id (:current-session-id typed) :model (:model typed) :archived-count (:archived-count typed)
+              and (struct? raw)
+                match (struct-definition raw)
+                  (:some definition) (identical? definition Store)
+                  (:none) false
+              struct-match raw (Store typed typed)
                 _ other $ raise "|Unexpected nominal value for Store"
               let
                   input $ if (struct? raw)
@@ -2532,52 +2522,81 @@
                       &struct:to-map raw
                       raise "|Unexpected nominal value for Store"
                     , raw
-                if (map? input)
-                  let
-                      data $ decode-map-as input $ Map Tag Dynamic
-                      raw-session-value $ .unwrap-or (get data :sessions) ([])
-                      raw-sessions $ if (list? raw-session-value)
-                        assert-type raw-session-value $ List Dynamic
-                        []
-                      sessions $ map raw-sessions $ fn (session) (normalize-chat-session session)
-                      patched $ dissoc data :current-chapter-id
-                      base $ decode-map-as
-                        assoc patched :sessions $ []
-                        , 'app.schema/Store
-                    Store :states (:states base) :sessions sessions :current-session-id (:current-session-id base) :model (:model base) :archived-count $ :archived-count base
-                  raise "|Expected store map"
+                  data $ decode-map-as input $ Map Tag Dynamic
+                  raw-session-value $ .unwrap-or (get data :sessions) ([])
+                  raw-sessions $ if (list? raw-session-value)
+                    assert-type raw-session-value $ List Dynamic
+                    []
+                  sessions $ map raw-sessions $ fn (session) (normalize-chat-session session)
+                  patched $ -> data (dissoc :current-chapter-id) (assoc :sessions sessions)
+                    assoc :current-session-id $ match (get data :current-session-id)
+                      (:none) None
+                      (:some session-id)
+                        cond
+                            nil? session-id
+                            , None
+                          (string? session-id) (Some session-id)
+                          true $ match session-id
+                            (:some id)
+                              Some $ decode-map-as id 'String
+                            (:none) None
+                            _ $ raise "|Invalid saved session ID"
+                    assoc :model $ match (get data :model)
+                      (:none) None
+                      (:some model)
+                        cond
+                            tag? model
+                            Some model
+                          (enum? model)
+                            match model
+                              (:some tag)
+                                Some $ decode-map-as tag 'Tag
+                              (:none) None
+                              _ $ raise "|Invalid saved model"
+                          true None
+                decode-map-as patched 'app.schema/Store
           :examples $ []
           :schema $ quote $ Fn T (-> Store) (:generics T) (:features :js-ffi)
-          :tests $ [] $ %{} 'TestEntry (:name |migrates-legacy-message-thinking)
-            :code $ quote $ let
-                legacy $ {}
-                  :states $ {} $ :cursor ([])
-                  :sessions $ [] $ {} (:id |legacy) (:created-at 1)
-                    :messages $ [] $ {} (:role :user) (:content |hello)
-                    :model :gemini
-                    :preview |hello
-                    :is-history? true
-                  :current-session-id nil
-                  :model nil
-                  :archived-count 0
-                normalized $ assert-type (normalize-store legacy) 'app.schema/Store
-                sessions $ assert-type (:sessions normalized) (List app.schema/ChatSession)
-                fallback-session $ ChatSession :id |fallback :created-at 0 :messages ([]) :model :gemini :preview | :is-history? false
-                session $ .unwrap-or
-                  assert-type (first sessions) (Option app.schema/ChatSession)
-                  , fallback-session
-                messages $ assert-type (:messages session) (List app.schema/ChatMessage)
-                fallback-message $ ChatMessage :role :user :content | :thinking |fallback
-                message $ .unwrap-or
-                  assert-type (first messages) (Option app.schema/ChatMessage)
-                  , fallback-message
-              is $ = | $ :thinking message
-            :tags $ #{} :regression :unit
+          :tests $ []
+            %{} 'TestEntry (:name |migrates-legacy-message-thinking)
+              :code $ quote $ let
+                  legacy $ {}
+                    :states $ {} $ :cursor ([])
+                    :sessions $ [] $ {} (:id |legacy) (:created-at 1)
+                      :messages $ [] $ {} (:role :user) (:content |hello)
+                      :model :gemini
+                      :preview |hello
+                      :is-history? true
+                    :current-session-id nil
+                    :model nil
+                    :archived-count 0
+                  normalized $ assert-type (normalize-store legacy) 'app.schema/Store
+                  sessions $ assert-type (:sessions normalized) (List app.schema/ChatSession)
+                  fallback-session $ ChatSession :id |fallback :created-at 0 :messages ([]) :model :gemini :preview | :is-history? false
+                  session $ .unwrap-or
+                    assert-type (first sessions) (Option app.schema/ChatSession)
+                    , fallback-session
+                  messages $ assert-type (:messages session) (List app.schema/ChatMessage)
+                  fallback-message $ ChatMessage :role :user :content | :thinking |fallback
+                  message $ .unwrap-or
+                    assert-type (first messages) (Option app.schema/ChatMessage)
+                    , fallback-message
+                is $ = | $ :thinking message
+              :tags $ #{} :regression :unit
+            %{} 'TestEntry (:name |optional-selection-roundtrip)
+              :code $ quote $ let
+                  old $ &struct:to-map store
+                  restored $ normalize-store $ assoc (assoc old :current-session-id |legacy) :model :anthropic
+                  round-tripped $ normalize-store $ parse-cirru-edn (format-cirru-edn restored)
+                assert= (Some |legacy) (:current-session-id restored)
+                assert= (Some :anthropic) (:model restored)
+                assert= restored round-tripped
+                assert= store $ normalize-store $ parse-cirru-edn (format-cirru-edn store)
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states
               {} $ :cursor $ []
-              , :sessions ([]) :current-session-id nil :model nil :archived-count 0
+              , :sessions ([]) :current-session-id None :model None :archived-count 0
           :examples $ []
           :schema $ quote Store
       :ns $ %{} 'NsEntry (:doc |)
@@ -2647,21 +2666,13 @@
                     assoc store :states $ decode-map-as updated-states $ Map Dynamic Dynamic
                 (:hydrate-storage data) data
                 (:change-model)
-                  if
-                    let
-                        model $ :model store
-                      if (tag? model) (= model :anthropic) false
-                    assoc store :model :gemini
-                    assoc store :model :anthropic
+                  assoc store :model $ if
+                    = (:model store) (Some :anthropic)
+                    Some :gemini
+                    Some :anthropic
                 (:save-session state)
-                  let
-                      store1 $ save-current-session store state
-                    assoc store1 :current-session-id nil
-                (:session id)
-                  match id
-                    (:none)
-                      assoc store :current-session-id $ :current-session-id app.schema/store
-                    (:some selected) (assoc store :current-session-id selected)
+                  assoc (save-current-session store state) :current-session-id None
+                (:session id) (assoc store :current-session-id id)
                 (:load-session cursor state session)
                   let
                       typed-session session
@@ -2672,7 +2683,7 @@
                             assoc :messages $ :messages typed-session
                             assoc :done? true
                         Map Dynamic Dynamic
-                    assoc store1 :current-session-id $ :id typed-session
+                    assoc store1 :current-session-id $ Some $ :id typed-session
                 (:remove-session id)
                   assoc store :sessions $ filter (:sessions store)
                     fn (s)
@@ -2682,13 +2693,13 @@
                   -> store
                     assoc :sessions $ []
                     assoc :archived-count new-count
-                    assoc :current-session-id nil
+                    assoc :current-session-id None
                 (:update-archived-count new-count)
                   -> store $ assoc :archived-count new-count
                 (:clear-sessions)
                   -> store
                     assoc :sessions $ []
-                    assoc :current-session-id nil
+                    assoc :current-session-id None
                 _ $ do (eprintln "|unknown op:" op) store
           :examples $ []
           :schema $ quote $ Fn Store app.schema/DispatchOp String Number (-> Store)
