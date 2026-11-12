@@ -702,13 +702,13 @@
                       div
                         {} (:role |region) (:aria-label |message-list)
                           :class-name $ str-spaced css/column style-message-list
-                        list->
+                        keyed->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           ->
                             :messages $ assert-type (app.schema/normalize-chat-session @*viewing-archive-session) ChatSession
                             map-indexed $ fn (idx msg)
-                              hint-fn $ Fn Number ChatMessage $ -> (List Dynamic)
-                              [] idx $ let
+                              hint-fn $ Fn Number ChatMessage $ -> respo.schema/ChildPair
+                              keyed-element idx $ let
                                   role $ :role msg
                                   content $ stream-text $ :content msg
                                   thinking $ stream-text $ :thinking msg
@@ -743,25 +743,25 @@
                       ; List
                       div
                         {} $ :class-name $ str-spaced css/column css/gap8 style-message-list
-                        list->
+                        keyed->
                           {} $ :class-name css/column
                           let
                               current-archives $ let
                                   cached @*archived-sessions
                                 if (js-nullish? cached) ([]) cached
                             if (empty? current-archives)
-                              [] $ [] :empty $ div
+                              [] $ keyed-element :empty $ div
                                 {} $ :style $ {} (:padding |12px)
                                   :color $ hsl 0 0 60
                                 <> "|No archived sessions left."
                               -> current-archives reverse $ map $ fn (session)
-                                hint-fn $ Fn ChatSession $ -> (List Dynamic)
+                                hint-fn $ Fn ChatSession $ -> respo.schema/ChildPair
                                 let
                                     session-id $ :id session
                                     created-at $ :created-at session
                                     preview $ :preview session
                                     date-str $ ffi/date-local-string $ ffi/date-from-ms created-at
-                                  [] session-id $ div
+                                  keyed-element session-id $ div
                                     {} $ :class-name style-session-item
                                     div
                                       {} (:role |button)
@@ -828,11 +828,11 @@
                         show
                           or (= :imagen-4 model) (= :flash-imagen model)
                           img $ {} $ :class-name (str-spaced style-image |show-image)
-                        list->
+                        keyed->
                           {} $ :class-name $ str-spaced css/column css/gap8
                           -> messages $ map-indexed $ fn (idx msg)
-                            hint-fn $ Fn Number ChatMessage $ -> (List Dynamic)
-                            [] idx $ let
+                            hint-fn $ Fn Number ChatMessage $ -> respo.schema/ChildPair
+                            keyed-element idx $ let
                                 role $ :role msg
                                 content $ stream-text $ :content msg
                                 thinking $ stream-text $ :thinking msg
@@ -2077,7 +2077,7 @@
           :require (respo-ui.css :as css)
             respo.css :refer $ defstyle
             respo.util.format :refer $ hsl
-            respo.core :refer $ defcomp defeffect show <> >> list-> div button textarea span input a pre img memo-comp-by
+            respo.core :refer $ defcomp defeffect show <> >> keyed-> keyed-element div button textarea span input a pre img memo-comp-by
             respo.comp.space :refer $ space-x space-y
             respo.comp.inspect :refer $ comp-inspect
             reel.comp.reel :refer $ comp-typed-reel
