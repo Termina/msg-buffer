@@ -2182,11 +2182,6 @@
             , &unit
           :examples $ []
           :schema $ quote $ Fn schema/ResolvedOp (-> Unit) (:features :js-ffi)
-        'dispatch-event! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch-event! (event)
-            dispatch! $ normalize-event event
-          :examples $ []
-          :schema $ quote $ Fn AnyEnum (-> Unit) (:features :js-ffi) (:open :decode)
         'extension-action $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn extension-action (message)
             js-nullish->option $ .-action message
@@ -2354,7 +2349,7 @@
                 fn () $ comp-container @*reel on-control!
                 fn (event)
                   hint-fn $ Fn *dispatch-op $ -> Unit
-                  dispatch-event! event
+                  dispatch! $ normalize-event event
               println "|Rendered in"
                 - (ffi/now-ms) t_start
                 , |ms
