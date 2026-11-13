@@ -1593,7 +1593,7 @@
           :code $ quote $ defn on-fill (cursor state on-submit)
             %{} respo.schema/RespoListener (:name :on-fill)
               :handler $ fn (event dispatch!)
-                hint-fn $ Fn AnyEnum
+                hint-fn $ Fn app.schema/FillEvent
                   Fn DispatchOp $ -> Unit
                   -> Unit
                 match (try-decode-map-as event 'app.schema/FillEvent)
