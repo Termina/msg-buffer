@@ -1,6 +1,5 @@
 {
   "coverage": {
-    "app.comp.container/comp-message-box": "partial",
     "app.comp.container/js-present-dynamic?": "partial",
     "app.comp.container/stream-text": "partial"
   },
@@ -13,9 +12,6 @@
     },
     "app.comp.container/comp-container": {
       "code-nil/unresolved": 3
-    },
-    "app.comp.container/comp-message-box": {
-      "schema-dynamic/intentional-js-ffi": 1
     },
     "app.comp.container/js-present-dynamic?": {
       "schema-dynamic/intentional-js-ffi": 1
