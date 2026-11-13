@@ -1593,7 +1593,7 @@
           :code $ quote $ defn on-fill (cursor state on-submit)
             %{} respo.schema/RespoListener (:name :on-fill)
               :handler $ fn (event dispatch!)
-                hint-fn $ Fn AnyEnum
+                hint-fn $ Fn app.schema/FillEvent
                   Fn DispatchOp $ -> Unit
                   -> Unit
                 match (try-decode-map-as event 'app.schema/FillEvent)
@@ -2304,7 +2304,8 @@
         'normalize-event $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn normalize-event (raw)
             if
-              = (enum-definition raw) (Some schema/DispatchOp)
+              and (enum? raw)
+                = (enum-definition raw) (Some schema/DispatchOp)
               decode-map-as raw app.schema/DispatchOp
               match raw
                 (:states cursor data)
@@ -2313,7 +2314,7 @@
                     , data
                 _ $ do (eprintln "|unknown op:" raw) (schema/DispatchOp :unhandled)
           :examples $ []
-          :schema $ quote $ Fn AnyEnum (-> schema/DispatchOp) (:open :decode)
+          :schema $ quote $ Fn Input (-> schema/DispatchOp) (:generics Input)
         'on-control! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-control! (control) (dispatch! control)
           :examples $ []
