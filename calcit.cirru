@@ -994,24 +994,26 @@
         'comp-message-box $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-message-box (states picker-el on-submit model)
             let
-                cursor $ decode-map-as
-                  .unwrap-or (get states :cursor) ([])
-                  List respo.schema/CoordKey
-                state $ let
-                    raw-message-box-state $ .unwrap-or (get states :data)
-                      {} (:content |) (:search? false) (:think? false) (:focus-mode? false)
-                  if
-                    and (struct? raw-message-box-state) (&struct:matches? raw-message-box-state MessageBoxState)
-                    struct-match raw-message-box-state (MessageBoxState typed typed)
-                      _ other $ raise "|Expected MessageBoxState"
-                    decode-map-as
-                      if (struct? raw-message-box-state)
-                        if
-                          = (&struct:get-name raw-message-box-state) :MessageBoxState
-                          &struct:to-map raw-message-box-state
-                          raise "|Expected MessageBoxState"
-                        , raw-message-box-state
-                      , 'app.schema/MessageBoxState
+                cursor $ match (get states :cursor)
+                  (:some value)
+                    decode-map-as value $ List respo.schema/CoordKey
+                  (:none) ([])
+                state $ match (get states :data)
+                  (:none)
+                    %{} MessageBoxState (:content |) (:search? false) (:think? false) (:focus-mode? false)
+                  (:some raw-message-box-state)
+                    if
+                      and (struct? raw-message-box-state) (&struct:matches? raw-message-box-state MessageBoxState)
+                      struct-match raw-message-box-state (MessageBoxState typed typed)
+                        _ other $ raise "|Expected MessageBoxState"
+                      decode-map-as
+                        if (struct? raw-message-box-state)
+                          if
+                            = (&struct:get-name raw-message-box-state) :MessageBoxState
+                            &struct:to-map raw-message-box-state
+                            raise "|Expected MessageBoxState"
+                          , raw-message-box-state
+                        , 'app.schema/MessageBoxState
               [] (effect-focus) (on-fill cursor state on-submit)
                 div
                   {} $ :class-name $ str-spaced css/center style-message-box-panel
@@ -1135,11 +1137,11 @@
                                   on-submit (:content state) (:search? state) (:think? state) d!
                                   , &unit
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) respo.schema/Element
+          :schema $ quote $ Fn (Map Tag V) respo.schema/Element
             Fn String Bool Bool
               Fn DispatchOp $ -> Unit
               -> Unit
-            , Tag (-> respo.schema/Component) (:features :js-ffi)
+            , Tag (-> respo.schema/Component) (:generics V) (:features :js-ffi)
         'comp-sessions-modal $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
             let
