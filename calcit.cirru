@@ -2132,7 +2132,7 @@
         'ChromeDisconnectEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ChromeDisconnectEventHost
             .add-listener! $ Fn app.main/ChromeDisconnectEventHost
-              Fn Dynamic $ -> Unit
+              Fn app.main/ChromePortHost $ -> Unit
               -> Unit
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
@@ -2170,7 +2170,11 @@
                 when (js-present? on-disconnect)
                   let
                       listener $ assert-type on-disconnect ChromeDisconnectEventHost
-                    listener .add-listener! $ fn (event) (println |Worker-disconnected-retrying) (js/setTimeout connect-to-worker! 500) &unit
+                    listener .add-listener! $ fn (_port)
+                      hint-fn $ Fn ChromePortHost $ -> Unit
+                      println |Worker-disconnected-retrying
+                      js/setTimeout connect-to-worker! 500
+                      , &unit
             , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
