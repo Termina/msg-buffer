@@ -2343,7 +2343,7 @@
                 add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
-              hud! |error $ unsafe-coerce build-errors Dynamic
+              hud! |error build-errors
             , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
