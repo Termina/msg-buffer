@@ -2264,7 +2264,7 @@
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             let
-                t0 $ unsafe-coerce (ffi/now-ms) Number
+                t0 $ ffi/now-ms
               println "|Starting main! at" t0
               println "|Running mode:" $ if config/dev? |dev |release
               if config/dev? $ load-console-formatter!
@@ -2291,7 +2291,7 @@
               if config/chrome-extension? $ listen-extension!
               sync-gemini-key!
               let
-                  t1 $ unsafe-coerce (ffi/now-ms) Number
+                  t1 $ ffi/now-ms
                 println "|App started at" t1 |cost (- t1 t0) |ms
               , &unit
           :examples $ []
@@ -2343,7 +2343,7 @@
                 add-watch! *viewing-archive-session :changes $ fn (s prev) (render-app!)
                 reset! *reel $ typed/refresh updater @*reel schema/store
                 hud! |ok~ |Ok
-              hud! |error $ unsafe-coerce build-errors Dynamic
+              hud! |error build-errors
             , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
