@@ -1591,20 +1591,18 @@
             :tags $ #{} :regression :unit
         'on-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-fill (cursor state on-submit)
-            %{} respo.schema/RespoListener (:name :on-fill)
-              :handler $ fn (event dispatch!)
+            app.schema/typed-listener :on-fill
+              fn (event) (try-decode-map-as event 'app.schema/FillEvent)
+              fn (checked dispatch!)
                 hint-fn $ Fn app.schema/FillEvent
                   Fn DispatchOp $ -> Unit
                   -> Unit
-                match (try-decode-map-as event 'app.schema/FillEvent)
-                  (:ok checked)
-                    match checked $
-                      :fill-text text submit?
-                      do
-                        dispatch! $ DispatchOp :widget-state cursor $ assoc state :content text
-                        when submit? $ on-submit text (:search? state) (:think? state) dispatch!
-                        , &unit
-                  (:err _) &unit
+                match checked $
+                  :fill-text text submit?
+                  do
+                    dispatch! $ DispatchOp :widget-state cursor $ assoc state :content text
+                    when submit? $ on-submit text (:search? state) (:think? state) dispatch!
+                    , &unit
           :examples $ []
           :schema $ quote $ Fn (List respo.schema/CoordKey) MessageBoxState
             Fn String Bool Bool
@@ -2655,6 +2653,26 @@
               , :sessions ([]) :current-session-id None :model None :archived-count 0
           :examples $ []
           :schema $ quote Store
+        'typed-listener $ %{} 'CodeEntry
+          :doc "|Build a RespoListener from an event decoder and a typed handler; the only Dynamic event boundary stays inside this adapter, and unknown events are ignored."
+          :code $ quote $ defn typed-listener (name decode handler)
+            respo.schema/RespoListener :name name :handler $ fn (event dispatch!)
+              match (decode event)
+                (:ok value)
+                  handler value $ fn (op)
+                    hint-fn $ Fn DispatchOp $ -> Unit
+                    dispatch! op
+                    , &unit
+                (:err _message) &unit
+          :examples $ []
+          :schema $ quote $ Fn Tag
+            Fn Dynamic $ -> $ Result T String
+            Fn T
+              Fn DispatchOp $ -> Unit
+              -> Unit
+            -> respo.schema/RespoListener
+            :generics T
+            :open :decode
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
           :require $ calcit.test :refer $ is
