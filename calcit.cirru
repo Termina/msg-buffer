@@ -237,7 +237,7 @@
           :schema $ quote $ Fn (List respo.schema/CoordKey) ChatState String String Bool
             Fn DispatchOp $ -> Unit
             -> Unit
-            :features :js-ffi
+            :features :io :js-ffi :state
             :async
         'call-flash-imagen-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-flash-imagen-msg! (variant cursor state prompt-text d!)
@@ -310,7 +310,7 @@
           :schema $ quote $ Fn Tag (List respo.schema/CoordKey) ChatState String
             Fn DispatchOp $ -> Unit
             -> Unit
-            :features :js-ffi
+            :features :js-ffi :state
             :async
         'call-genai-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-genai-msg!
@@ -375,7 +375,7 @@
             Ref String
             Ref String
             -> Unit
-            :features :js-ffi
+            :features :js-ffi :state
             :async
         'call-imagen-4-msg! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-imagen-4-msg! (variant cursor state prompt-text d!)
@@ -426,7 +426,7 @@
           :schema $ quote $ Fn Tag (List respo.schema/CoordKey) ChatState String
             Fn DispatchOp $ -> Unit
             -> Unit
-            :features :js-ffi
+            :features :js-ffi :state
             :async
         'call-openrouter! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn call-openrouter! (cursor state prompt-text provider variant thinking? d! *text)
@@ -496,7 +496,7 @@
             Fn DispatchOp $ -> Unit
             Ref String
             -> Unit
-            :features :js-ffi
+            :features :js-ffi :state
             :async
         'clear-image-cache! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn clear-image-cache! ()
@@ -505,7 +505,7 @@
               (:some url)
                 do (browser/object-url-revoke! url) (reset! *image-cache None) &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
         'comp-abort $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn comp-abort (t)
             span
@@ -520,7 +520,7 @@
               space-x 8
               <> "|✕" style-abort-close
           :examples $ []
-          :schema $ quote $ Fn String (-> respo.schema/Element) (:features :js-ffi)
+          :schema $ quote $ Fn String (-> respo.schema/Element) (:features :js-ffi :state)
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel on-control)
             let
@@ -967,7 +967,7 @@
           :schema $ quote $ Fn (reel.typed/State DispatchOp Store)
             Fn reel.typed/Control $ -> Unit
             -> respo.schema/Component
-            :features :js-ffi
+            :features :io :js-ffi :state
         'comp-fill $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-fill (text)
             div
@@ -1141,7 +1141,7 @@
             Fn String Bool Bool
               Fn DispatchOp $ -> Unit
               -> Unit
-            , Tag (-> respo.schema/Component) (:generics V) (:features :js-ffi)
+            , Tag (-> respo.schema/Component) (:generics V) (:features :io :js-ffi :state)
         'comp-sessions-modal $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-sessions-modal (sessions archived-count on-select on-close on-view-archive)
             let
@@ -1359,7 +1359,7 @@
                   reset! *gen-ai-new $ Some client
                   , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi) (:async)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state) (:async)
         'ensure-openai! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn ensure-openai! (provider)
             let
@@ -1378,7 +1378,7 @@
                 reset! *openai $ Some client
               , &unit
           :examples $ []
-          :schema $ quote $ Fn Tag (-> Unit) (:features :js-ffi) (:async)
+          :schema $ quote $ Fn Tag (-> Unit) (:features :js-ffi :state) (:async)
         'first-line $ %{} 'CodeEntry
           :doc "|last message from error contains a line starts with \"data: \" and an extra error message. In order that JSON is parsed correctly, only first line is used now."
           :code $ quote $ defn first-line (tt)
@@ -1392,7 +1392,7 @@
                 eprintln "|Dropping some unexpected lines:" $ slice lines 1
               .unwrap-or (first lines) |
           :examples $ []
-          :schema $ quote $ Fn String (-> String)
+          :schema $ quote $ Fn String (-> String) (:features :io)
         'genai-new $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn genai-new (module api-key) (raise "|JavaScript GenAI constructor")
           :examples $ []
@@ -1609,6 +1609,7 @@
               Fn DispatchOp $ -> Unit
               -> Unit
             -> respo.schema/RespoListener
+            :features :io :state
           :tests $ [] $ %{} 'TestEntry (:name |fills-draft-and-only-submits-when-requested)
             :code $ quote $ let
                 state $ MessageBoxState :content |old :search? true :think? false :focus-mode? false
@@ -2035,7 +2036,7 @@
           :schema $ quote $ Fn (List respo.schema/CoordKey) ChatState String Bool Bool Tag
             Fn DispatchOp $ -> Unit
             -> Unit
-            :features :js-ffi
+            :features :io :js-ffi :state
             :async
         'toggle-focus-within! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn toggle-focus-within! (respo-event active?)
@@ -2175,7 +2176,7 @@
                       , &unit
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ js/console.log |Dispatch: op
@@ -2185,7 +2186,7 @@
               (reel.typed/Control control) (typed/apply-control updater @*reel control)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn schema/ResolvedOp (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn schema/ResolvedOp (-> Unit) (:features :js-ffi :state)
         'extension-action $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn extension-action (message)
             js-nullish->option $ .-action message
@@ -2214,7 +2215,7 @@
           :schema $ quote $ Fn
             Fn $ -> Unit
             -> Unit
-            :features :js-ffi
+            :features :io :js-ffi :state
         'listen-extension! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn listen-extension! ()
             js/chrome.runtime.onMessage.addListener $ fn (raw-message sender respond!)
@@ -2258,7 +2259,7 @@
             connect-to-worker!
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             let
@@ -2293,7 +2294,7 @@
                 println "|App started at" t1 |cost (- t1 t0) |ms
               , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn mount-target ()
             let
@@ -2316,11 +2317,11 @@
                     , data
                 _ $ do (eprintln "|unknown op:" raw) (schema/DispatchOp :unhandled)
           :examples $ []
-          :schema $ quote $ Fn Input (-> schema/DispatchOp) (:generics Input)
+          :schema $ quote $ Fn Input (-> schema/DispatchOp) (:generics Input) (:features :io)
         'on-control! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-control! (control) (dispatch! control)
           :examples $ []
-          :schema $ quote $ Fn typed/Control (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn typed/Control (-> Unit) (:features :js-ffi :state)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             println "|Saved at" $ :iso $ ffi/date-now-snapshot
@@ -2330,7 +2331,7 @@
               storage .set-item! (:storage-key config/site) (schema/encode-store store)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
@@ -2344,14 +2345,14 @@
               hud! |error build-errors
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             let
                 t_start $ ffi/now-ms
               println "|Rendering app..."
               render-with! (mount-target)
-                fn () $ comp-container @*reel on-control!
+                fn () $ comp-container @*reel $ fn (op) (on-control! op)
                 fn (event)
                   hint-fn $ Fn *dispatch-op $ -> Unit
                   dispatch! $ normalize-event event
@@ -2359,7 +2360,7 @@
                 - (ffi/now-ms) t_start
                 , |ms
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'sync-gemini-key! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sync-gemini-key! ()
             when config/chrome-extension? $ do
@@ -2672,6 +2673,7 @@
               -> Unit
             -> respo.schema/RespoListener
             :generics T
+            :features :io :state
             :open :decode
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
@@ -2737,7 +2739,7 @@
                                         , :thinking $ match (get changes :thinking)
                                           (:none) (:thinking base)
                                           (:some value) (decode-map-as value 'String)
-                          do (eprintln |unknown-state-to-merge state) state
+                          , state
                     assoc store :states $ decode-map-as updated-states $ Map Dynamic Dynamic
                 (:hydrate-storage data) data
                 (:change-model)
@@ -2775,7 +2777,7 @@
                   -> store
                     assoc :sessions $ []
                     assoc :current-session-id None
-                _ $ do (eprintln "|unknown op:" op) store
+                _ store
           :examples $ []
           :schema $ quote $ Fn Store app.schema/DispatchOp String Number (-> Store)
           :tests $ [] $ %{} 'TestEntry (:name |mixed-cursor-latest-state-merge)
