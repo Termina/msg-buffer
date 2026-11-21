@@ -9,7 +9,7 @@ Demo：<https://r.tiye.me/Termina/msg-buffer/>。Gemini 文档：<https://ai.goo
 
 本地开发使用正式 Calcit 和 `@calcit/procs` **0.44.0**。升级后请重装依赖，分别重建网页与扩展资源，并刷新。页面 HUD、模型名称、请求配置和存档格式保持原行为。
 
-模块使用已发布的 Respo 0.19.10、UI 0.15.4、JS FFI 0.2.18、Reel 0.11.2、Alerts 0.14.5、Markdown 0.9.2 和 Router 0.12.8。
+模块使用已发布的 Respo 0.19.13、UI 0.15.7、JS FFI 0.2.19、Reel 0.11.5、Alerts 0.14.8、Markdown 0.9.5 和 Router 0.12.11。
 
 ## 迁移合同
 
